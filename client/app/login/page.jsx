@@ -6,7 +6,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit =  (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -14,11 +14,12 @@ export default function Login() {
       return;
     }
 
-    if (email == "tesetUser@gmai.com" && password == "testUser123") {
+    if (email === "tesetUser@gmai.com" && password === "testUser123") {
       alert("Login successful");
-    } else { 
+    } else {
       setError("Invalid email or password");
     }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -59,4 +60,4 @@ export default function Login() {
       </div>
     </div>
   );
-}}
+}
