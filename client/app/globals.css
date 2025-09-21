@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 * {
   margin: 0;
@@ -6,8 +7,21 @@
   box-sizing: border-box;
 }
 
+:root {
+  --brand-purple: #7d4eb0;
+  --brand-purple-light: #9b7ed8;
+  --brand-purple-dark: #5a3687;
+  --lavender-border: #e0d4f6;
+  --success-green: #28a745;
+
+  /* Optional extras for UI polish */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-radius: 1.5rem; /* 24px = rounded-3xl */
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
 body {
-  font-family: sans-serif;
-  background: #f9f9f9;
-  color: #333;
+  font-family: 'Inter', sans-serif;
+  background-color: #fafafa;
+  color: #111827; /* Tailwind gray-900 */
 }
