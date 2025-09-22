@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { FiArrowLeft } from "react-icons/fi"; 
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,12 +16,17 @@ export default function Login() {
     if (!pwd) return { label: "", color: "" };
     if (pwd.length < 6) return { label: "Weak", color: "bg-red-400" };
     if (pwd.length < 10) return { label: "Medium", color: "bg-yellow-300" };
-    return { label: "Strong", color: "bg-[var(--success-green)]" };
+    return { label: "Strong", color: "bg-green-400" };
   };
 
   const strength = getPasswordStrength(password);
 
+  const handleBack = () => {
+    router.push("/landing");
+  };
+
   // Handle form submission
+  const [success, setSuccess] = useState("");
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email || !password) {
@@ -29,37 +35,45 @@ export default function Login() {
     }
     if (email === "testUser@gmail.com" && password === "testUser123") {
       router.push("/login/student_dashboard");
-      alert("Login successful ✅");
+      setError("");
+      setSuccess("Login successful ✅");
     } else {
       setError("Invalid email or password ❌");
+      setSuccess("");
     }
   };
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-purple-900/70 bg-cover bg-center px-6 py-12"
-      style={{ backgroundImage: "url('img/bg-img.png')" }}
-    >
-      <div className="w-full max-w-md p-8 mx-auto justify-center items-center bg-white/95 rounded-3xl border-4 border-[var(--lavender-border)] shadow-xl backdrop-blur-md">
+    <div className="container">
+        <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
+          <FiArrowLeft size={18} />
+          Back
+        </button>
+      <div className="neu-card w-full max-w-md mx-auto justify-center">
         {/* Title */}
-        <h1 className="text-4xl font-extrabold text-center text-[var(--brand-purple)] mb-8">
+        <h1 className="heading-2 text-center mb-8">
           Log In
         </h1>
 
-        {error && (
-          <p className="text-red-500 text-sm mb-6 text-center">{error}</p>
+        {/* Success message */}
+        {success && (
+          <p className="success-msg mb-4 text-center">{success}</p>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-12">
+        {/* Error message */}
+        {error && (
+          <p className="error-msg mb-4 text-center">{error}</p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-10">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-[var(--brand-purple)] mb-2">
+            <label className="block text-sm font-medium text-[var(--brand-purple-dark)] mb-2">
               Email
             </label>
             <input
               type="email"
-              className="w-full rounded-xl border border-[var(--brand-purple)] px-4 py-3 text-sm font-[var(--brand-purple)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-purple-light)]"
+              className="neu-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.name@your.email.com"
@@ -68,29 +82,29 @@ export default function Login() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-[var(--brand-purple)] mb-2">
+            <label className="block text-sm font-medium text-[var(--brand-purple-dark)] mb-2">
               Password
             </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full rounded-xl border border-[var(--brand-purple)] px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-purple-light)]"
+                className="neu-input pr-12"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
               />
-                {/* Eye toggle */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? (
-                    <EyeIcon className="h-5 w-5 text-[var(--brand-purple)]" />
-                  ) : (
-                    <EyeSlashIcon className="h-5 w-5 text-[var(--brand-purple)]" />
-                  )}
-                </button>
+              {/* Eye toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <EyeIcon className="h-5 w-5 text-[var(--brand-purple-dark)]" />
+                ) : (
+                  <EyeSlashIcon className="h-5 w-5 text-[var(--brand-purple-dark)]" />
+                )}
+              </button>
             </div>
 
             {/* Password strength */}
@@ -117,21 +131,15 @@ export default function Login() {
           </div>
 
           {/* Submit */}
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl font-semibold text-white bg-[var(--brand-purple)] hover:bg-[var(--brand-purple-dark)] transition shadow-md"
-          >
+          <button type="submit" className="neu-btn">
             Log In
           </button>
         </form>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-sm text-[var(--brand-purple)]">
+        <p className="mt-10 text-center text-sm text-[var(--brand-purple-dark)]">
           No account?{" "}
-          <a
-            href="/signup"
-            className="font-semibold text-[var(--brand-purple)] hover:underline"
-          >
+          <a href="/signup" className="font-semibold hover:underline">
             Create Account
           </a>
         </p>
