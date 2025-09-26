@@ -22,7 +22,7 @@ export default function Login() {
   const strength = getPasswordStrength(password);
 
   const handleBack = () => {
-    router.push("/landing");
+    router.push("/");
   };
 
   // Handle form submission

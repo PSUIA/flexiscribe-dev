@@ -1,3 +1,4 @@
+// This file was moved from login/student_dashboard/page.jsx
 "use client"
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -78,10 +79,6 @@ export default function StudentDashboard() {
           <div className="card transcript">
             <h3 className="text-xl font-bold">Live Transcript</h3>
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac libero scelerisque...</p>
-          </div>
-          <div className="card slide-preview">
-            <h3 className="text-xl font-bold">Slide Preview</h3>
-            <div className="slide-box"></div>
           </div>
         </div>
       </main>
