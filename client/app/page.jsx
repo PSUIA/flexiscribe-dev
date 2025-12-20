@@ -5,54 +5,69 @@ export default function Landing() {
   const router = useRouter();
 
   const getStarted = () => {
-    router.push("/login");
+    router.push("/auth/student/login");
   };
 
   return (
     <div className="container min-h-screen flex flex-col">
       {/* Navbar */}
-        <nav className="neu-navbar">
-          {/* Logo */}
-          <div className="neu-navbar-logo">
-            <img src="/img/logo.png" alt="Logo" className="h-8 w-8" />
-            <span>fLexiScribe</span>
+      <nav className="neu-navbar">
+        {/* Logo */}
+        <div className="neu-navbar-logo">
+          <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-15 w-15" />
+          <div className="flex flex-col items-start">
+            <span className="text-2xl font-bold">fLexiScribe</span>
+            <span className="text-xs font-normal">Your Note-Taking Assistant</span>
           </div>
+        </div>
 
-          {/* Links */}
-          <div className="neu-navbar-links">
-            <a href="#mission">Our Mission</a>
-            <a href="#services">Services</a>
-            <a href="#about-us">About Us</a>
-          </div>
-
-          {/* Actions */}
-          <div className="neu-navbar-actions">
-            <button className="btn-login">Log In</button>
-            <button className="btn-signup">Sign Up</button>
-          </div>
-        </nav>
-
+        {/* Actions */}
+        <div className="neu-navbar-actions">
+          <button className="btn-login text-md" onClick={() => router.push("/auth/student/login")}>
+            Student & Educator Portal
+          </button>
+        </div>
+      </nav>
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col justify-center items-center text-center px-6">
-        <div className="max-w-4xl">
-          <h1 className="heading-1 mb-4">From Speech to Study-Ready Notes</h1>
-          <p className="paragraph mb-4">
-            Redefining how students capture, organize, and review lectures. With
-            real-time speech-to-text transcription and an intelligent
-            auto-reviewer generator,
-            <span className="font-bold text-[var(--brand-purple-dark)]"> fLexiScribe </span>
-            ensures no detail is missed and every concept is easier to revisit.
+        <div className="max-w-5xl">
+          <h1 className="text-4xl font-bold mt-6 mb-6">From Speech to Study-Ready Notes</h1>
+          <p className="text-lg mb-4 leading-relaxed">
+            Redefining how students capture, organize, and review lectures.<br />
+            With real-time speech-to-text transcription and an intelligent auto-reviewer generator,<br /> 
+            fLexiScribe ensures no detail is missed and every concept is easier to revisit.
           </p>
-          <p className="font-bold text-[var(--brand-purple-dark)] mb-8">
+          <p className="font-bold text-xl mb-12">
             Listen better. Write less. Learn more.
           </p>
+
+          {/* Feature Cards */}
+          <div className="grid grid-cols-3 items-center gap-8 mb-14">
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-red-400 rounded-xl p-4 shadow-lg">
+                <span className="text-white text-3xl">📃</span>
+              </div>
+              <span className="text-md font-semibold">Get Auto-Generated PDF Reviewer</span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-yellow-200 rounded-xl p-4 shadow-lg">
+                <span className="text-3xl">💡</span>
+              </div>
+              <span className="text-md font-semibold">Generate Interactive Quiz</span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-cyan-200 rounded-xl p-4 shadow-lg">
+                <span className="text-3xl">🏆</span>
+              </div>
+              <span className="text-md font-semibold">Earn XP and Rank UP!</span>
+            </div>
+          </div>
 
           {/* Get Started Button */}
           <button className="btn-get-started" onClick={getStarted}>
             Get Started
           </button>
-
         </div>
       </main>
     </div>
