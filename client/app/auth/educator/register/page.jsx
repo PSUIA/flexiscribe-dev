@@ -1,0 +1,337 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { FiArrowLeft } from "react-icons/fi";
+
+export default function EducatorRegister() {
+  const router = useRouter();
+  const [step, setStep] = useState(1); // 1: personal details, 2: account details
+
+  // Step 1: Personal Details
+  const [fullName, setFullName] = useState("");
+  const [department, setDepartment] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+
+  // Step 2: Account Details
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleBack = () => {
+    if (step === 1) {
+      router.push("/auth/role-selection");
+    } else {
+      setStep(step - 1);
+      setError("");
+      setSuccess("");
+    }
+  };
+
+  // Password Strength Checker
+  const getPasswordStrength = (pwd) => {
+    if (!pwd) return { label: "", color: "" };
+    if (pwd.length < 6) return { label: "Weak", color: "bg-red-400" };
+    if (pwd.length < 10) return { label: "Medium", color: "bg-yellow-300" };
+    return { label: "Strong", color: "bg-green-400" };
+  };
+
+  const strength = getPasswordStrength(password);
+
+  // Step 1 Validation and Submit
+  const handleStep1Submit = (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!fullName || !department || !dateOfBirth || !gender) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setSuccess("Personal details saved!");
+    setTimeout(() => {
+      setStep(2);
+      setSuccess("");
+    }, 800);
+  };
+
+  // Step 2 Validation and Submit
+  const handleStep2Submit = (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!username || !email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // Validate password
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // In production, this would call an API to create the account
+    console.log("Educator Registration data:", {
+      fullName,
+      department,
+      dateOfBirth,
+      gender,
+      username,
+      email,
+    });
+
+    setSuccess("Account created successfully! Redirecting to login...");
+    setTimeout(() => {
+      router.push("/auth/educator/login");
+    }, 2000);
+  };
+
+  return (
+    <div className="container">
+      <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
+        <FiArrowLeft size={18} />
+        Back
+      </button>
+      <div className="neu-card w-full max-w-md mx-auto justify-center">
+        {/* Title */}
+        <div className="flex flex-col items-center mb-6 mt-2">
+          <span className="font-extrabold text-4xl text-center mb-2">
+            Educator Registration
+          </span>
+          <span className="text-center text-md mb-2">
+            {step === 1 && "Step 1 of 2: Personal Details"}
+            {step === 2 && "Step 2 of 2: Account Details"}
+          </span>
+        </div>
+
+        {/* Success message */}
+        {success && <p className="success-msg mb-4 text-center">{success}</p>}
+
+        {/* Error message */}
+        {error && <p className="error-msg mb-4 text-center">{error}</p>}
+
+        {/* Step 1: Personal Details */}
+        {step === 1 && (
+          <form onSubmit={handleStep1Submit} className="space-y-6">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                className="neu-input"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Dr. Maria Santos"
+              />
+            </div>
+
+            {/* Department Specialization */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Department Specialization
+              </label>
+              <select
+                className="neu-input"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+              >
+                <option value="">Select Department</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Information Technology">
+                  Information Technology
+                </option>
+                <option value="Information Systems">Information Systems</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Physics">Physics</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {/* Date of Birth */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                className="neu-input"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+              />
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Gender</label>
+              <select
+                className="neu-input"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Prefer not to say</option>
+              </select>
+            </div>
+
+            {/* Next Button */}
+            <button type="submit" className="neu-btn">
+              Next
+            </button>
+          </form>
+        )}
+
+        {/* Step 2: Account Details */}
+        {step === 2 && (
+          <form onSubmit={handleStep2Submit} className="space-y-6">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                className="neu-input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="mariasantos"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                className="neu-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="educator@example.com"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="neu-input pr-12"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+
+              {/* Password strength */}
+              {strength.label && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-600">{strength.label}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 rounded-full">
+                    <div
+                      className={`h-2 rounded-full ${strength.color}`}
+                      style={{
+                        width:
+                          strength.label === "Weak"
+                            ? "33%"
+                            : strength.label === "Medium"
+                            ? "66%"
+                            : "100%",
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="neu-input pr-12"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? (
+                    <EyeIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button type="submit" className="neu-btn">
+              Create Account
+            </button>
+          </form>
+        )}
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-sm">
+          Already have an account?{" "}
+          <a
+            href="/auth/educator/login"
+            className="font-semibold hover:underline"
+          >
+            Log In
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}

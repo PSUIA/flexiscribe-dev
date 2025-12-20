@@ -4,10 +4,6 @@ import { useRouter } from "next/navigation";
 export default function Landing() {
   const router = useRouter();
 
-  const getStarted = () => {
-    router.push("/auth/student/login");
-  };
-
   return (
     <div className="container min-h-screen flex flex-col">
       {/* Navbar */}
@@ -23,7 +19,7 @@ export default function Landing() {
 
         {/* Actions */}
         <div className="neu-navbar-actions">
-          <button className="btn-login text-md" onClick={() => router.push("/auth/student/login")}>
+          <button className="btn-login text-md" onClick={() => router.push("/auth/role-selection")}>
             Student & Educator Portal
           </button>
         </div>
@@ -65,7 +61,7 @@ export default function Landing() {
           </div>
 
           {/* Get Started Button */}
-          <button className="btn-get-started" onClick={getStarted}>
+          <button className="btn-get-started" onClick={() => router.push("/auth/role-selection")}>
             Get Started
           </button>
         </div>
