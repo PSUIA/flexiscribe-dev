@@ -75,6 +75,16 @@ Hybrid transcription pipeline:
 
 Designed for 1+ hour lectures on Jetson Orin Nano Super.
 """
+"""
+transcription.py
+
+Hybrid transcription pipeline with final flush:
+- Vosk: real-time captions (low latency)
+- Whisper (faster-whisper): delayed refinement (offline-quality)
+- Continuous WAV recording for reliability
+
+Designed for 1+ hour lectures on Jetson Orin Nano Super.
+"""
 
 import queue
 import threading
@@ -98,6 +108,9 @@ from .config import (
 )
 from .file_manager import generate_transcript_file, append_text_to_file
 
+# Global stop event for final flush
+stop_event = threading.Event()
+
 # Load models
 print("Loading Whisper model (GPU)...")
 whisper_model = WhisperModel(
@@ -109,7 +122,7 @@ whisper_model = WhisperModel(
 print("Loading Vosk model...")
 vosk_model = vosk.Model(VOSK_MODEL_PATH)
 
-# Queues (NO shared queue — critical)
+# Queues (no shared queue — critical)
 audio_queue_vosk = queue.Queue(maxsize=300)
 audio_queue_whisper = queue.Queue(maxsize=80)
 audio_queue_wav = queue.Queue(maxsize=1000)
@@ -136,45 +149,59 @@ def wav_writer(wav_path):
         channels=CHANNELS,
         subtype="PCM_16",
     ) as f:
-        while True:
-            data = audio_queue_wav.get()
-            audio = np.frombuffer(data, dtype=np.int16)
-            f.write(audio)
+        while not stop_event.is_set() or not audio_queue_wav.empty():
+            try:
+                data = audio_queue_wav.get(timeout=0.5)
+                audio = np.frombuffer(data, dtype=np.int16)
+                f.write(audio)
+            except queue.Empty:
+                continue
 
 # Vosk — real-time captions
 def vosk_transcriber(transcript_file):
     rec = vosk.KaldiRecognizer(vosk_model, SAMPLERATE)
-
-    while True:
-        data = audio_queue_vosk.get()
+    while not stop_event.is_set() or not audio_queue_vosk.empty():
+        try:
+            data = audio_queue_vosk.get(timeout=0.5)
+        except queue.Empty:
+            continue
 
         if rec.AcceptWaveform(data):
             result = json.loads(rec.Result())
             text = result.get("text", "").strip()
-
             if text:
                 print("Vosk:", text)
                 append_text_to_file(transcript_file, text)
 
-# Whisper — offline-quality refinement
+# Whisper — offline-quality refinement with final flush
 def whisper_refiner(transcript_file):
     buffer = np.zeros(0, dtype=np.float32)
-
     window_samples = WHISPER_WINDOW_SEC * SAMPLERATE
     overlap_samples = WHISPER_OVERLAP_SEC * SAMPLERATE
 
-    while True:
-        data = audio_queue_whisper.get()
+    while not stop_event.is_set() or not audio_queue_whisper.empty():
+        try:
+            data = audio_queue_whisper.get(timeout=0.5)
+            audio = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
+            buffer = np.concatenate((buffer, audio))
+        except queue.Empty:
+            # If stopping and queue empty, flush remaining buffer
+            if stop_event.is_set() and len(buffer) > 0:
+                segments, _ = whisper_model.transcribe(
+                    buffer,
+                    beam_size=5,
+                    vad_filter=True,
+                    language="en",
+                )
+                refined_text = " ".join(seg.text.strip() for seg in segments)
+                if refined_text:
+                    print("Whisper (final flush):", refined_text)
+                    append_text_to_file(transcript_file, refined_text)
+                break
+            continue
 
-        audio = (
-            np.frombuffer(data, dtype=np.int16)
-            .astype(np.float32)
-            / 32768.0
-        )
-
-        buffer = np.concatenate((buffer, audio))
-
-        if len(buffer) >= window_samples:
+        # Process normal overlapping chunks
+        while len(buffer) >= window_samples:
             window = buffer[:window_samples]
             buffer = buffer[window_samples - overlap_samples :]
 
@@ -186,7 +213,6 @@ def whisper_refiner(transcript_file):
             )
 
             refined_text = " ".join(seg.text.strip() for seg in segments)
-
             if refined_text:
                 print("Whisper (refined):", refined_text)
                 append_text_to_file(transcript_file, refined_text)
@@ -199,17 +225,13 @@ def start_transcription():
     print(f"Transcript file: {transcript_file}")
     print(f"Audio recording: {wav_path}")
 
-    threading.Thread(
-        target=wav_writer, args=(wav_path,), daemon=True
-    ).start()
+    # Start threads
+    wav_thread = threading.Thread(target=wav_writer, args=(wav_path,), daemon=True)
+    vosk_thread = threading.Thread(target=vosk_transcriber, args=(transcript_file,), daemon=True)
+    whisper_thread = threading.Thread(target=whisper_refiner, args=(transcript_file,), daemon=True)
 
-    threading.Thread(
-        target=vosk_transcriber, args=(transcript_file,), daemon=True
-    ).start()
-
-    threading.Thread(
-        target=whisper_refiner, args=(transcript_file,), daemon=True
-    ).start()
+    for t in (wav_thread, vosk_thread, whisper_thread):
+        t.start()
 
     try:
         with sd.RawInputStream(
@@ -225,3 +247,10 @@ def start_transcription():
 
     except KeyboardInterrupt:
         print("\nStopping transcription...")
+        stop_event.set()  # signal threads to stop
+
+        # Wait a short time to allow final flush
+        whisper_thread.join(timeout=10)
+        wav_thread.join(timeout=5)
+        vosk_thread.join(timeout=5)
+        print("Final flush completed. All audio and transcription saved.")
