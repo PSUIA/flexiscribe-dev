@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { FiArrowLeft } from "react-icons/fi"; 
+import { FiArrowLeft } from "react-icons/fi";
 
-export default function Login() {
+export default function EducatorLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,7 +22,7 @@ export default function Login() {
   const strength = getPasswordStrength(password);
 
   const handleBack = () => {
-    router.push("/");
+    router.push("/auth/role-selection");
   };
 
   // Handle form submission
@@ -33,8 +33,16 @@ export default function Login() {
       setError("Please fill in all fields");
       return;
     }
-    if (email === "testUser@gmail.com" && password === "testUser123") {
-      router.push("/login/student_dashboard");
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (email === "educator@example.com" && password === "educatoracc0123") {
+      router.push("/educator/dashboard");
       setError("");
       setSuccess("Login successful ✅");
     } else {
@@ -45,46 +53,53 @@ export default function Login() {
 
   return (
     <div className="container">
-        <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
-          <FiArrowLeft size={18} />
-          Back
-        </button>
+      <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
+        <FiArrowLeft size={18} />
+        Back
+      </button>
       <div className="neu-card w-full max-w-md mx-auto justify-center">
         {/* Title */}
-        <h1 className="heading-2 text-center mb-8">
-          Log In
-        </h1>
-
+        <div className="flex flex-col items-center mb-6 mt-2">
+          <span className="font-extrabold text-4xl text-center mb-2">
+            Educator Log In
+          </span>
+          <span className="text-center text-md mb-2">
+            Access your fLexiScribe educator portal
+          </span>
+        </div>
         {/* Success message */}
-        {success && (
-          <p className="success-msg mb-4 text-center">{success}</p>
-        )}
+        {success && <p className="success-msg mb-4 text-center">{success}</p>}
 
         {/* Error message */}
-        {error && (
-          <p className="error-msg mb-4 text-center">{error}</p>
-        )}
+        {error && <p className="error-msg mb-4 text-center">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-10">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-[var(--brand-purple-dark)] mb-2">
-              Email
+            <label className="block text-sm font-medium mb-2">
+              Email Address
             </label>
             <input
               type="email"
               className="neu-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.name@your.email.com"
+              placeholder="educator@example.com"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-[var(--brand-purple-dark)] mb-2">
-              Password
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-medium">Password</label>
+              <a
+                href="/auth/educator/forgot-password"
+                className="text-sm font-semibold hover:underline"
+              >
+                Forgot Password?
+              </a>
+            </div>
+            {/* Password input */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -100,9 +115,9 @@ export default function Login() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
                 {showPassword ? (
-                  <EyeIcon className="h-5 w-5 text-[var(--brand-purple-dark)]" />
+                  <EyeIcon className="h-5 w-5" />
                 ) : (
-                  <EyeSlashIcon className="h-5 w-5 text-[var(--brand-purple-dark)]" />
+                  <EyeSlashIcon className="h-5 w-5" />
                 )}
               </button>
             </div>
@@ -137,9 +152,12 @@ export default function Login() {
         </form>
 
         {/* Footer */}
-        <p className="mt-10 text-center text-sm text-[var(--brand-purple-dark)]">
+        <p className="mt-10 text-center text-sm">
           No account?{" "}
-          <a href="/signup" className="font-semibold hover:underline">
+          <a
+            href="/auth/educator/register"
+            className="font-semibold hover:underline"
+          >
             Create Account
           </a>
         </p>
