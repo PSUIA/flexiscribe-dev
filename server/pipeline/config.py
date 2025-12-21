@@ -29,10 +29,17 @@ import os
 SAMPLERATE = 16000
 CHANNELS = 1
 
-# Model paths
-WHISPER_MODEL = "small"
+# Whisper refinement settings
+WHISPER_MODEL = "large-v3"  # Used by faster-whisper (GPU)
+WHISPER_WINDOW_SEC = 60
+WHISPER_OVERLAP_SEC = 15
+
+# Vosk (real-time captions)
 VOSK_MODEL_PATH = "./models/vosk-model-en-us-0.42-gigaspeech"
 
-# Transcript settings
+# Directories
 TRANSCRIPTS_DIR = "./data/transcripts/"
+AUDIO_DIR = "./data/audio/"
+
 os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
+os.makedirs(AUDIO_DIR, exist_ok=True)
