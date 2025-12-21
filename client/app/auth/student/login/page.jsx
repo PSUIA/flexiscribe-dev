@@ -53,7 +53,7 @@ export default function Login() {
         {/* Title */}
         <div className="flex flex-col items-center mb-6 mt-2">
           <span className="font-extrabold text-4xl text-center mb-2">Student Log In</span>
-          <span className="text-center text-md mb-2">Access your fLexiScribe portal</span>
+          <span className="text-center text-md mb-2">Access your fLexiScribe student portal</span>
         </div>
         {/* Success message */}
         {success && (

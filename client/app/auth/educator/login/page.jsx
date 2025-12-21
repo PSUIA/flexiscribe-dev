@@ -93,7 +93,7 @@ export default function EducatorLogin() {
             <div className="flex justify-between items-center mb-2">
               <label className="text-sm font-medium">Password</label>
               <a
-                href="/auth/educator/forgot-password"
+                href="/auth/forgot-password"
                 className="text-sm font-semibold hover:underline"
               >
                 Forgot Password?
