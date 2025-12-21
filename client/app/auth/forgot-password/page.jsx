@@ -18,7 +18,7 @@ export default function ForgotPassword() {
   const [generatedCode, setGeneratedCode] = useState("");
 
   const handleBack = () => {
-    router.push("/auth/student/login");
+    router.push("/auth/role-selection");
   };
 
   // Password Strength Checker
@@ -161,7 +161,7 @@ export default function ForgotPassword() {
                 className="neu-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@example.com"
+                placeholder="email@example.com"
               />
             </div>
             <button type="submit" className="neu-btn">
