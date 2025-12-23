@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBell, FaSearch, FaRegUserCircle, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBell, FaSearch, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import UserMenu from "./UserMenu";
 import "./styles.css";
 
 export default function StudentDashboard() {
@@ -133,10 +134,12 @@ export default function StudentDashboard() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="logo-section">
-          <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-          <div className="flex flex-col items-start">
-            <h1 className="text-2xl font-bold">fLexiScribe</h1>
-            <p className="text-xs font-normal">Your Note-Taking Assistant</p>
+          <div className="logo-content">
+            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
+            <div className="flex flex-col items-start">
+              <h1 className="text-2xl font-bold">fLexiScribe</h1>
+              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
+            </div>
           </div>
         </div>
 
@@ -158,12 +161,6 @@ export default function StudentDashboard() {
             <span>Leaderboard</span>
           </div>
         </nav>
-
-        {/* Theme Toggle */}
-        <button className="theme-toggle" onClick={toggleDarkMode}>
-          {darkMode ? <FaSun className="theme-icon" /> : <FaMoon className="theme-icon" />}
-          <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-        </button>
 
         <div className="clock-widget">
           <svg className="clock-svg" viewBox="0 0 100 100">
@@ -243,16 +240,16 @@ export default function StudentDashboard() {
             <input type="text" placeholder="Search" />
           </div>
           <div className="header-actions">
+            {/* Theme Toggle Button */}
+            <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
+            
             <button className="notification-btn">
               <FaBell />
             </button>
-            <div className="user-profile">
-              <div className="user-avatar"><FaRegUserCircle /></div>
-              <div className="user-info">
-                <div className="user-name">Eru.</div>
-                <div className="user-role">Student</div>
-              </div>
-            </div>
+            
+            <UserMenu userName="erunim" userRole="Student" />
           </div>
         </header>
         
