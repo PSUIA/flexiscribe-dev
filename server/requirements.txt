@@ -2,3 +2,8 @@ numpy
 sounddevice 
 vosk 
 openai-whisper
+soundfile
+faster_whisper
+python3-dev
+build-essential
+cmake
