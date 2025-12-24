@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
 import UserMenu from "../dashboard/UserMenu";
 import NotificationMenu from "../dashboard/NotificationMenu";
+import SearchBar from "../dashboard/SearchBar";
+import { mockUserProfile } from "../dashboard/mockData";
 import "../../student/dashboard/styles.css";
 
 export default function ChangePassword() {

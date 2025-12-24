@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaCamera, FaSave } from "react-icons/fa";
 import UserMenu from "../dashboard/UserMenu";
 import NotificationMenu from "../dashboard/NotificationMenu";
+import SearchBar from "../dashboard/SearchBar";
 import { mockUserProfile } from "../dashboard/mockData";
 import "../../student/dashboard/styles.css";
 
