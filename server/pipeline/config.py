@@ -23,23 +23,30 @@ Contents to include:
         - LOGGING: True/False
 """
 
-import os
-
-# Audio settings
 SAMPLERATE = 16000
 CHANNELS = 1
 
-# Whisper refinement settings
-WHISPER_MODEL = "base"  # Used by faster-whisper (GPU)
-WHISPER_WINDOW_SEC = 60
-WHISPER_OVERLAP_SEC = 15
+WHISPER_MODEL = "base"  
+VOSK_MODEL_ENGLISH = ""
+VOSK_MODEL_TAGALOG = ""
 
-# Vosk (real-time captions)
-VOSK_MODEL_PATH = "/home/psuia/Documents/fLexiScribe/server/models/vosk-model-en-us-0.42-gigaspeech/"
+MODEL_NAME = "sshleifer/distilbart-cnn-12-6"
+LOCAL_MODEL_PATH = "/absolute/path/to/external/models/distilbart"  # must exist after download
 
-# Directories
-TRANSCRIPTS_DIR = "data/transcripts/"
-AUDIO_DIR = "data/audio/"
+# GPU settings
+REQUIRE_CUDA = True
+USE_FP16 = True
 
-os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
-os.makedirs(AUDIO_DIR, exist_ok=True)
+# Text processing
+MAX_WORDS_PER_CHUNK = 500       # adjust for very long transcripts
+MAX_INPUT_TOKENS = 1024
+
+# Generation parameters
+MAX_SUMMARY_LENGTH = 150
+MIN_SUMMARY_LENGTH = 40
+NUM_BEAMS = 4
+LENGTH_PENALTY = 2.0
+
+# Data paths
+INPUT_TEXT_PATH = "/absolute/path/to/external/data/lecture_transcript.txt"
+OUTPUT_SUMMARY_PATH = "/absolute/path/to/external/data/lecture_summary.txt"
