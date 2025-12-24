@@ -1,4 +1,12 @@
-from pipeline.transcription import start_transcription
+from pipeline.summarizer import Summarizer
+from pipeline.config import INPUT_TEXT_PATH, OUTPUT_SUMMARY_PATH
 
 if __name__ == "__main__":
-    start_transcription()
+    summarizer = Summarizer()
+
+    print("Starting summarization...")
+    summary = summarizer.summarize_file(INPUT_TEXT_PATH, OUTPUT_SUMMARY_PATH)
+
+    print("\n--- FINAL SUMMARY ---\n")
+    print(summary)
+    print(f"\nSummary saved to: {OUTPUT_SUMMARY_PATH}")
