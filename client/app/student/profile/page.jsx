@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBell, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaCamera, FaSave } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaCamera, FaSave } from "react-icons/fa";
 import UserMenu from "../dashboard/UserMenu";
+import NotificationMenu from "../dashboard/NotificationMenu";
+import { mockUserProfile } from "../dashboard/mockData";
 import "../../student/dashboard/styles.css";
 
 export default function StudentProfile() {
@@ -11,17 +13,17 @@ export default function StudentProfile() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [profileImage, setProfileImage] = useState("/img/default-avatar.png");
+  const [profileImage, setProfileImage] = useState(mockUserProfile.profileImage);
 
-  // Form state
+  // Form state - initialized with mock data
   const [formData, setFormData] = useState({
-    username: "erunim",
-    firstName: "Camille",
-    lastName: "Enraca",
-    email: "enracamacamille53@gmail.com",
-    studentId: "2201553",
-    course: "BSCPE",
-    yearLevel: "4th Year"
+    username: mockUserProfile.username,
+    firstName: mockUserProfile.firstName,
+    lastName: mockUserProfile.lastName,
+    email: mockUserProfile.email,
+    studentId: mockUserProfile.studentId,
+    course: mockUserProfile.course,
+    yearLevel: mockUserProfile.yearLevel
   });
 
   useEffect(() => {
@@ -217,18 +219,13 @@ export default function StudentProfile() {
       <main className="main-content flex flex-col justify-between min-h-screen">
         {/* Header */}
         <header className="dashboard-header">
-          <div className="search-bar">
-            <FaSearch className="search-icon" />
-            <input type="text" placeholder="Search" />
-          </div>
+          <SearchBar />
           <div className="header-actions">
             <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
             
-            <button className="notification-btn">
-              <FaBell />
-            </button>
+            <NotificationMenu />
             
             <UserMenu userName={formData.username} userRole="Student" />
           </div>

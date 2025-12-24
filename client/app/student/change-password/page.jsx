@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBell, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
 import UserMenu from "../dashboard/UserMenu";
+import NotificationMenu from "../dashboard/NotificationMenu";
 import "../../student/dashboard/styles.css";
 
 export default function ChangePassword() {
@@ -252,20 +253,15 @@ export default function ChangePassword() {
       <main className="main-content flex flex-col justify-between min-h-screen">
         {/* Header */}
         <header className="dashboard-header">
-          <div className="search-bar">
-            <FaSearch className="search-icon" />
-            <input type="text" placeholder="Search" />
-          </div>
+          <SearchBar />
           <div className="header-actions">
             <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
             
-            <button className="notification-btn">
-              <FaBell />
-            </button>
+            <NotificationMenu />
             
-            <UserMenu userName="Eru." userRole="Student" />
+            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
           </div>
         </header>
         

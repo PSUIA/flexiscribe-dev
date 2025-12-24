@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBell, FaSearch, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import UserMenu from "./UserMenu";
+import NotificationMenu from "./NotificationMenu";
+import SearchBar from "./SearchBar";
+import { mockUserProfile, mockDashboardStats } from "./mockData";
 import "./styles.css";
 
 export default function StudentDashboard() {
@@ -235,21 +238,16 @@ export default function StudentDashboard() {
       <main className="main-content flex flex-col justify-between min-h-screen">
         {/* Header */}
         <header className="dashboard-header">
-          <div className="search-bar">
-            <FaSearch className="search-icon" />
-            <input type="text" placeholder="Search" />
-          </div>
+          <SearchBar />
           <div className="header-actions">
             {/* Theme Toggle Button */}
             <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
             
-            <button className="notification-btn">
-              <FaBell />
-            </button>
+            <NotificationMenu />
             
-            <UserMenu userName="erunim" userRole="Student" />
+            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
           </div>
         </header>
         
@@ -259,7 +257,7 @@ export default function StudentDashboard() {
             <div className="welcome-banner md:col-span-2 lg:col-span-8">
               <div className="grid grid-cols-2 grid-rows-2">
                 <div className="col-start-1 row-start-1 items-start flex justify-center flex-col">
-                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">Welcome, Eru!</span>
+                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">Welcome, {mockUserProfile.username}!</span>
                 </div>
                 <div className="col-start-1 row-start-2 items-start flex justify-center flex-col">
                   <span className="font-normal text-xs md:text-sm opacity-90">Ready for another day of learning?</span>
@@ -276,19 +274,19 @@ export default function StudentDashboard() {
                   <div className="row-span-3 items-start flex flex-col justify-center">
                     <img src="/img/ascendant-badge.png" alt="Badge" className="h-auto w-full max-w-[80px] md:max-w-[100px]" />
                   </div>
-                  <div className="col-span-2 font-semibold text-sm md:text-md items-start flex flex-col">Ascendant</div>
+                  <div className="col-span-2 font-semibold text-sm md:text-md items-start flex flex-col">{mockDashboardStats.rank}</div>
                   <div className="xp-bar col-span-2 col-start-2 row-start-2">
-                    <div className="xp-fill" style={{width: '65%'}}></div>
+                    <div className="xp-fill" style={{width: `${mockDashboardStats.xpProgress}%`}}></div>
                   </div>
-                  <div className="col-span-2 col-start-2 row-start-3 font-normal text-sm md:text-md items-start flex flex-col">10543 XP</div>
+                  <div className="col-span-2 col-start-2 row-start-3 font-normal text-sm md:text-md items-start flex flex-col">{mockDashboardStats.xp} XP</div>
               </div>
             </div>
 
             {/* Study Streak */}
             <div className="card study-streak lg:col-span-4">
                 <h3>Study Streak</h3>
-                <div className="streak-icon">🔥</div>
-                <div className="streak-count">7 day streak</div>
+                <div className="streak-icon">{mockDashboardStats.streakIcon}</div>
+                <div className="streak-count">{mockDashboardStats.studyStreak} day streak</div>
             </div>
 
             {/* Jump Back In */}
