@@ -7,7 +7,7 @@ import 'react-circular-progressbar/dist/styles.css';
 import UserMenu from "./UserMenu";
 import NotificationMenu from "./NotificationMenu";
 import SearchBar from "./SearchBar";
-import { mockUserProfile, mockDashboardStats } from "./mockData";
+import { mockUserProfile, mockDashboardStats, mockDailyMessages, mockRankSystem, mockQuotes, mockReviewers, mockLeaderboard } from "./mockData";
 import "./styles.css";
 
 export default function StudentDashboard() {
@@ -16,6 +16,77 @@ export default function StudentDashboard() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  // Calculate XP progress for rank bar
+  const currentRank = mockRankSystem.currentRank;
+  const xpProgress = ((currentRank.xp - currentRank.xpMin) / (currentRank.xpMax - currentRank.xpMin)) * 100;
+  
+  // Get time-based greeting
+  const getGreeting = () => {
+    if (!currentTime) return "Welcome";
+    const hour = currentTime.getHours();
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 18) return "Good Afternoon";
+    if (hour >= 18 && hour < 22) return "Good Evening";
+    return "Good Night";
+  };
+
+  // Get daily rotating message (changes every day)
+  const getDailyMessage = () => {
+    if (!currentTime) return mockDailyMessages[0];
+    // Get day of year (0-365) and use modulo to cycle through 7 messages
+    const startOfYear = new Date(currentTime.getFullYear(), 0, 0);
+    const diff = currentTime - startOfYear;
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+    const messageIndex = dayOfYear % 7;
+    return mockDailyMessages[messageIndex];
+  };
+
+  // Get daily rotating quote (changes every day, cycles through 14 quotes)
+  const getDailyQuote = () => {
+    if (!currentTime) return mockQuotes[0];
+    // Get day of year (0-365) and use modulo to cycle through 14 quotes
+    const startOfYear = new Date(currentTime.getFullYear(), 0, 0);
+    const diff = currentTime - startOfYear;
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+    const quoteIndex = dayOfYear % 14; // 14 quotes for 2-week rotation
+    return mockQuotes[quoteIndex];
+  };
+
+  // Get most recently added reviewer
+  const getRecentReviewer = () => {
+    // Sort reviewers by uploadDate in descending order and return the most recent
+    const sortedReviewers = [...mockReviewers].sort((a, b) => 
+      new Date(b.uploadDate) - new Date(a.uploadDate)
+    );
+    return sortedReviewers[0];
+  };
+
+  // Handle Generate Quiz button click
+  const handleGenerateQuiz = () => {
+    // Redirect to quiz page
+    router.push(`/student/quizzes`);
+  };
+
+  // Get top 3 students from leaderboard
+  const getTopLeaderboard = () => {
+    return mockLeaderboard.slice(0, 3);
+  };
+
+  // Handle View Full Leaderboard
+  const handleViewLeaderboard = () => {
+    router.push('/student/leaderboard');
+  };
+
+  // Format XP for display (e.g., 15420 -> 15.4K)
+  const formatXP = (xp) => {
+    if (xp >= 1000) {
+      return `${(xp / 1000).toFixed(1)}K`;
+    }
+    return xp.toString();
+  };
 
   useEffect(() => {
     // Set initial time on mount
@@ -151,15 +222,15 @@ export default function StudentDashboard() {
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push('/student/reviewers')}>
             <FaBook className="nav-icon" />
             <span>Reviewers</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push('/student/quizzes')}>
             <FaGamepad className="nav-icon" />
             <span>Quizzes</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push('/student/leaderboard')}>
             <FaTrophy className="nav-icon" />
             <span>Leaderboard</span>
           </div>
@@ -257,68 +328,99 @@ export default function StudentDashboard() {
             <div className="welcome-banner md:col-span-2 lg:col-span-8">
               <div className="grid grid-cols-2 grid-rows-2">
                 <div className="col-start-1 row-start-1 items-start flex justify-center flex-col">
-                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">Welcome, {mockUserProfile.username}!</span>
+                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">{getGreeting()}, {mockUserProfile.username}!</span>
                 </div>
                 <div className="col-start-1 row-start-2 items-start flex justify-center flex-col">
-                  <span className="font-normal text-xs md:text-sm opacity-90">Ready for another day of learning?</span>
+                  <span className="font-normal text-xs md:text-sm opacity-90">{getDailyMessage()}</span>
                 </div>
-                <div className="welcome-mascot row-span-2 col-start-2 row-start-1 items-end flex flex-col justify-end">
-                  <img src="/img/fLexiScribe-mascot.png" alt="Mascot" className="h-auto w-full max-w-[100px] md:max-w-[150px]" />
+                <div className="welcome-mascot col-start-2 row-span-2 flex items-center justify-center">
+                  😻{/* <img src="/img/fLexiScribe-mascot.png" alt="Mascot" className="h-auto w-full max-w-[100px] md:max-w-[150px]" /> */}
                 </div>
               </div>
             </div>
 
-            {/* Ascendant Card */}
-            <div className="card ascendant-card lg:col-span-4">
-              <div className="grid grid-cols-3 grid-rows-3 items-center">
-                  <div className="row-span-3 items-start flex flex-col justify-center">
-                    <img src="/img/ascendant-badge.png" alt="Badge" className="h-auto w-full max-w-[80px] md:max-w-[100px]" />
+            {/* Rank Card */}
+            <div className="card rank-card lg:col-span-4" onClick={() => router.push("/student/rank")} style={{ cursor: 'pointer' }}>
+              <div className="rank-card-content">
+                <div className="rank-badge-container">
+                  <img src="/img/ascendant-badge.png" alt="Badge" className="rank-badge-img" />
+                </div>
+                <div className="rank-info">
+                  <div className="rank-name">{mockRankSystem.currentRank.name}</div>
+                  <div className="rank-tier">Tier {mockRankSystem.currentRank.tier}</div>
+                  <div className="xp-bar">
+                    <div className="xp-fill" style={{width: `${Math.min(xpProgress, 100)}%`}}></div>
                   </div>
-                  <div className="col-span-2 font-semibold text-sm md:text-md items-start flex flex-col">{mockDashboardStats.rank}</div>
-                  <div className="xp-bar col-span-2 col-start-2 row-start-2">
-                    <div className="xp-fill" style={{width: `${mockDashboardStats.xpProgress}%`}}></div>
-                  </div>
-                  <div className="col-span-2 col-start-2 row-start-3 font-normal text-sm md:text-md items-start flex flex-col">{mockDashboardStats.xp} XP</div>
+                  <div className="rank-xp">{mockRankSystem.currentRank.xp.toLocaleString()} XP</div>
+                </div>
               </div>
             </div>
 
             {/* Study Streak */}
-            <div className="card study-streak lg:col-span-4">
-                <h3>Study Streak</h3>
-                <div className="streak-icon">{mockDashboardStats.streakIcon}</div>
-                <div className="streak-count">{mockDashboardStats.studyStreak} day streak</div>
+            <div className={`card study-streak lg:col-span-4 ${mockDashboardStats.streakActive ? 'streak-active' : 'streak-inactive'}`}>
+                <div className="card-header-compact">
+                  <h3>Study Streak</h3>
+                </div>
+                <div className="streak-content">
+                  <div className="streak-icon-container">
+                    <div className="streak-icon">{mockDashboardStats.streakIcon}</div>
+                    {mockDashboardStats.streakActive && (
+                      <>
+                        <div className="fire-particle fire-particle-1"></div>
+                        <div className="fire-particle fire-particle-2"></div>
+                        <div className="fire-particle fire-particle-3"></div>
+                        <div className="fire-glow"></div>
+                      </>
+                    )}
+                  </div>
+                  <div className="streak-count">{mockDashboardStats.studyStreak} days</div>
+                  {mockDashboardStats.streakActive ? (
+                    <div className="streak-status active">✓ Active</div>
+                  ) : (
+                    <div className="streak-status inactive">Keep going!</div>
+                  )}
+                </div>
             </div>
 
             {/* Jump Back In */}
-            <div className="card jump-back lg:col-span-4 flex flex-col items-center text-center">
-                <h3>Jump Back In</h3>
-                <div style={{ width: 100, height: 100 }} className="md:w-[120px] md:h-[120px]">
-                  <CircularProgressbar
-                    value={90}
-                    text={`90%`}
-                    strokeWidth={10}
-                    styles={buildStyles({
-                      textColor: 'var(--accent-secondary)',
-                      pathColor: 'var(--accent-primary)',
-                      trailColor: 'var(--brand-tertiary)',
-                      textSize: '18px',
-                      pathTransitionDuration: 0.5,
-                    })}
-                  />
+            <div className="card jump-back lg:col-span-4">
+                <div className="card-header-compact">
+                  <h3>Jump Back In</h3>
                 </div>
-                <div className="progress-label">Periodic Interrupt...</div>
+                <div className="jump-back-content">
+                  <div className="progress-circle">
+                    <CircularProgressbar
+                      value={90}
+                      text={`90%`}
+                      strokeWidth={10}
+                      styles={buildStyles({
+                        textColor: 'var(--accent-secondary)',
+                        pathColor: 'var(--accent-primary)',
+                        trailColor: 'var(--brand-tertiary)',
+                        textSize: '22px',
+                        pathTransitionDuration: 0.5,
+                      })}
+                    />
+                  </div>
+                  <div className="progress-label">Periodic Interrupt, Waveform Generation, and Time Measurement </div>
+                </div>
             </div>
 
             {/* Recently Added */}
             <div className="card recently-added lg:col-span-4">
-                <h3>Recently Added</h3>
-                <div className="document-preview">
-                  <div className="doc-icon">📄</div>
-                  <div className="doc-info">
-                    <div className="doc-title">Data Acquisition, Controls, Sensors an...</div>
-                  </div>
+                <div className="card-header-compact">
+                  <h3>Recently Added</h3>
                 </div>
-                <button className="generate-quiz-btn">Generate Quiz</button>
+                <div className="recently-added-content">
+                  <div className="document-preview">
+                    <div className="doc-icon">📄</div>
+                    <div className="doc-info">
+                      <div className="doc-title">{getRecentReviewer().title}</div>
+                      <div className="doc-subject">{getRecentReviewer().subject}</div>
+                    </div>
+                  </div>
+                  <button className="generate-quiz-btn" onClick={handleGenerateQuiz}>Generate Quiz</button>
+                </div>
             </div>
 
             {/* Leaderboard */}
@@ -326,29 +428,24 @@ export default function StudentDashboard() {
               <div className="card leaderboard-card">
                 <h3>Leaderboard</h3>
                 <div className="leaderboard-list">
-                  <div className="leaderboard-item gold">
-                    <div className="rank-circle">🥇</div>
-                    <div className="player-info">
-                      <div className="player-name">Eru</div>
-                      <div className="player-xp">10.5K XP</div>
-                    </div>
-                  </div>
-                  <div className="leaderboard-item silver">
-                    <div className="rank-circle">🥈</div>
-                    <div className="player-info">
-                      <div className="player-name">Yuri</div>
-                      <div className="player-xp">10.1K XP</div>
-                    </div>
-                  </div>
-                  <div className="leaderboard-item bronze">
-                    <div className="rank-circle">🥉</div>
-                    <div className="player-info">
-                      <div className="player-name">Bella</div>
-                      <div className="player-xp">9k XP</div>
-                    </div>
-                  </div>
+                  {getTopLeaderboard().map((player, index) => {
+                    const medalClass = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+                    const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                    
+                    return (
+                      <div key={player.studentId} className={`leaderboard-item ${medalClass}`}>
+                        <div className="rank-circle">{medalEmoji}</div>
+                        <div className="player-info">
+                          <div className="player-name">{player.username}</div>
+                          <div className="player-xp">{formatXP(player.xp)} XP</div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="leaderboard-more">• • •</div>
+                <button className="leaderboard-more" onClick={handleViewLeaderboard}>
+                  See More
+                </button>
               </div>
             </div>
 
@@ -357,11 +454,11 @@ export default function StudentDashboard() {
               <div className="card quote-card">
                 <div className="quote-content">
                   <h3>Quote of the Day</h3>
-                  <div className="quote-mascot">😸</div>
+                  <div className="quote-mascot">{getDailyQuote().emoji}</div>
                   <p className="quote-text">
-                    "The beautiful thing about learning is nobody can take it away from you."
+                    "{getDailyQuote().text}"
                   </p>
-                  <p className="quote-author">-Albert Einstein</p>
+                  <p className="quote-author">— {getDailyQuote().author}</p>
                 </div>
               </div>
             </div>

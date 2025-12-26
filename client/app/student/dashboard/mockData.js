@@ -19,8 +19,19 @@ export const mockDashboardStats = {
   rank: "Ascendant",
   xp: 10543,
   xpProgress: 65, // percentage
-  studyStreak: 7,
-  streakIcon: "🔥"
+  studyStreak: 3,
+  streakIcon: "🔥",
+  streakActive: true, // Whether streak is active today
+  lastActivityDate: "2024-12-24", // Last date of activity
+  streakHistory: [
+    { date: "2024-12-24", activity: "quiz", completed: true },
+    { date: "2024-12-23", activity: "reviewer", completed: true },
+    { date: "2024-12-22", activity: "quiz", completed: true },
+    { date: "2024-12-21", activity: "reviewer", completed: true },
+    { date: "2024-12-20", activity: "quiz", completed: true },
+    { date: "2024-12-19", activity: "quiz", completed: true },
+    { date: "2024-12-18", activity: "reviewer", completed: true }
+  ]
 };
 
 // Notifications Data
@@ -315,6 +326,66 @@ export const mockRecentActivity = [
   }
 ];
 
+// Rank System Data (Based on the ranking image provided)
+export const mockRankSystem = {
+  currentRank: {
+    name: "Ascendant",
+    level: 0, // 0-indexed, so Ascendant is the 7th rank tier
+    tier: "VII",
+    xp: 10543,
+    xpMin: 10500,
+    xpMax: 999999, // Max rank
+    color: "#FF1493",
+    icon: "/img/ascendant-badge.png"
+  },
+  allRanks: [
+    // Learner Tiers
+    { name: "Learner I", tier: "I", xpMin: 800, xpMax: 999, color: "#CD7F32", icon: "/img/learner-1.png" },
+    { name: "Learner II", tier: "II", xpMin: 600, xpMax: 799, color: "#CD7F32", icon: "/img/learner-2.png" },
+    { name: "Learner III", tier: "III", xpMin: 400, xpMax: 599, color: "#CD7F32", icon: "/img/learner-3.png" },
+    { name: "Learner IV", tier: "IV", xpMin: 200, xpMax: 399, color: "#CD7F32", icon: "/img/learner-4.png" },
+    { name: "Learner V", tier: "V", xpMin: 0, xpMax: 199, color: "#CD7F32", icon: "/img/learner-5.png" },
+    
+    // Habit Builder Tiers
+    { name: "Habit Builder I", tier: "I", xpMin: 1800, xpMax: 1999, color: "#C0C0C0", icon: "/img/habit-builder-1.png" },
+    { name: "Habit Builder II", tier: "II", xpMin: 1600, xpMax: 1799, color: "#C0C0C0", icon: "/img/habit-builder-2.png" },
+    { name: "Habit Builder III", tier: "III", xpMin: 1400, xpMax: 1599, color: "#C0C0C0", icon: "/img/habit-builder-3.png" },
+    { name: "Habit Builder IV", tier: "IV", xpMin: 1200, xpMax: 1399, color: "#C0C0C0", icon: "/img/habit-builder-4.png" },
+    { name: "Habit Builder V", tier: "V", xpMin: 1000, xpMax: 1199, color: "#C0C0C0", icon: "/img/habit-builder-5.png" },
+    
+    // Growth Seeker Tiers
+    { name: "Growth Seeker I", tier: "I", xpMin: 3200, xpMax: 3499, color: "#FFD700", icon: "/img/growth-seeker-1.png" },
+    { name: "Growth Seeker II", tier: "II", xpMin: 2900, xpMax: 3199, color: "#FFD700", icon: "/img/growth-seeker-2.png" },
+    { name: "Growth Seeker III", tier: "III", xpMin: 2600, xpMax: 2899, color: "#FFD700", icon: "/img/growth-seeker-3.png" },
+    { name: "Growth Seeker IV", tier: "IV", xpMin: 2300, xpMax: 2599, color: "#FFD700", icon: "/img/growth-seeker-4.png" },
+    { name: "Growth Seeker V", tier: "V", xpMin: 2000, xpMax: 2299, color: "#FFD700", icon: "/img/growth-seeker-5.png" },
+    
+    // Self-Driven Tiers
+    { name: "Self-Driven I", tier: "I", xpMin: 5100, xpMax: 5499, color: "#90EE90", icon: "/img/self-driven-1.png" },
+    { name: "Self-Driven II", tier: "II", xpMin: 4700, xpMax: 5099, color: "#90EE90", icon: "/img/self-driven-2.png" },
+    { name: "Self-Driven III", tier: "III", xpMin: 4300, xpMax: 4699, color: "#90EE90", icon: "/img/self-driven-3.png" },
+    { name: "Self-Driven IV", tier: "IV", xpMin: 3900, xpMax: 4299, color: "#90EE90", icon: "/img/self-driven-4.png" },
+    { name: "Self-Driven V", tier: "V", xpMin: 3500, xpMax: 3899, color: "#90EE90", icon: "/img/self-driven-5.png" },
+    
+    // Mastery Tiers
+    { name: "Mastery I", tier: "I", xpMin: 7500, xpMax: 7999, color: "#9370DB", icon: "/img/mastery-1.png" },
+    { name: "Mastery II", tier: "II", xpMin: 7000, xpMax: 7499, color: "#9370DB", icon: "/img/mastery-2.png" },
+    { name: "Mastery III", tier: "III", xpMin: 6500, xpMax: 6999, color: "#9370DB", icon: "/img/mastery-3.png" },
+    { name: "Mastery IV", tier: "IV", xpMin: 6000, xpMax: 6499, color: "#9370DB", icon: "/img/mastery-4.png" },
+    { name: "Mastery V", tier: "V", xpMin: 5500, xpMax: 5999, color: "#9370DB", icon: "/img/mastery-5.png" },
+    
+    // Peak Performer Tiers
+    { name: "Peak Performer I", tier: "I", xpMin: 10000, xpMax: 10499, color: "#00CED1", icon: "/img/peak-performer-1.png" },
+    { name: "Peak Performer II", tier: "II", xpMin: 9500, xpMax: 9999, color: "#00CED1", icon: "/img/peak-performer-2.png" },
+    { name: "Peak Performer III", tier: "III", xpMin: 9000, xpMax: 9499, color: "#00CED1", icon: "/img/peak-performer-3.png" },
+    { name: "Peak Performer IV", tier: "IV", xpMin: 8500, xpMax: 8999, color: "#00CED1", icon: "/img/peak-performer-4.png" },
+    { name: "Peak Performer V", tier: "V", xpMin: 8000, xpMax: 8499, color: "#00CED1", icon: "/img/peak-performer-5.png" },
+    
+    // Ascendant (Highest Rank)
+    { name: "Ascendant", tier: "VII", xpMin: 10500, xpMax: 999999, color: "#FF1493", icon: "/img/ascendant-badge.png" }
+  ]
+};
+
 // Achievements/Badges
 export const mockAchievements = [
   {
@@ -322,32 +393,187 @@ export const mockAchievements = [
     name: "Week Warrior",
     description: "Maintained a 7-day study streak",
     icon: "🔥",
+    category: "Streak",
     earned: true,
-    earnedDate: "2024-12-21"
+    earnedDate: "2024-12-21",
+    rarity: "common"
   },
   {
     id: 2,
     name: "Quiz Master",
     description: "Completed 25 quizzes",
     icon: "🎯",
+    category: "Quiz",
     earned: true,
-    earnedDate: "2024-12-18"
+    earnedDate: "2024-12-18",
+    rarity: "rare"
   },
   {
     id: 3,
     name: "Perfect Score",
     description: "Got 100% on any quiz",
     icon: "⭐",
+    category: "Quiz",
     earned: false,
-    earnedDate: null
+    earnedDate: null,
+    rarity: "legendary"
   },
   {
     id: 4,
     name: "Knowledge Seeker",
     description: "Downloaded 10 reviewers",
     icon: "📚",
+    category: "Reviewer",
     earned: true,
-    earnedDate: "2024-12-15"
+    earnedDate: "2024-12-15",
+    rarity: "common"
+  },
+  {
+    id: 5,
+    name: "Early Bird",
+    description: "Complete a quiz before 8 AM",
+    icon: "🌅",
+    category: "Special",
+    earned: true,
+    earnedDate: "2024-12-10",
+    rarity: "uncommon"
+  },
+  {
+    id: 6,
+    name: "Night Owl",
+    description: "Study after midnight",
+    icon: "🦉",
+    category: "Special",
+    earned: false,
+    earnedDate: null,
+    rarity: "uncommon"
+  },
+  {
+    id: 7,
+    name: "Speed Demon",
+    description: "Complete a quiz in under 5 minutes",
+    icon: "⚡",
+    category: "Quiz",
+    earned: false,
+    earnedDate: null,
+    rarity: "rare"
+  },
+  {
+    id: 8,
+    name: "Consistency King",
+    description: "Maintained a 30-day study streak",
+    icon: "👑",
+    category: "Streak",
+    earned: false,
+    earnedDate: null,
+    rarity: "legendary"
+  },
+  {
+    id: 9,
+    name: "First Steps",
+    description: "Complete your first quiz",
+    icon: "👣",
+    category: "Milestone",
+    earned: true,
+    earnedDate: "2024-11-28",
+    rarity: "common"
+  },
+  {
+    id: 10,
+    name: "Bookworm",
+    description: "Downloaded 50 reviewers",
+    icon: "🐛",
+    category: "Reviewer",
+    earned: false,
+    earnedDate: null,
+    rarity: "epic"
+  },
+  {
+    id: 11,
+    name: "Social Butterfly",
+    description: "Top 10 on the leaderboard",
+    icon: "🦋",
+    category: "Leaderboard",
+    earned: true,
+    earnedDate: "2024-12-20",
+    rarity: "rare"
+  },
+  {
+    id: 12,
+    name: "Champion",
+    description: "Reach #1 on the leaderboard",
+    icon: "🏆",
+    category: "Leaderboard",
+    earned: false,
+    earnedDate: null,
+    rarity: "legendary"
+  }
+];
+
+// Badges (Visual representations)
+export const mockBadges = [
+  {
+    id: 1,
+    name: "Bronze Star",
+    description: "Reached Learner rank",
+    icon: "⭐",
+    color: "#CD7F32",
+    earned: true,
+    earnedDate: "2024-11-15"
+  },
+  {
+    id: 2,
+    name: "Silver Star",
+    description: "Reached Habit Builder rank",
+    icon: "⭐",
+    color: "#C0C0C0",
+    earned: true,
+    earnedDate: "2024-11-25"
+  },
+  {
+    id: 3,
+    name: "Gold Star",
+    description: "Reached Growth Seeker rank",
+    icon: "⭐",
+    color: "#FFD700",
+    earned: true,
+    earnedDate: "2024-12-05"
+  },
+  {
+    id: 4,
+    name: "Emerald Star",
+    description: "Reached Self-Driven rank",
+    icon: "⭐",
+    color: "#90EE90",
+    earned: true,
+    earnedDate: "2024-12-12"
+  },
+  {
+    id: 5,
+    name: "Purple Star",
+    description: "Reached Mastery rank",
+    icon: "⭐",
+    color: "#9370DB",
+    earned: false,
+    earnedDate: null
+  },
+  {
+    id: 6,
+    name: "Diamond Star",
+    description: "Reached Peak Performer rank",
+    icon: "⭐",
+    color: "#00CED1",
+    earned: false,
+    earnedDate: null
+  },
+  {
+    id: 7,
+    name: "Legendary Star",
+    description: "Reached Ascendant rank",
+    icon: "⭐",
+    color: "#FF1493",
+    earned: true,
+    earnedDate: "2024-12-22"
   }
 ];
 
@@ -383,22 +609,101 @@ export const mockSubjects = [
   { code: "CS303", name: "Software Engineering", semester: 2, year: 4 }
 ];
 
-// Motivational Quotes
+// Motivational Quotes (14 quotes for 2-week rotation)
 export const mockQuotes = [
   {
-    text: "The only way to do great work is to love what you do.",
-    author: "Steve Jobs"
+    id: 1,
+    text: "The beautiful thing about learning is nobody can take it away from you.",
+    author: "B.B. King",
+    emoji: "📚"
   },
   {
-    text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    author: "Winston Churchill"
-  },
-  {
+    id: 2,
     text: "Education is the most powerful weapon which you can use to change the world.",
-    author: "Nelson Mandela"
+    author: "Nelson Mandela",
+    emoji: "🌍"
   },
   {
+    id: 3,
+    text: "The only way to do great work is to love what you do.",
+    author: "Steve Jobs",
+    emoji: "💡"
+  },
+  {
+    id: 4,
+    text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    author: "Winston Churchill",
+    emoji: "💪"
+  },
+  {
+    id: 5,
     text: "The future belongs to those who believe in the beauty of their dreams.",
-    author: "Eleanor Roosevelt"
+    author: "Eleanor Roosevelt",
+    emoji: "✨"
+  },
+  {
+    id: 6,
+    text: "Learning is not attained by chance, it must be sought for with ardor and attended to with diligence.",
+    author: "Abigail Adams",
+    emoji: "🎯"
+  },
+  {
+    id: 7,
+    text: "The expert in anything was once a beginner.",
+    author: "Helen Hayes",
+    emoji: "🌱"
+  },
+  {
+    id: 8,
+    text: "Don't watch the clock; do what it does. Keep going.",
+    author: "Sam Levenson",
+    emoji: "⏰"
+  },
+  {
+    id: 9,
+    text: "Believe you can and you're halfway there.",
+    author: "Theodore Roosevelt",
+    emoji: "🚀"
+  },
+  {
+    id: 10,
+    text: "The secret of getting ahead is getting started.",
+    author: "Mark Twain",
+    emoji: "🎬"
+  },
+  {
+    id: 11,
+    text: "It always seems impossible until it's done.",
+    author: "Nelson Mandela",
+    emoji: "🏆"
+  },
+  {
+    id: 12,
+    text: "Study hard what interests you the most in the most undisciplined, irreverent and original manner possible.",
+    author: "Richard Feynman",
+    emoji: "🔬"
+  },
+  {
+    id: 13,
+    text: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.",
+    author: "Brian Herbert",
+    emoji: "🎁"
+  },
+  {
+    id: 14,
+    text: "Strive for progress, not perfection.",
+    author: "Unknown",
+    emoji: "📈"
   }
+];
+
+// Daily Welcome Messages (7 messages that rotate daily)
+export const mockDailyMessages = [
+  "Ready for another day of learning?",
+  "Let's make today productive!",
+  "Time to level up your knowledge!",
+  "Every day is a chance to learn something new!",
+  "Your future self will thank you for studying today!",
+  "Knowledge is power - let's get started!",
+  "Make today count - you've got this!"
 ];
