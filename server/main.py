@@ -1,10 +1,16 @@
-from threading import Thread
-from pipeline.transcription import start_transcription
-from pipeline.summarizer import start_summarizer
+"""
+Purpose:
+    Entry point for the fLexiScribe pipeline.
 
-# Start summarizer thread
-summary_thread = Thread(target=start_summarizer, daemon=True)
-summary_thread.start()
+Functions:
+    - Starts the orchestrator to run transcription and summarization concurrently
 
-# Start transcription in main thread
-start_transcription()
+Notes:
+    - Minimal logic here; delegates all processing to orchestrator
+    - Keeps main.py clean and focused on launching the pipeline
+"""
+
+from pipeline.orchestrator import start_pipeline
+
+if __name__ == "__main__":
+    start_pipeline()
