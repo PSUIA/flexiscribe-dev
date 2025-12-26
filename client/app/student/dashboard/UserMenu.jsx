@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaRegUserCircle, FaUser, FaKey, FaSignOutAlt } from "react-icons/fa";
+import { FaRegUserCircle, FaUser, FaKey, FaSignOutAlt, FaTrophy } from "react-icons/fa";
 
 export default function UserMenu({ userName, userRole }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +29,11 @@ export default function UserMenu({ userName, userRole }) {
   const handleProfile = () => {
     setIsOpen(false);
     router.push("/student/profile");
+  };
+
+  const handleRank = () => {
+    setIsOpen(false);
+    router.push("/student/rank");
   };
 
   const handleChangePassword = () => {
@@ -60,6 +65,10 @@ export default function UserMenu({ userName, userRole }) {
           <div className="dropdown-item" onClick={handleProfile}>
             <FaUser className="dropdown-icon" />
             <span>My Profile</span>
+          </div>
+          <div className="dropdown-item" onClick={handleRank}>
+            <FaTrophy className="dropdown-icon" />
+            <span>My Rank</span>
           </div>
           <div className="dropdown-item" onClick={handleChangePassword}>
             <FaKey className="dropdown-icon" />

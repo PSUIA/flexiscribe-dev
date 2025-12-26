@@ -1,0 +1,540 @@
+/* Rank Page Specific Styles */
+
+.rank-page-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--brand-primary);
+  color: var(--accent-secondary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  transform: translateX(-5px);
+  opacity: 0.9;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.page-title .title-icon {
+  font-size: 32px;
+  color: var(--accent-primary);
+}
+
+.page-title h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Rank Banner */
+.rank-banner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-tertiary) 100%);
+  padding: 30px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.rank-banner-left {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+.rank-badge-large {
+  flex-shrink: 0;
+}
+
+.rank-badge-large img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+}
+
+.rank-details {
+  flex: 1;
+}
+
+.rank-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+  margin: 0 0 5px 0;
+}
+
+.rank-tier {
+  font-size: 16px;
+  color: var(--accent-primary);
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.xp-info {
+  margin-bottom: 10px;
+}
+
+.current-xp {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.next-rank {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 5px;
+}
+
+.xp-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.rank-banner-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.rank-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.rank-stat .stat-icon {
+  font-size: 32px;
+  color: var(--accent-primary);
+}
+
+.stat-info {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Tabs */
+.rank-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.rank-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.rank-tab:hover {
+  color: var(--text-primary);
+}
+
+.rank-tab.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+/* Tab Content */
+.rank-tab-content {
+  padding: 20px 0;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+}
+
+.section-title.locked-section {
+  margin-top: 40px;
+  opacity: 0.7;
+}
+
+/* Ranks Grid */
+.ranks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: var(--bg-main);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.rank-item.locked {
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
+
+.rank-item.current-rank {
+  border: 2px solid var(--accent-primary);
+  box-shadow: 0 0 20px rgba(197, 166, 249, 0.4);
+}
+
+.rank-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.rank-item-icon {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.rank-item-icon img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.current-badge {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: var(--accent-primary);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rank-item-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 5px 0;
+}
+
+.rank-item-info p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Achievements Grid */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.achievement-card {
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+  background: var(--bg-main);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-card.earned {
+  border-left: 4px solid var(--accent-primary);
+}
+
+.achievement-card.locked {
+  opacity: 0.6;
+  filter: grayscale(50%);
+}
+
+.achievement-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.achievement-icon {
+  font-size: 48px;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(197, 166, 249, 0.1);
+  border-radius: 12px;
+}
+
+.achievement-icon.locked-icon {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+.achievement-info {
+  flex: 1;
+}
+
+.achievement-info h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.achievement-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 10px 0;
+}
+
+.achievement-rarity {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 8px;
+}
+
+.achievement-rarity.common {
+  background: #95a5a6;
+  color: white;
+}
+
+.achievement-rarity.uncommon {
+  background: #27ae60;
+  color: white;
+}
+
+.achievement-rarity.rare {
+  background: #3498db;
+  color: white;
+}
+
+.achievement-rarity.epic {
+  background: #9b59b6;
+  color: white;
+}
+
+.achievement-rarity.legendary {
+  background: linear-gradient(135deg, #f39c12, #e74c3c);
+  color: white;
+}
+
+.achievement-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Badges Grid */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 15px;
+  padding: 30px 20px;
+  background: var(--bg-main);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.badge-card.earned {
+  border-top: 4px solid var(--accent-primary);
+}
+
+.badge-card.locked {
+  opacity: 0.6;
+  filter: grayscale(50%);
+}
+
+.badge-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.badge-icon {
+  font-size: 64px;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(197, 166, 249, 0.1);
+  border-radius: 50%;
+}
+
+.badge-icon.locked-icon {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+.badge-info h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.badge-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 10px 0;
+}
+
+.badge-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .rank-banner {
+    grid-template-columns: 2fr 1fr;
+  }
+  
+  .page-title h1 {
+    font-size: 40px;
+  }
+  
+  .rank-title {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 767px) {
+  .rank-page-container {
+    padding: 15px;
+  }
+  
+  .rank-banner {
+    padding: 20px;
+  }
+  
+  .rank-banner-left {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .rank-badge-large img {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .rank-title {
+    font-size: 28px;
+  }
+  
+  .current-xp {
+    font-size: 20px;
+  }
+  
+  .rank-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .rank-stat {
+    padding: 15px 10px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .page-title h1 {
+    font-size: 24px;
+  }
+  
+  .page-title .title-icon {
+    font-size: 24px;
+  }
+  
+  .ranks-grid,
+  .achievements-grid,
+  .badges-grid {
+    grid-template-columns: 1fr;
+  }
+}
