@@ -23,23 +23,21 @@ Contents to include:
         - LOGGING: True/False
 """
 
-import os
+from faster_whisper import WhisperModel
 
+# ------------------------------
 # Audio settings
-SAMPLERATE = 16000
-CHANNELS = 1
+# ------------------------------
+SAMPLE_RATE = 16000      # Standard for speech recognition
+CHANNELS = 1             # Mono
+CHUNK_DURATION = 5       # Seconds per transcription chunk
 
-# Whisper refinement settings
-WHISPER_MODEL = "base"  # Used by faster-whisper (GPU)
-WHISPER_WINDOW_SEC = 60
-WHISPER_OVERLAP_SEC = 15
-
-# Vosk (real-time captions)
-VOSK_MODEL_PATH = "/home/psuia/Documents/fLexiScribe/server/models/vosk-model-en-us-0.42-gigaspeech/"
-
-# Directories
-TRANSCRIPTS_DIR = "data/transcripts/"
-AUDIO_DIR = "data/audio/"
-
-os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
-os.makedirs(AUDIO_DIR, exist_ok=True)
+# ------------------------------
+# Whisper model settings
+# ------------------------------
+# Using small model on CPU with int8 for efficiency
+WHISPER_MODEL = WhisperModel(
+    "small",
+    device="cpu",
+    compute_type="int8"
+)
