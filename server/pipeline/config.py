@@ -23,30 +23,11 @@ Contents to include:
         - LOGGING: True/False
 """
 
-SAMPLERATE = 16000
-CHANNELS = 1
+from faster_whisper import WhisperModel
 
-WHISPER_MODEL = "base"  
-VOSK_MODEL_ENGLISH = ""
-VOSK_MODEL_TAGALOG = ""
+WHISPER_MODEL = WhisperModel(
+                "small", 
+                device="cuda", 
+                compute_type="float16")
 
-MODEL_NAME = "sshleifer/distilbart-cnn-12-6"
-LOCAL_MODEL_PATH = "/absolute/path/to/external/models/distilbart"  # must exist after download
-
-# GPU settings
-REQUIRE_CUDA = True
-USE_FP16 = True
-
-# Text processing
-MAX_WORDS_PER_CHUNK = 500       # adjust for very long transcripts
-MAX_INPUT_TOKENS = 1024
-
-# Generation parameters
-MAX_SUMMARY_LENGTH = 150
-MIN_SUMMARY_LENGTH = 40
-NUM_BEAMS = 4
-LENGTH_PENALTY = 2.0
-
-# Data paths
-INPUT_TEXT_PATH = "/absolute/path/to/external/data/lecture_transcript.txt"
-OUTPUT_SUMMARY_PATH = "/absolute/path/to/external/data/lecture_summary.txt"
+AUDIO_FILE = "/home/psuia/Downloads/M_0070_9y9m_1.wav"

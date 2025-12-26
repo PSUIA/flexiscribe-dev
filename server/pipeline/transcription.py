@@ -86,13 +86,11 @@ Hybrid transcription pipeline with final flush:
 Designed for 1+ hour lectures on Jetson Orin Nano Super.
 """
 
-import whisper
-import torch
+from config import WHISPER_MODEL, AUDIO_FILE
 
-torch.cuda.empty_cache()
+segments, info = WHISPER_MODEL.transcribe(AUDIO_FILE)
 
-model = whisper.load_model("base", device="cuda")
+print(f"Detected language: {info.language}")
 
-result = model.transcribe("server/data/M_0070_9y9m_1.wav")
-
-print(result["text"])
+for segment in segments:
+    print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
