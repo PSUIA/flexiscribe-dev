@@ -25,10 +25,17 @@ Contents to include:
 
 from faster_whisper import WhisperModel
 
-SAMPLE_RATE = 16000
-CHANNELS = 1
-CHUNK_DURATION = 5
+# ------------------------------
+# Audio settings
+# ------------------------------
+SAMPLE_RATE = 16000      # Standard for speech recognition
+CHANNELS = 1             # Mono
+CHUNK_DURATION = 5       # Seconds per transcription chunk
 
+# ------------------------------
+# Whisper model settings
+# ------------------------------
+# Using small model on CPU with int8 for efficiency
 WHISPER_MODEL = WhisperModel(
     "small",
     device="cpu",

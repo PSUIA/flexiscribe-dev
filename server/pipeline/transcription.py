@@ -88,75 +88,75 @@ Designed for 1+ hour lectures on Jetson Orin Nano Super.
 
 import sounddevice as sd
 import numpy as np
-from config import WHISPER_MODEL, SAMPLE_RATE, CHANNELS, CHUNK_DURATION
+from .config import WHISPER_MODEL, SAMPLE_RATE, CHANNELS, CHUNK_DURATION
+from pathlib import Path
+import json
 
-# State
+TRANSCRIPT_FILE = Path("transcript.txt")
+
 audio_buffer = []
 language_printed = False
 time_offset = 0.0
 
-# Output file
-transcript_file = open("live_transcript.txt", "a", encoding="utf-8")
-
-# Startup info
-print("Whisper model loaded.")
-print("LISTENING... Speak clearly into the microphone.")
-print("Press Ctrl+C to stop.\n")
-
-# Audio callback
 def callback(indata, frames, time, status):
     if status:
         print(status)
     audio_buffer.append(indata.copy())
 
-# Microphone stream
-with sd.InputStream(
-    samplerate=SAMPLE_RATE,
-    channels=CHANNELS,
-    dtype="float32",
-    callback=callback
-):
+def start_transcription():
+    global language_printed, time_offset
+
+    transcript_file = open(TRANSCRIPT_FILE, "a", encoding="utf-8")
+
+    print("Whisper model loaded.")
+    print("LISTENING... Speak clearly into the microphone.")
+    print("Press Ctrl+C to stop.\n")
+
     try:
-        while True:
-            sd.sleep(CHUNK_DURATION * 1000)
+        with sd.InputStream(
+            samplerate=SAMPLE_RATE,
+            channels=CHANNELS,
+            dtype="float32",
+            callback=callback
+        ):
+            while True:
+                sd.sleep(CHUNK_DURATION * 1000)
 
-            if not audio_buffer:
-                continue
+                if not audio_buffer:
+                    continue
 
-            # Combine audio chunks
-            audio = np.concatenate(audio_buffer, axis=0)
-            audio_buffer.clear()
+                audio = np.concatenate(audio_buffer, axis=0)
+                audio_buffer.clear()
+                audio = audio.flatten()
 
-            # Flatten to mono
-            audio = audio.flatten()
+                print(f"Captured {audio.shape[0]} samples")
 
-            # Debug: confirm audio capture
-            print(f"Captured {audio.shape[0]} samples")
+                segments, info = WHISPER_MODEL.transcribe(
+                    audio,
+                    language="en",
+                    vad_filter=False
+                )
 
-            # Transcribe (VAD OFF)
-            segments, info = WHISPER_MODEL.transcribe(
-                audio,
-                language="en",      # force for reliability
-                vad_filter=False
-            )
+                if not language_printed:
+                    print(f"\nDetected language: {info.language}\n")
+                    language_printed = True
 
-            if not language_printed:
-                print(f"\nDetected language: {info.language}\n")
-                language_printed = True
+                for segment in segments:
+                    start = segment.start + time_offset
+                    end = segment.end + time_offset
+                    segment_data = {
+                        "start": round(start, 2),
+                        "end": round(end, 2),
+                        "text": segment.text
+                    }
+                    # Save as JSON line
+                    transcript_file.write(json.dumps(segment_data) + "\n")
+                    transcript_file.flush()
+                    # Print to console
+                    print(f"[{start:.2f}s -> {end:.2f}s] {segment.text}")
 
-            # ------------------------------
-            # Print and save transcription
-
-            for segment in segments:
-                start = segment.start + time_offset
-                end = segment.end + time_offset
-                line = f"{segment.text}"
-                print(line)
-                transcript_file.write(line + "\n")
-                transcript_file.flush()
-
-            time_offset += CHUNK_DURATION
+                time_offset += CHUNK_DURATION
 
     except KeyboardInterrupt:
-        print("\n*STOPPED*")
+        print("\n*STOPPED TRANSCRIPTION*")
         transcript_file.close()
