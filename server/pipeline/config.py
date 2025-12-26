@@ -25,9 +25,12 @@ Contents to include:
 
 from faster_whisper import WhisperModel
 
-WHISPER_MODEL = WhisperModel(
-                "small", 
-                device="cuda", 
-                compute_type="float16")
+SAMPLE_RATE = 16000
+CHANNELS = 1
+CHUNK_DURATION = 5
 
-AUDIO_FILE = "/home/psuia/Downloads/M_0070_9y9m_1.wav"
+WHISPER_MODEL = WhisperModel(
+    "small",
+    device="cpu",
+    compute_type="int8"
+)

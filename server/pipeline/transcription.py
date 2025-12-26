@@ -86,11 +86,77 @@ Hybrid transcription pipeline with final flush:
 Designed for 1+ hour lectures on Jetson Orin Nano Super.
 """
 
-from config import WHISPER_MODEL, AUDIO_FILE
+import sounddevice as sd
+import numpy as np
+from config import WHISPER_MODEL, SAMPLE_RATE, CHANNELS, CHUNK_DURATION
 
-segments, info = WHISPER_MODEL.transcribe(AUDIO_FILE)
+# State
+audio_buffer = []
+language_printed = False
+time_offset = 0.0
 
-print(f"Detected language: {info.language}")
+# Output file
+transcript_file = open("live_transcript.txt", "a", encoding="utf-8")
 
-for segment in segments:
-    print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
+# Startup info
+print("Whisper model loaded.")
+print("LISTENING... Speak clearly into the microphone.")
+print("Press Ctrl+C to stop.\n")
+
+# Audio callback
+def callback(indata, frames, time, status):
+    if status:
+        print(status)
+    audio_buffer.append(indata.copy())
+
+# Microphone stream
+with sd.InputStream(
+    samplerate=SAMPLE_RATE,
+    channels=CHANNELS,
+    dtype="float32",
+    callback=callback
+):
+    try:
+        while True:
+            sd.sleep(CHUNK_DURATION * 1000)
+
+            if not audio_buffer:
+                continue
+
+            # Combine audio chunks
+            audio = np.concatenate(audio_buffer, axis=0)
+            audio_buffer.clear()
+
+            # Flatten to mono
+            audio = audio.flatten()
+
+            # Debug: confirm audio capture
+            print(f"Captured {audio.shape[0]} samples")
+
+            # Transcribe (VAD OFF)
+            segments, info = WHISPER_MODEL.transcribe(
+                audio,
+                language="en",      # force for reliability
+                vad_filter=False
+            )
+
+            if not language_printed:
+                print(f"\nDetected language: {info.language}\n")
+                language_printed = True
+
+            # ------------------------------
+            # Print and save transcription
+
+            for segment in segments:
+                start = segment.start + time_offset
+                end = segment.end + time_offset
+                line = f"{segment.text}"
+                print(line)
+                transcript_file.write(line + "\n")
+                transcript_file.flush()
+
+            time_offset += CHUNK_DURATION
+
+    except KeyboardInterrupt:
+        print("\n*STOPPED*")
+        transcript_file.close()
