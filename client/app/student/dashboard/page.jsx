@@ -7,7 +7,7 @@ import 'react-circular-progressbar/dist/styles.css';
 import UserMenu from "./UserMenu";
 import NotificationMenu from "./NotificationMenu";
 import SearchBar from "./SearchBar";
-import { mockUserProfile, mockDashboardStats, mockDailyMessages, mockRankSystem, mockQuotes, mockReviewers, mockLeaderboard } from "./mockData";
+import { mockUserProfile, mockDashboardStats, mockDailyMessages, mockRankSystem, mockQuotes, mockReviewers, mockLeaderboard, mockStudyProgress } from "./mockData";
 import "./styles.css";
 
 export default function StudentDashboard() {
@@ -86,6 +86,20 @@ export default function StudentDashboard() {
       return `${(xp / 1000).toFixed(1)}K`;
     }
     return xp.toString();
+  };
+
+  // Get most recent study progress
+  const getRecentStudyProgress = () => {
+    // Sort by lastStudied date and return the most recent
+    const sortedProgress = [...mockStudyProgress].sort((a, b) => 
+      new Date(b.lastStudied + ' ' + b.lastStudiedTime) - new Date(a.lastStudied + ' ' + a.lastStudiedTime)
+    );
+    return sortedProgress[0];
+  };
+
+  // Handle Jump Back In click
+  const handleJumpBackIn = () => {
+    router.push('/student/reviewers');
   };
 
   useEffect(() => {
@@ -226,11 +240,11 @@ export default function StudentDashboard() {
             <FaBook className="nav-icon" />
             <span>Reviewers</span>
           </div>
-          <div className="nav-item" onClick={() => router.push('/student/quizzes')}>
+          <div className="nav-item">
             <FaGamepad className="nav-icon" />
             <span>Quizzes</span>
           </div>
-          <div className="nav-item" onClick={() => router.push('/student/leaderboard')}>
+          <div className="nav-item">
             <FaTrophy className="nav-icon" />
             <span>Leaderboard</span>
           </div>
@@ -383,15 +397,15 @@ export default function StudentDashboard() {
             </div>
 
             {/* Jump Back In */}
-            <div className="card jump-back lg:col-span-4">
+            <div className="card jump-back lg:col-span-4" onClick={handleJumpBackIn} style={{ cursor: 'pointer' }}>
                 <div className="card-header-compact">
                   <h3>Jump Back In</h3>
                 </div>
                 <div className="jump-back-content">
                   <div className="progress-circle">
                     <CircularProgressbar
-                      value={90}
-                      text={`90%`}
+                      value={getRecentStudyProgress().progress}
+                      text={`${getRecentStudyProgress().progress}%`}
                       strokeWidth={10}
                       styles={buildStyles({
                         textColor: 'var(--accent-secondary)',
@@ -402,7 +416,8 @@ export default function StudentDashboard() {
                       })}
                     />
                   </div>
-                  <div className="progress-label">Periodic Interrupt, Waveform Generation, and Time Measurement </div>
+                  <div className="progress-label">{getRecentStudyProgress().reviewerTitle}</div>
+                  <div className="progress-section">{getRecentStudyProgress().currentSection}</div>
                 </div>
             </div>
 

@@ -74,6 +74,90 @@ export const mockNotifications = [
   }
 ];
 
+// Mock data for enrolled classes and raw transcripts
+export const enrolledClasses = [
+  { id: 1, code: "CPP117", name: "Embedded Systems" }
+];
+
+export const rawTranscripts = [
+  { id: 1, code: "CPP117", name: "Embedded Systems" }
+];
+
+// Mock reviewers by class code
+export const mockReviewersByClass = {
+  "CPP117": [
+    {
+      id: 1,
+      title: "Periodic Interrupt, Waveform Generation, and Time Measurement",
+      subject: "CPP117",
+      description: "Comprehensive guide to timer-based interrupts and waveform generation techniques",
+      uploadDate: "2024-12-20",
+      lastUpdated: "2024-12-22",
+      fileType: "PDF",
+      fileSize: "2.4 MB",
+      pages: 45
+    },
+    {
+      id: 2,
+      title: "Microcontroller Architecture and Assembly Programming",
+      subject: "CPP117",
+      description: "Deep dive into microcontroller internals and low-level programming",
+      uploadDate: "2024-12-18",
+      lastUpdated: "2024-12-21",
+      fileType: "PDF",
+      fileSize: "3.1 MB",
+      pages: 62
+    },
+    {
+      id: 3,
+      title: "Embedded Systems Communication Protocols",
+      subject: "CPP117",
+      description: "I2C, SPI, UART and other communication protocols explained",
+      uploadDate: "2024-12-15",
+      lastUpdated: "2024-12-19",
+      fileType: "PDF",
+      fileSize: "1.8 MB",
+      pages: 38
+    }
+  ]
+};
+
+// Mock raw transcripts by class code
+export const mockTranscriptsByClass = {
+  "CPP117": [
+    {
+      id: 1,
+      title: "Lecture 1 - Introduction to Embedded Systems",
+      subject: "CPP117",
+      date: "2024-12-01",
+      duration: "1h 30m",
+      fileType: "DOCX",
+      fileSize: "45 KB",
+      status: "Processed"
+    },
+    {
+      id: 2,
+      title: "Lecture 2 - Timer and Counter Fundamentals",
+      subject: "CPP117",
+      date: "2024-12-05",
+      duration: "2h 00m",
+      fileType: "DOCX",
+      fileSize: "58 KB",
+      status: "Processed"
+    },
+    {
+      id: 3,
+      title: "Lecture 3 - Interrupt Handling Mechanisms",
+      subject: "CPP117",
+      date: "2024-12-08",
+      duration: "1h 45m",
+      fileType: "DOCX",
+      fileSize: "52 KB",
+      status: "Processed"
+    }
+  ]
+};
+
 // Reviewers Data
 export const mockReviewers = [
   {
@@ -323,6 +407,49 @@ export const mockRecentActivity = [
     title: "Earned 7-Day Streak Badge",
     date: "2024-12-21",
     time: "09:00"
+  }
+];
+
+// Study Progress Data (for Jump Back In feature)
+export const mockStudyProgress = [
+  {
+    id: 1,
+    reviewerId: 1,
+    reviewerTitle: "Introduction to Computer Science",
+    subject: "CS101",
+    progress: 90, // percentage
+    lastStudied: "2024-12-24",
+    lastStudiedTime: "15:30",
+    currentSection: "Chapter 5: Algorithms",
+    totalSections: 8,
+    completedSections: 7,
+    link: "/student/reviewers/1?section=5"
+  },
+  {
+    id: 2,
+    reviewerId: 2,
+    reviewerTitle: "Data Structures and Algorithms",
+    subject: "CS102",
+    progress: 65,
+    lastStudied: "2024-12-23",
+    lastStudiedTime: "10:20",
+    currentSection: "Chapter 3: Trees and Graphs",
+    totalSections: 6,
+    completedSections: 4,
+    link: "/student/reviewers/2?section=3"
+  },
+  {
+    id: 3,
+    reviewerId: 3,
+    reviewerTitle: "Database Management Systems",
+    subject: "CS201",
+    progress: 40,
+    lastStudied: "2024-12-22",
+    lastStudiedTime: "14:45",
+    currentSection: "Chapter 2: SQL Queries",
+    totalSections: 5,
+    completedSections: 2,
+    link: "/student/reviewers/3?section=2"
   }
 ];
 
