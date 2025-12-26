@@ -1,12 +1,10 @@
-from pipeline.summarizer import Summarizer
-from pipeline.config import INPUT_TEXT_PATH, OUTPUT_SUMMARY_PATH
+from threading import Thread
+from pipeline.transcription import start_transcription
+from pipeline.summarizer import start_summarizer
 
-if __name__ == "__main__":
-    summarizer = Summarizer()
+# Start summarizer thread
+summary_thread = Thread(target=start_summarizer, daemon=True)
+summary_thread.start()
 
-    print("Starting summarization...")
-    summary = summarizer.summarize_file(INPUT_TEXT_PATH, OUTPUT_SUMMARY_PATH)
-
-    print("\n--- FINAL SUMMARY ---\n")
-    print(summary)
-    print(f"\nSummary saved to: {OUTPUT_SUMMARY_PATH}")
+# Start transcription in main thread
+start_transcription()

@@ -1,0 +1,16 @@
+
+{"start": 0.0, "end": 4.96, "text": " So, good day everyone, I will"}
+{"start": 5.0, "end": 9.56, "text": " be discussing about the Jetson or Winnanotech warranty and compliance"}
+{"start": 9.56, "end": 15.32, "text": " statement. So for technical support"}
+{"start": 10.0, "end": 16.08, "text": " Guarantee Information, Regulatory Compliance Information and User Guide, visit the following"}
+{"start": 16.08, "end": 21.2, "text": " website and also we have the different parts of"}
+{"start": 15.0, "end": 22.6, "text": " the jet zone or in nano so we have the 40 pin expansion header the USB type-c UFP"}
+{"start": 22.6, "end": 26.2, "text": " the ethernet connection"}
+{"start": 20.0, "end": 30.0, "text": " USB 3.2 Gen 2 connectors, DisplayPort, 19V DC power jack, Camera connectors, and Micro SD card slot."}
+{"start": 30.0, "end": 32.0, "text": " You"}
+{"start": 35.0, "end": 37.0, "text": " You"}
+{"start": 40.0, "end": 42.0, "text": " You"}
+{"start": 45.0, "end": 52.0, "text": " Okay, that's all, thank you."}
+{"start": 50.0, "end": 52.0, "text": " You"}
+{"start": 55.0, "end": 57.0, "text": " You"}
+{"start": 60.0, "end": 62.0, "text": " You"}
