@@ -1,0 +1,562 @@
+/* PDF Viewer Styles */
+
+.pdf-viewer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-main);
+  overflow: hidden;
+}
+
+/* Toolbar */
+.pdf-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0);
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.document-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.document-title h2 {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.document-info {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+}
+
+/* Edit Toolbar */
+.edit-toolbar {
+  padding: 12px 24px;
+  background: rgba(157, 138, 219, 0.1);
+  border-bottom: 1px solid rgba(197, 166, 249, 0.2);
+  display: flex;
+  justify-content: center;
+}
+
+.edit-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(157, 138, 219, 0.1);
+  border: 2px solid rgba(197, 166, 249, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(157, 138, 219, 0.2);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+}
+
+.tool-btn.active {
+  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.tool-btn.save-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.tool-btn.save-btn:hover {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+/* PDF Content */
+.pdf-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+  padding: 20px;
+  background: var(--bg-main);
+  position: relative;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  position: fixed;
+  top: 140px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+}
+
+.dark-mode .zoom-controls {
+  background: var(--brand-tertiary);
+}
+
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(157, 138, 219, 0.4);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-level {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 8px 0;
+}
+
+/* PDF Document Wrapper */
+.pdf-document-wrapper {
+  flex: 1;
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 500px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dark-mode .pdf-document-wrapper {
+  background: var(--bg-main);
+}
+
+.react-pdf__Document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+  padding: 20px 0;
+}
+
+/* Individual Page Container */
+.pdf-page-container {
+  position: relative;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.pdf-page-container:last-child {
+  margin-bottom: 0;
+}
+
+.react-pdf__Page {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.react-pdf__Page canvas {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+}
+
+.page-number-label {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-primary);
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(157, 138, 219, 0.2);
+  border-top-color: var(--brand-secondary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Error Message */
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.error-message h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #ef4444;
+}
+
+.error-message p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.error-note {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 12px;
+}
+
+/* Page Navigation */
+.page-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(157, 138, 219, 0.1);
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.page-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Annotations */
+.annotation {
+  position: absolute;
+  background: rgba(255, 235, 59, 0.3);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 235, 59, 0.6);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.annotation:hover {
+  background: rgba(255, 235, 59, 0.5);
+  transform: scale(1.05);
+}
+
+.annotation-note {
+  background: rgba(251, 191, 36, 0.3);
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
+.annotation-text {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.annotation-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.annotation-icon {
+  font-size: 16px;
+}
+
+/* Annotations Sidebar */
+.annotations-sidebar {
+  position: fixed;
+  right: 0;
+  top: 140px;
+  bottom: 0;
+  width: 300px;
+  background: white;
+  border-left: 2px solid rgba(197, 166, 249, 0.3);
+  padding: 20px;
+  overflow-y: auto;
+  z-index: 40;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .annotations-sidebar {
+  background: var(--brand-tertiary);
+}
+
+.annotations-sidebar h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(197, 166, 249, 0.3);
+}
+
+.annotations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.annotation-item {
+  padding: 12px;
+  background: rgba(157, 138, 219, 0.1);
+  border: 2px solid rgba(197, 166, 249, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.annotation-item:hover {
+  background: rgba(157, 138, 219, 0.2);
+  border-color: var(--accent-primary);
+  transform: translateX(-4px);
+}
+
+.annotation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--brand-secondary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.annotation-page {
+  color: var(--text-secondary);
+}
+
+.annotation-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.delete-annotation {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  color: #ef4444;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.delete-annotation:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .annotations-sidebar {
+    width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pdf-toolbar {
+    padding: 12px 16px;
+  }
+
+  .toolbar-left {
+    gap: 12px;
+  }
+
+  .document-title h2 {
+    font-size: 16px;
+  }
+
+  .document-info {
+    font-size: 11px;
+  }
+
+  .edit-toolbar {
+    padding: 10px 16px;
+  }
+
+  .tool-btn span {
+    display: none;
+  }
+
+  .zoom-controls {
+    top: 120px;
+    right: 16px;
+    padding: 8px;
+  }
+
+  .zoom-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .page-navigation {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .annotations-sidebar {
+    width: 100%;
+    top: auto;
+    bottom: 0;
+    height: 50vh;
+    border-left: none;
+    border-top: 2px solid rgba(197, 166, 249, 0.3);
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar-btn span {
+    display: none;
+  }
+
+  .nav-btn span {
+    display: none;
+  }
+
+  .edit-tools {
+    justify-content: center;
+  }
+}
+
+/* Dark Mode Adjustments */
+.dark-mode .toolbar-btn {
+  background: rgba(139, 127, 199, 0.2);
+  border-color: rgba(139, 127, 199, 0.4);
+}
+
+.dark-mode .tool-btn {
+  background: rgba(107, 91, 149, 0.2);
+  border-color: rgba(139, 127, 199, 0.3);
+}
+
+.dark-mode .annotation-item {
+  background: rgba(45, 38, 64, 0.3);
+  border-color: rgba(139, 127, 199, 0.3);
+}
