@@ -3,24 +3,21 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Document, Page, pdfjs } from "react-pdf";
 import { 
-  FaArrowLeft, 
-  FaDownload, 
-  FaSearchPlus, 
-  FaSearchMinus, 
-  FaChevronLeft, 
-  FaChevronRight,
-  FaHighlighter,
-  FaStickyNote,
-  FaFont,
-  FaEraser,
-  FaSave,
-  FaExpand,
-  FaCompress
+  FaMoon, FaSun, FaArrowLeft, FaDownload, FaSearchPlus, FaSearchMinus, 
+  FaChevronLeft, FaChevronRight, FaHighlighter, FaStickyNote,
+  FaFont, FaEraser, FaSave, FaExpand, FaCompress, FaEyeSlash, FaEye
 } from "react-icons/fa";
 import { mockReviewersByClass } from "../../../dashboard/mockData";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "./styles.css";
+
+// PDF.js options - defined outside component to prevent recreation
+const pdfOptions = {
+  cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+};
 
 export default function PDFViewerPage() {
   const router = useRouter();
@@ -32,9 +29,15 @@ export default function PDFViewerPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [annotations, setAnnotations] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showEditToolbar, setShowEditToolbar] = useState(true);
+  const [textBoxPosition, setTextBoxPosition] = useState(null);
+  const [textBoxPage, setTextBoxPage] = useState(null);
+  const [draggingAnnotation, setDraggingAnnotation] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   // Get reviewer data
   const reviewers = mockReviewersByClass[classCode] || [];
@@ -48,13 +51,6 @@ export default function PDFViewerPage() {
   useEffect(() => {
     pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
   }, []);
-
-  // Memoize PDF options to prevent unnecessary reloads
-  const pdfOptions = useMemo(() => ({
-    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
-    cMapPacked: true,
-    standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-  }), []);
 
   useEffect(() => {
     // Load saved annotations from localStorage
@@ -93,6 +89,17 @@ export default function PDFViewerPage() {
     document.body.removeChild(link);
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    if (!darkMode) {
+      document.documentElement.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -105,6 +112,7 @@ export default function PDFViewerPage() {
 
   const handleToolSelect = (tool) => {
     setActiveTool(activeTool === tool ? null : tool);
+    setTextBoxPosition(null);
   };
 
   const handleSaveAnnotations = () => {
@@ -116,6 +124,7 @@ export default function PDFViewerPage() {
     if (window.confirm('Are you sure you want to clear all annotations?')) {
       setAnnotations([]);
       localStorage.removeItem(`annotations-${classCode}-${reviewerId}`);
+      setActiveTool(null);
     }
   };
 
@@ -133,17 +142,125 @@ export default function PDFViewerPage() {
     }
   };
 
-  const handleAddText = () => {
-    const text = prompt('Enter text to add:');
-    if (text) {
+  const handleTextSelection = (e, pageNum) => {
+    if (activeTool !== 'highlight') return;
+    
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    
+    if (selectedText) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const pageElement = e.currentTarget;
+      const pageRect = pageElement.getBoundingClientRect();
+      
+      const newAnnotation = {
+        id: Date.now(),
+        type: 'highlight',
+        page: pageNum,
+        text: selectedText,
+        position: {
+          x: ((rect.left - pageRect.left) / pageRect.width) * 100,
+          y: ((rect.top - pageRect.top) / pageRect.height) * 100,
+          width: (rect.width / pageRect.width) * 100,
+          height: (rect.height / pageRect.height) * 100
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      setAnnotations([...annotations, newAnnotation]);
+      selection.removeAllRanges();
+    }
+  };
+
+  const handlePageClick = (e, pageNum) => {
+    if (activeTool === 'text') {
+      const pageElement = e.currentTarget;
+      const rect = pageElement.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      
+      setTextBoxPosition({ x, y });
+      setTextBoxPage(pageNum);
+    } else if (activeTool === 'clear') {
+      // Clear mode - clicking background does nothing
+      return;
+    }
+  };
+
+  const handleTextBoxSubmit = (text) => {
+    if (text && textBoxPosition && textBoxPage) {
       const newAnnotation = {
         id: Date.now(),
         type: 'text',
-        page: pageNumber,
+        page: textBoxPage,
         text: text,
+        position: textBoxPosition,
         timestamp: new Date().toISOString()
       };
+      
       setAnnotations([...annotations, newAnnotation]);
+      setTextBoxPosition(null);
+      setTextBoxPage(null);
+      setActiveTool(null);
+    }
+  };
+
+  const handleDeleteAnnotation = (annotationId, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    if (activeTool === 'clear') {
+      setAnnotations(annotations.filter(a => a.id !== annotationId));
+    }
+  };
+
+  const handleAddText = () => {
+    setActiveTool('text');
+  };
+
+  const handleTextMouseDown = (e, annotation, pageNum) => {
+    if (activeTool === 'clear') return; // Don't drag in eraser mode
+    
+    e.stopPropagation();
+    const pageElement = e.currentTarget.closest('.pdf-page-container');
+    const rect = pageElement.getBoundingClientRect();
+    
+    const clickX = ((e.clientX - rect.left) / rect.width) * 100;
+    const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    setDraggingAnnotation(annotation.id);
+    setDragOffset({
+      x: clickX - annotation.position.x,
+      y: clickY - annotation.position.y
+    });
+  };
+
+  const handleMouseMove = (e, pageNum) => {
+    if (!draggingAnnotation) return;
+    
+    const pageElement = e.currentTarget;
+    const rect = pageElement.getBoundingClientRect();
+    
+    const newX = ((e.clientX - rect.left) / rect.width) * 100 - dragOffset.x;
+    const newY = ((e.clientY - rect.top) / rect.height) * 100 - dragOffset.y;
+    
+    // Clamp values to keep text within page bounds
+    const clampedX = Math.max(0, Math.min(100, newX));
+    const clampedY = Math.max(0, Math.min(100, newY));
+    
+    setAnnotations(annotations.map(ann => 
+      ann.id === draggingAnnotation
+        ? { ...ann, position: { ...ann.position, x: clampedX, y: clampedY } }
+        : ann
+    ));
+  };
+
+  const handleMouseUp = () => {
+    if (draggingAnnotation) {
+      setDraggingAnnotation(null);
+      setDragOffset({ x: 0, y: 0 });
     }
   };
 
@@ -165,8 +282,8 @@ export default function PDFViewerPage() {
       {/* Header Toolbar */}
       <div className="pdf-toolbar">
         <div className="toolbar-left">
-          <button className="toolbar-btn back-btn" onClick={() => router.push(`/student/reviewers/${classCode}`)}>
-            <FaArrowLeft />
+          <button className="back-btn" onClick={() => router.push(`/student/reviewers/${classCode}`)}>
+            <FaArrowLeft className="back-icon" />
             <span>Back</span>
           </button>
           <div className="document-title">
@@ -176,6 +293,16 @@ export default function PDFViewerPage() {
         </div>
 
         <div className="toolbar-right">
+          <button 
+            className="toolbar-btn" 
+            onClick={() => setShowEditToolbar(!showEditToolbar)} 
+            title={showEditToolbar ? "Hide Annotation Toolbar" : "Show Annotation Toolbar"}
+          >
+            {showEditToolbar ? <FaEyeSlash /> : <FaEye />}
+          </button>
+          <button className="toolbar-btn" onClick={toggleDarkMode} title={darkMode ? "Light Mode" : "Dark Mode"}>
+            {darkMode ? <FaSun /> : <FaMoon />}
+          </button>
           <button className="toolbar-btn" onClick={handleDownload} title="Download PDF">
             <FaDownload />
           </button>
@@ -186,6 +313,7 @@ export default function PDFViewerPage() {
       </div>
 
       {/* Edit Toolbar */}
+      {showEditToolbar && (
       <div className="edit-toolbar">
         <div className="edit-tools">
           <button 
@@ -215,10 +343,18 @@ export default function PDFViewerPage() {
           <button 
             className="tool-btn"
             onClick={handleClearAnnotations}
-            title="Clear All"
+            title="Clear All Annotations"
           >
             <FaEraser />
-            <span>Clear</span>
+            <span>Clear All</span>
+          </button>
+          <button 
+            className={`tool-btn ${activeTool === 'clear' ? 'active' : ''}`}
+            onClick={() => handleToolSelect('clear')}
+            title="Eraser Mode"
+          >
+            <FaEraser />
+            <span>Eraser</span>
           </button>
           <button 
             className="tool-btn save-btn"
@@ -230,9 +366,45 @@ export default function PDFViewerPage() {
           </button>
         </div>
       </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="viewer-main-content">
+        {/* Annotations Sidebar - Left Side */}
+        {annotations.length > 0 && (
+          <div className="annotations-sidebar">
+            <h3>Annotations ({annotations.length})</h3>
+            <div className="annotations-list">
+              {annotations.map(annotation => (
+                <div 
+                  key={annotation.id} 
+                  className="annotation-item"
+                  onClick={() => setPageNumber(annotation.page)}
+                >
+                  <div className="annotation-header">
+                    {annotation.type === 'note' && <FaStickyNote />}
+                    {annotation.type === 'text' && <FaFont />}
+                    {annotation.type === 'highlight' && <FaHighlighter />}
+                    <span className="annotation-page">Page {annotation.page}</span>
+                  </div>
+                  <p className="annotation-text">{annotation.text}</p>
+                  <button 
+                    className="delete-annotation"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAnnotations(annotations.filter(a => a.id !== annotation.id));
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* PDF Viewer Container */}
-      <div className="pdf-content">
+      <div className={`pdf-content ${activeTool ? `tool-active tool-${activeTool}` : ''}`}>
         {/* Zoom Controls */}
         <div className="zoom-controls">
           <button className="zoom-btn" onClick={handleZoomOut} disabled={scale <= 0.5}>
@@ -265,7 +437,14 @@ export default function PDFViewerPage() {
           >
             {/* Render all pages for scrolling */}
             {Array.from(new Array(numPages), (el, index) => (
-              <div key={`page_${index + 1}`} className="pdf-page-container">
+              <div 
+                key={`page_${index + 1}`} 
+                className="pdf-page-container"
+                onMouseUp={(e) => handleTextSelection(e, index + 1)}
+                onClick={(e) => handlePageClick(e, index + 1)}
+                onMouseMove={(e) => handleMouseMove(e, index + 1)}
+                onMouseUpCapture={handleMouseUp}
+              >
                 <Page 
                   pageNumber={index + 1} 
                   scale={scale}
@@ -275,19 +454,88 @@ export default function PDFViewerPage() {
                 />
                 <div className="page-number-label">Page {index + 1} of {numPages}</div>
                 
-                {/* Annotations for this page */}
+                {/* Render Highlight Annotations */}
                 {annotations
-                  .filter(ann => ann.page === index + 1)
+                  .filter(ann => ann.page === index + 1 && ann.type === 'highlight' && ann.position)
+                  .map(annotation => (
+                    <div 
+                      key={annotation.id} 
+                      className={`annotation-overlay highlight-overlay ${activeTool === 'clear' ? 'erasable' : ''}`}
+                      style={{
+                        left: `${annotation.position.x}%`,
+                        top: `${annotation.position.y}%`,
+                        width: `${annotation.position.width}%`,
+                        height: `${annotation.position.height}%`,
+                      }}
+                      onClick={(e) => handleDeleteAnnotation(annotation.id, e)}
+                      title={activeTool === 'clear' ? 'Click to erase' : annotation.text}
+                    />
+                  ))}
+                
+                {/* Render Text Annotations */}
+                {annotations
+                  .filter(ann => ann.page === index + 1 && ann.type === 'text' && ann.position)
+                  .map(annotation => (
+                    <div 
+                      key={annotation.id} 
+                      className={`annotation-overlay text-overlay ${activeTool === 'clear' ? 'erasable' : ''} ${draggingAnnotation === annotation.id ? 'dragging' : ''}`}
+                      style={{
+                        left: `${annotation.position.x}%`,
+                        top: `${annotation.position.y}%`,
+                      }}
+                      onMouseDown={(e) => handleTextMouseDown(e, annotation, index + 1)}
+                      onClick={(e) => {
+                        if (activeTool === 'clear') {
+                          handleDeleteAnnotation(annotation.id, e);
+                        }
+                      }}
+                      title={activeTool === 'clear' ? 'Click to erase' : 'Drag to move'}
+                    >
+                      {annotation.text}
+                    </div>
+                  ))}
+                
+                {/* Text Box Input (when placing new text) */}
+                {textBoxPosition && textBoxPage === index + 1 && (
+                  <div 
+                    className="text-box-input"
+                    style={{
+                      left: `${textBoxPosition.x}%`,
+                      top: `${textBoxPosition.y}%`,
+                    }}
+                  >
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Enter text..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleTextBoxSubmit(e.target.value);
+                        } else if (e.key === 'Escape') {
+                          setTextBoxPosition(null);
+                          setTextBoxPage(null);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value.trim()) {
+                          handleTextBoxSubmit(e.target.value);
+                        } else {
+                          setTextBoxPosition(null);
+                          setTextBoxPage(null);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                
+                {/* Annotations for sidebar (notes only) */}
+                {annotations
+                  .filter(ann => ann.page === index + 1 && ann.type === 'note')
                   .map(annotation => (
                     <div key={annotation.id} className={`annotation annotation-${annotation.type}`}>
                       <div className="annotation-content">
-                        {annotation.type === 'note' && (
-                          <>
-                            <FaStickyNote className="annotation-icon" />
-                            <span>{annotation.text}</span>
-                          </>
-                        )}
-                        {annotation.type === 'text' && <span>{annotation.text}</span>}
+                        <FaStickyNote className="annotation-icon" />
+                        <span>{annotation.text}</span>
                       </div>
                     </div>
                   ))}
@@ -303,38 +551,7 @@ export default function PDFViewerPage() {
           </div>
         </div>
       </div>
-
-      {/* Annotations Sidebar */}
-      {annotations.length > 0 && (
-        <div className="annotations-sidebar">
-          <h3>Annotations ({annotations.length})</h3>
-          <div className="annotations-list">
-            {annotations.map(annotation => (
-              <div 
-                key={annotation.id} 
-                className="annotation-item"
-                onClick={() => setPageNumber(annotation.page)}
-              >
-                <div className="annotation-header">
-                  {annotation.type === 'note' && <FaStickyNote />}
-                  {annotation.type === 'text' && <FaFont />}
-                  <span className="annotation-page">Page {annotation.page}</span>
-                </div>
-                <p className="annotation-text">{annotation.text}</p>
-                <button 
-                  className="delete-annotation"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAnnotations(annotations.filter(a => a.id !== annotation.id));
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -55,8 +55,7 @@ export default function ClassTranscriptsPage() {
   };
 
   const handleTranscriptClick = (transcript) => {
-    console.log("Opening transcript:", transcript);
-    // TODO: Navigate to transcript viewer
+    router.push(`/student/reviewers/transcripts/${classCode}/${transcript.id}`);
   };
 
   if (!mounted || !currentTime) {
