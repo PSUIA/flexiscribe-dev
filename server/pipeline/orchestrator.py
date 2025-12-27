@@ -1,24 +1,24 @@
 """
-orchestrator.py
-
 Purpose:
-    Orchestrate the full end-to-end workflow:
-    Audio → Transcription → Preprocessing → Summarization → Save Summary
+    Coordinate the concurrent execution of transcription and summarization.
 
-Functions to implement:
-    - run_pipeline(audio_file, transcript_file, summary_file, strategy="hybrid")
-        Steps:
-            1. Transcribe audio using transcription.py with selected strategy
-            2. Read transcript and clean it using preprocessing.py
-            3. Generate summary using summarizer.py
-            4. Save summary using file_manager.py
-        Optional:
-            - Batch processing of multiple audio files
-            - Error handling for missing or corrupted files
-            - Logging execution time for each stage
+Functions:
+    - start_pipeline()
+        - Start summarizer in a separate daemon thread
+        - Start transcription in main thread
+        - Ensure both run concurrently and safely
 
 Notes:
-    - Flexible transcription strategy:
-        'whisper', 'vosk', or 'hybrid'
-    - Core module connecting all other modules
+    - Ensures modular separation of transcription and summarization
+    - Allows live summarization while recording
 """
+
+from threading import Thread
+from .transcription import start_transcription
+from .summarizer import start_summarizer
+
+def start_pipeline():
+    summary_thread = Thread(target=start_summarizer, daemon=True)
+    summary_thread.start()
+
+    start_transcription()
