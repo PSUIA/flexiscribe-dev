@@ -28,7 +28,7 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 print("Loading summarization model on CPU...")
 
-summarizer_model = pipeline("summarization", model="facebook/bart-large-cnn",device=-1)
+summarizer_model = pipeline("summarization", model="facebook/bart-large-cnn", device=-1)
 
 print("Summarization model loaded.\n")
 
