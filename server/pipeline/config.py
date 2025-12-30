@@ -16,8 +16,8 @@ Notes:
 from faster_whisper import WhisperModel
 
 # Files
-TRANSCRIPT_FILE = "transcript.txt"
-SUMMARY_FILE = "summary.txt"
+TRANSCRIPT_FILE = "server/data/transcript.txt"
+SUMMARY_FILE = "server/data/summary.txt"
 
 # Audio
 SAMPLE_RATE = 16000

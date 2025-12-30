@@ -1,0 +1,10 @@
+numpy
+sounddevice 
+vosk 
+openai-whisper
+soundfile
+faster_whisper
+torch
+transformers    
+sentencepiece
+pyspellchecker
