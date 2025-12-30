@@ -15,20 +15,18 @@ Notes:
 
 from faster_whisper import WhisperModel
 
+# Files
+TRANSCRIPT_FILE = "transcript.txt"
+SUMMARY_FILE = "summary.txt"
+
 # Audio
 SAMPLE_RATE = 16000
 CHANNELS = 1
 CHUNK_DURATION = 5  # seconds per transcription chunk
 
-# Files
-TRANSCRIPT_FILE = "transcript.txt"
-SUMMARY_FILE = "summary.txt"
-
 # Whisper model
 WHISPER_MODEL = WhisperModel("small", device="cpu", compute_type="int8")
 
 # Summarizer settings
-SUMMARY_INTERVAL = 10  # seconds
-CHUNK_SEGMENTS = 20    # number of transcript segments per summarization chunk
-MAX_SUMMARY_LENGTH = 50
-MIN_SUMMARY_LENGTH = 20
+SUMMARY_CHECK_INTERVAL = 10  # seconds between checking for new transcript content
+TARGET_SUMMARY_WORDS = 500

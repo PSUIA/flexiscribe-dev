@@ -7,3 +7,4 @@ faster_whisper
 torch
 transformers    
 sentencepiece
+pyspellchecker
