@@ -128,8 +128,8 @@ export default function StudentLeaderboard() {
 
   const getRankColor = (rank) => {
     if (rank === 1) return "#FFD700"; // Gold
-    if (rank === 2) return "#C0C0C0"; // Silver
-    if (rank === 3) return "#CD7F32"; // Bronze
+    if (rank === 2) return "#00A1FF"; // Silver
+    if (rank === 3) return "#873F1E"; // Bronze
     return "var(--brand-primary)";
   };
 
@@ -269,10 +269,6 @@ export default function StudentLeaderboard() {
 
         {/* Leaderboard Content */}
         <div className="leaderboard-page-container">
-          <div className="page-title">
-            <FaTrophy className="title-icon" />
-            <h1>LEADERBOARD</h1>
-          </div>
 
           {/* Top 3 Podium */}
           <div className="podium-section">
