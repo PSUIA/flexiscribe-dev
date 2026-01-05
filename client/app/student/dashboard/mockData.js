@@ -713,7 +713,7 @@ export const mockRankSystem = {
     xpMin: 10500,
     xpMax: 999999, // Max rank
     color: "#FF1493",
-    icon: "/img/ascendant-badge.png"
+    icon: "/img/ascendant.png"
   },
   allRanks: [
     // Learner Tiers
@@ -759,7 +759,7 @@ export const mockRankSystem = {
     { name: "Peak Performer V", tier: "V", xpMin: 8000, xpMax: 8499, color: "#00CED1", icon: "/img/peak-performer-5.png" },
     
     // Ascendant (Highest Rank)
-    { name: "Ascendant", tier: "VII", xpMin: 10500, xpMax: 999999, color: "#FF1493", icon: "/img/ascendant-badge.png" }
+    { name: "Ascendant", tier: "VII", xpMin: 10500, xpMax: 999999, color: "#FF1493", icon: "/img/ascendant.png" }
   ]
 };
 
@@ -976,14 +976,14 @@ export const mockSearchData = [
 
 // Subject/Course List
 export const mockSubjects = [
-  { code: "CS101", name: "Introduction to Computer Science", semester: 1, year: 1 },
-  { code: "CS102", name: "Data Structures and Algorithms", semester: 2, year: 1 },
-  { code: "CS103", name: "Object-Oriented Programming", semester: 1, year: 2 },
-  { code: "CS201", name: "Database Management Systems", semester: 2, year: 2 },
-  { code: "CS202", name: "Web Development Fundamentals", semester: 1, year: 3 },
-  { code: "CS301", name: "Operating Systems", semester: 2, year: 3 },
-  { code: "CS302", name: "Computer Networks", semester: 1, year: 4 },
-  { code: "CS303", name: "Software Engineering", semester: 2, year: 4 }
+  { code: "CPP117", name: "Embedded Systems", semester: 1, year: 4 },
+  { code: "CPP118", name: "Computer Architecture and Organization", semester: 1, year: 4 },
+  { code: "CPP119", name: "Data Signal Processing", semester: 1, year: 4 },
+  { code: "CPP120", name: "CpE Practice and Design 1", semester: 1, year: 4 },
+  { code: "CPP121", name: "Fundamentals of Mixed Signals and Sensors", semester: 1, year: 4 },
+  { code: "CPE102", name: "Network Embedded Systems", semester: 1, year: 4 },
+  { code: "CPE103", name: "Mobile Embedded Systems", semester: 2, year: 4 },
+  { code: "CPP122", name: "Cpe Practice and Design 2", semester: 2, year: 4 }
 ];
 
 // Motivational Quotes (14 quotes for 2-week rotation)

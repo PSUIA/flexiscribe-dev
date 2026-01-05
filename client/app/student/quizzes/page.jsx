@@ -40,6 +40,27 @@ export default function QuizzesPage() {
   
   const questionNumbers = [10, 15, 20, 25, 30];
 
+  const [showGeneratedNotification, setShowGeneratedNotification] = useState(false);
+  const [generatedQuizInfo, setGeneratedQuizInfo] = useState(null);
+
+  useEffect(() => {
+    // Check if a quiz was just generated
+    const quizGenerated = localStorage.getItem('quiz-generated');
+    if (quizGenerated) {
+      const info = JSON.parse(quizGenerated);
+      setGeneratedQuizInfo(info);
+      setShowGeneratedNotification(true);
+      
+      // Remove the flag
+      localStorage.removeItem('quiz-generated');
+      
+      // Hide notification after 5 seconds
+      setTimeout(() => {
+        setShowGeneratedNotification(false);
+      }, 5000);
+    }
+  }, []);
+
   useEffect(() => {
     // Set initial time on mount
     setMounted(true);
@@ -348,6 +369,23 @@ export default function QuizzesPage() {
         
         {/* Quizzes Content */}
         <div className="quizzes-content">
+          {/* Quiz Generated Notification */}
+          {showGeneratedNotification && generatedQuizInfo && (
+            <div className="quiz-generated-notification">
+              <div className="quiz-notification-icon">✓</div>
+              <div className="notification-content">
+                <h4>Quiz Generated Successfully!</h4>
+                <p>A new quiz has been generated from "{generatedQuizInfo.reviewerTitle}" in {generatedQuizInfo.classCode}</p>
+              </div>
+              <button 
+                className="notification-close"
+                onClick={() => setShowGeneratedNotification(false)}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {/* Generate Quiz Section */}
           <div className="generate-quiz-section">
             <h2 className="generate-quiz-title">Generate Quiz</h2>

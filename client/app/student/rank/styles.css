@@ -497,6 +497,7 @@
   .rank-banner-left {
     flex-direction: column;
     text-align: center;
+    align-items: center;
   }
   
   .rank-badge-large img {
@@ -514,6 +515,7 @@
   
   .rank-stats-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
   
   .rank-stat {
@@ -522,6 +524,10 @@
   
   .stat-value {
     font-size: 20px;
+  }
+
+  .stat-icon {
+    font-size: 24px !important;
   }
   
   .page-title h1 {
@@ -536,5 +542,124 @@
   .achievements-grid,
   .badges-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rank-tabs {
+    gap: 5px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .rank-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rank-tab {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .achievement-card,
+  .badge-card {
+    padding: 15px;
+  }
+
+  .achievement-icon {
+    font-size: 36px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .achievement-info h4 {
+    font-size: 16px;
+  }
+
+  .achievement-info p {
+    font-size: 13px;
+  }
+
+  .badge-icon {
+    font-size: 48px;
+    width: 60px;
+    height: 60px;
+  }
+
+  .badge-info h4 {
+    font-size: 16px;
+  }
+
+  .badge-info p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rank-page-container {
+    padding: 10px;
+  }
+
+  .rank-banner {
+    padding: 15px;
+  }
+
+  .rank-title {
+    font-size: 24px;
+  }
+
+  .rank-tier {
+    font-size: 14px;
+  }
+
+  .current-xp {
+    font-size: 18px;
+  }
+
+  .next-rank {
+    font-size: 12px;
+  }
+
+  .rank-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .rank-stat {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 12px 15px;
+  }
+
+  .stat-icon {
+    font-size: 24px !important;
+  }
+
+  .stat-info {
+    text-align: left;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .page-title {
+    margin-bottom: 20px;
+  }
+
+  .page-title h1 {
+    font-size: 20px;
+  }
+
+  .page-title .title-icon {
+    font-size: 20px;
+  }
+
+  .back-button {
+    padding: 8px 16px;
+    font-size: 13px;
   }
 }

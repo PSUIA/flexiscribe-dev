@@ -18,9 +18,30 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [flippedStates, setFlippedStates] = useState({});
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
+
+  // Load saved flipped states from localStorage
+  useEffect(() => {
+    const savedStates = localStorage.getItem(`quiz-flipped-${quiz.id}`);
+    if (savedStates) {
+      const parsedStates = JSON.parse(savedStates);
+      setFlippedStates(parsedStates);
+      // Set the flipped state for current question if it exists
+      if (parsedStates[currentQuestionIndex] !== undefined) {
+        setIsFlipped(parsedStates[currentQuestionIndex]);
+      }
+    }
+  }, [quiz.id, currentQuestionIndex]);
+
+  // Save flipped states to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(flippedStates).length > 0) {
+      localStorage.setItem(`quiz-flipped-${quiz.id}`, JSON.stringify(flippedStates));
+    }
+  }, [flippedStates, quiz.id]);
 
   useEffect(() => {
     setMounted(true);
@@ -57,7 +78,9 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const handleNext = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setIsFlipped(false);
+      // Load the flipped state for the next question
+      const nextFlipped = flippedStates[currentQuestionIndex + 1];
+      setIsFlipped(nextFlipped !== undefined ? nextFlipped : false);
       setShowHint(false);
     }
   };
@@ -65,13 +88,21 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setIsFlipped(false);
+      // Load the flipped state for the previous question
+      const prevFlipped = flippedStates[currentQuestionIndex - 1];
+      setIsFlipped(prevFlipped !== undefined ? prevFlipped : false);
       setShowHint(false);
     }
   };
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    const newFlippedState = !isFlipped;
+    setIsFlipped(newFlippedState);
+    // Save the flipped state
+    setFlippedStates(prev => ({
+      ...prev,
+      [currentQuestionIndex]: newFlippedState
+    }));
   };
 
   const handleBack = () => {

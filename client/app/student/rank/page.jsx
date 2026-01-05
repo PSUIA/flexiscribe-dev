@@ -294,7 +294,7 @@ export default function StudentRank() {
               <div className="overview-content">
                 <h3 className="section-title">All Ranks</h3>
                 <div className="ranks-grid">
-                  {mockRankSystem.allRanks.slice().reverse().map((rank, index) => {
+                  {mockRankSystem.allRanks.slice().sort((a, b) => b.xpMin - a.xpMin).map((rank, index) => {
                     const isCurrentRank = rank.name === currentRank.name;
                     const isPassed = currentRank.xp >= rank.xpMin;
                     

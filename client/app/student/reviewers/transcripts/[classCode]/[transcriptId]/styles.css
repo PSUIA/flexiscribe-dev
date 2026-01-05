@@ -216,9 +216,11 @@
   z-index: 50;
   opacity: 0.3;
   transition: opacity 0.3s ease;
+  min-width: 64px;
 }
 
-.zoom-controls:hover {
+.zoom-controls:hover,
+.zoom-controls:active {
   opacity: 1;
 }
 
@@ -436,7 +438,7 @@
   line-height: 1.8;
   color: var(--text-primary);
   font-size: 14px;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .docx-content p {
@@ -762,7 +764,7 @@
   padding: 60px 80px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark-mode .docx-content {
@@ -985,8 +987,19 @@
   }
 
   .zoom-controls {
+    top: auto;
+    bottom: 80px;
     right: 20px;
-    top: 120px;
+    padding: 10px;
+    opacity: 0.8;
+    min-width: 56px;
+  }
+
+  .zoom-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+    touch-action: manipulation;
   }
 
   .docx-content {
@@ -995,6 +1008,46 @@
 }
 
 @media (max-width: 768px) {
+  .docx-toolbar {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toolbar-left {
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .toolbar-right {
+    gap: 6px;
+  }
+
+  .toolbar-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .toolbar-btn span {
+    display: none;
+  }
+
+  .document-title {
+    max-width: 150px;
+  }
+
+  .document-title h2 {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .document-info {
+    font-size: 10px;
+  }
+
   .viewer-header {
     padding: 16px;
   }
@@ -1010,8 +1063,8 @@
   }
 
   .zoom-controls {
+    bottom: 70px;
     right: 10px;
-    top: 100px;
   }
 
   .docx-document-wrapper {
@@ -1037,5 +1090,92 @@
   .docx-content p,
   .docx-content li {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .docx-toolbar {
+    padding: 8px;
+  }
+
+  .toolbar-left {
+    min-width: 120px;
+  }
+
+  .toolbar-btn {
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+
+  .back-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .document-title {
+    display: none;
+  }
+
+  .zoom-controls {
+    bottom: 60px;
+    right: 8px;
+    padding: 8px;
+    min-width: 52px;
+  }
+
+  .zoom-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .docx-document-wrapper {
+    padding: 10px;
+  }
+
+  .docx-content {
+    padding: 20px 15px;
+  }
+
+  .docx-content h1 {
+    font-size: 22px;
+  }
+
+  .docx-content h2 {
+    font-size: 19px;
+  }
+
+  .docx-content h3 {
+    font-size: 16px;
+  }
+
+  .docx-content p,
+  .docx-content li {
+    font-size: 13px;
+  }
+
+  /* Disable hover effects on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .zoom-controls {
+      opacity: 0.95;
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .toolbar-btn {
+    padding: 5px 8px;
+    font-size: 14px;
+  }
+
+  .zoom-controls {
+    right: 5px;
+    padding: 6px;
+  }
+
+  .zoom-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
   }
 }

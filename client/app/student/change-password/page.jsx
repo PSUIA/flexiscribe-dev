@@ -24,10 +24,15 @@ export default function ChangePassword() {
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    verificationCode: ""
   });
 
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(1); // 1: Enter passwords, 2: Verify code
+  const [generatedCode, setGeneratedCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -45,6 +50,14 @@ export default function ChangePassword() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Countdown timer for resend code
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -103,18 +116,79 @@ export default function ChangePassword() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const generateVerificationCode = () => {
+    // Generate a 6-digit verification code
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const sendVerificationCode = () => {
+    const code = generateVerificationCode();
+    setGeneratedCode(code);
+    setCodeSent(true);
+    setCountdown(60); // 60 seconds cooldown
+    
+    // In a real app, this would send the code via email/SMS
+    // For demo purposes, we'll just show it in console
+    console.log("Verification code:", code);
+    alert(`Verification code sent! (Demo code: ${code})`);
+  };
+
+  const handleContinueToVerification = (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // TODO: Implement password change API call
-      alert("Password changed successfully!");
-      setFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      });
-      router.push("/student/dashboard");
+      sendVerificationCode();
+      setStep(2);
+    }
+  };
+
+  const handleVerifyCode = (e) => {
+    e.preventDefault();
+    
+    if (!formData.verificationCode) {
+      setErrors({ verificationCode: "Please enter the verification code" });
+      return;
+    }
+
+    if (formData.verificationCode !== generatedCode) {
+      setErrors({ verificationCode: "Invalid verification code" });
+      return;
+    }
+
+    // Code is valid, proceed with password change
+    // TODO: Implement password change API call
+    alert("Password changed successfully!");
+    setFormData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+      verificationCode: ""
+    });
+    setStep(1);
+    setGeneratedCode("");
+    setCodeSent(false);
+    router.push("/student/dashboard");
+  };
+
+  const handleResendCode = () => {
+    if (countdown === 0) {
+      sendVerificationCode();
+    }
+  };
+
+  const handleBackToPasswordForm = () => {
+    setStep(1);
+    setFormData(prev => ({ ...prev, verificationCode: "" }));
+    setErrors({});
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (step === 1) {
+      handleContinueToVerification(e);
+    } else {
+      handleVerifyCode(e);
     }
   };
 
@@ -282,87 +356,146 @@ export default function ChangePassword() {
             </div>
             
             <form onSubmit={handleSubmit} className="password-form">
-              {/* Current Password */}
-              <div className="form-group">
-                <label htmlFor="currentPassword">Current Password</label>
-                <div className="password-input-container">
-                  <input
-                    type={showCurrentPassword ? "text" : "password"}
-                    id="currentPassword"
-                    name="currentPassword"
-                    value={formData.currentPassword}
-                    onChange={handleInputChange}
-                    className={errors.currentPassword ? "error" : ""}
-                  />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  >
-                    {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-                {errors.currentPassword && (
-                  <span className="error-message">{errors.currentPassword}</span>
-                )}
-              </div>
+              {step === 1 ? (
+                <>
+                  {/* Step 1: Password Form */}
+                  {/* Current Password */}
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">Current Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        id="currentPassword"
+                        name="currentPassword"
+                        value={formData.currentPassword}
+                        onChange={handleInputChange}
+                        className={errors.currentPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {errors.currentPassword && (
+                      <span className="error-message">{errors.currentPassword}</span>
+                    )}
+                  </div>
 
-              {/* New Password */}
-              <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
-                <div className="password-input-container">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    id="newPassword"
-                    name="newPassword"
-                    value={formData.newPassword}
-                    onChange={handleInputChange}
-                    className={errors.newPassword ? "error" : ""}
-                  />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-                {errors.newPassword && (
-                  <span className="error-message">{errors.newPassword}</span>
-                )}
-                <span className="hint-text">Password must be at least 8 characters long</span>
-              </div>
+                  {/* New Password */}
+                  <div className="form-group">
+                    <label htmlFor="newPassword">New Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        id="newPassword"
+                        name="newPassword"
+                        value={formData.newPassword}
+                        onChange={handleInputChange}
+                        className={errors.newPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {errors.newPassword && (
+                      <span className="error-message">{errors.newPassword}</span>
+                    )}
+                    <span className="hint-text">Password must be at least 8 characters long</span>
+                  </div>
 
-              {/* Confirm Password */}
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm New Password</label>
-                <div className="password-input-container">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className={errors.confirmPassword ? "error" : ""}
-                  />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <span className="error-message">{errors.confirmPassword}</span>
-                )}
-              </div>
+                  {/* Confirm Password */}
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm New Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className={errors.confirmPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {errors.confirmPassword && (
+                      <span className="error-message">{errors.confirmPassword}</span>
+                    )}
+                  </div>
 
-              <div className="form-actions">
-                <button type="submit" className="submit-btn">
-                  Change Password
-                </button>
-              </div>
+                  <div className="form-actions">
+                    <button type="submit" className="submit-btn">
+                      Continue to Verification
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Step 2: Verification Code */}
+                  <div className="verification-step">
+                    <h3 className="verification-title">Verify Your Identity</h3>
+                    <p className="verification-text">
+                      We've sent a 6-digit verification code to your email address.
+                      Please enter it below to confirm the password change.
+                    </p>
+
+                    <div className="form-group">
+                      <label htmlFor="verificationCode">Verification Code</label>
+                      <input
+                        type="text"
+                        id="verificationCode"
+                        name="verificationCode"
+                        value={formData.verificationCode}
+                        onChange={handleInputChange}
+                        className={errors.verificationCode ? "error" : ""}
+                        placeholder="Enter 6-digit code"
+                        maxLength="6"
+                      />
+                      {errors.verificationCode && (
+                        <span className="error-message">{errors.verificationCode}</span>
+                      )}
+                    </div>
+
+                    <div className="resend-code-section">
+                      <button
+                        type="button"
+                        className="resend-code-btn"
+                        onClick={handleResendCode}
+                        disabled={countdown > 0}
+                      >
+                        {countdown > 0 
+                          ? `Resend code in ${countdown}s` 
+                          : "Resend code"}
+                      </button>
+                    </div>
+
+                    <div className="form-actions">
+                      <button 
+                        type="button" 
+                        className="back-to-form-btn"
+                        onClick={handleBackToPasswordForm}
+                      >
+                        Back
+                      </button>
+                      <button type="submit" className="submit-btn">
+                        Verify & Change Password
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </form>
           </div>
         </div>

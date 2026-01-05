@@ -18,9 +18,30 @@ export default function FillInQuiz({ quiz, questions }) {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [answers, setAnswers] = useState({});
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
+
+  // Load saved answers from localStorage
+  useEffect(() => {
+    const savedAnswers = localStorage.getItem(`quiz-answers-${quiz.id}`);
+    if (savedAnswers) {
+      const parsedAnswers = JSON.parse(savedAnswers);
+      setAnswers(parsedAnswers);
+      // Set the user answer for current question if it exists
+      if (parsedAnswers[currentQuestionIndex] !== undefined) {
+        setUserAnswer(parsedAnswers[currentQuestionIndex]);
+      }
+    }
+  }, [quiz.id, currentQuestionIndex]);
+
+  // Save answers to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      localStorage.setItem(`quiz-answers-${quiz.id}`, JSON.stringify(answers));
+    }
+  }, [answers, quiz.id]);
 
   useEffect(() => {
     setMounted(true);
@@ -57,7 +78,9 @@ export default function FillInQuiz({ quiz, questions }) {
   const handleNext = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setUserAnswer("");
+      // Load the answer for the next question
+      const nextAnswer = answers[currentQuestionIndex + 1];
+      setUserAnswer(nextAnswer !== undefined ? nextAnswer : "");
       setShowHint(false);
     }
   };
@@ -65,9 +88,20 @@ export default function FillInQuiz({ quiz, questions }) {
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setUserAnswer("");
+      // Load the answer for the previous question
+      const prevAnswer = answers[currentQuestionIndex - 1];
+      setUserAnswer(prevAnswer !== undefined ? prevAnswer : "");
       setShowHint(false);
     }
+  };
+
+  const handleAnswerChange = (value) => {
+    setUserAnswer(value);
+    // Save the answer
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestionIndex]: value
+    }));
   };
 
   const handleBack = () => {
@@ -84,7 +118,7 @@ export default function FillInQuiz({ quiz, questions }) {
           type="text"
           className="fill-in-input"
           value={userAnswer}
-          onChange={(e) => setUserAnswer(e.target.value)}
+          onChange={(e) => handleAnswerChange(e.target.value)}
           placeholder="Type your answer"
         />
         {parts[1]}

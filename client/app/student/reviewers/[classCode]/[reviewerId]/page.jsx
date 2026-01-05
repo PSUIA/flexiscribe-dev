@@ -38,6 +38,8 @@ export default function PDFViewerPage() {
   const [textBoxPage, setTextBoxPage] = useState(null);
   const [draggingAnnotation, setDraggingAnnotation] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [lastTouchDistance, setLastTouchDistance] = useState(null);
+  const [touchStartScale, setTouchStartScale] = useState(null);
   
   // Get reviewer data
   const reviewers = mockReviewersByClass[classCode] || [];
@@ -72,11 +74,11 @@ export default function PDFViewerPage() {
   };
 
   const handleZoomIn = () => {
-    setScale(prevScale => Math.min(prevScale + 0.2, 3.0));
+    setScale(prevScale => Math.min(prevScale + 0.1, 3.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prevScale => Math.max(prevScale - 0.2, 0.5));
+    setScale(prevScale => Math.max(prevScale - 0.1, 0.5));
   };
 
   const handleDownload = () => {
@@ -264,6 +266,42 @@ export default function PDFViewerPage() {
     }
   };
 
+  // Touch events for pinch-to-zoom
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      setLastTouchDistance(distance);
+      setTouchStartScale(scale);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && lastTouchDistance && touchStartScale) {
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      const scaleFactor = distance / lastTouchDistance;
+      const newScale = Math.max(0.5, Math.min(touchStartScale * scaleFactor, 3.0));
+      setScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.touches.length < 2) {
+      setLastTouchDistance(null);
+      setTouchStartScale(null);
+    }
+  };
+
   if (!reviewer) {
     return (
       <div className="pdf-viewer-container">
@@ -407,17 +445,22 @@ export default function PDFViewerPage() {
       <div className={`pdf-content ${activeTool ? `tool-active tool-${activeTool}` : ''}`}>
         {/* Zoom Controls */}
         <div className="zoom-controls">
-          <button className="zoom-btn" onClick={handleZoomOut} disabled={scale <= 0.5}>
-            <FaSearchMinus />
-          </button>
-          <span className="zoom-level">{Math.round(scale * 100)}%</span>
           <button className="zoom-btn" onClick={handleZoomIn} disabled={scale >= 3.0}>
             <FaSearchPlus />
+          </button>
+          <span className="zoom-level">{Math.round(scale * 100)}%</span>
+          <button className="zoom-btn" onClick={handleZoomOut} disabled={scale <= 0.5}>
+            <FaSearchMinus />
           </button>
         </div>
 
         {/* PDF Document */}
-        <div className="pdf-document-wrapper">
+        <div 
+          className="pdf-document-wrapper"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
