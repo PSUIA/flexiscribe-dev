@@ -189,7 +189,7 @@ export default function QuizzesPage() {
           </div>
 
           <nav className="nav-menu">
-            <div className="nav-item active">
+            <div className="nav-item">
               <FaHome className="nav-icon" />
               <span>Dashboard</span>
             </div>
@@ -197,7 +197,7 @@ export default function QuizzesPage() {
               <FaBook className="nav-icon" />
               <span>Reviewers</span>
             </div>
-            <div className="nav-item">
+            <div className="nav-item active">
               <FaGamepad className="nav-icon" />
               <span>Quizzes</span>
             </div>

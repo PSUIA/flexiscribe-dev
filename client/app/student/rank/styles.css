@@ -487,39 +487,63 @@
 
 @media (max-width: 767px) {
   .rank-page-container {
-    padding: 15px;
+    padding: 12px;
   }
   
   .rank-banner {
-    padding: 20px;
+    padding: 20px 15px;
+    gap: 15px;
   }
   
   .rank-banner-left {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+    gap: 15px;
   }
   
   .rank-badge-large img {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
+  }
+  
+  .rank-details {
+    flex: 1;
+    min-width: 0;
   }
   
   .rank-title {
-    font-size: 28px;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  
+  .rank-tier {
+    font-size: 14px;
+    margin-bottom: 10px;
   }
   
   .current-xp {
-    font-size: 20px;
+    font-size: 18px;
+  }
+  
+  .next-rank {
+    display: block;
+    margin-top: 4px;
+    margin-left: 0;
+  }
+  
+  .xp-progress-bar {
+    height: 10px;
   }
   
   .rank-stats-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
   
   .rank-stat {
-    padding: 15px 10px;
+    padding: 12px 8px;
+    gap: 8px;
   }
   
   .stat-value {
@@ -530,18 +554,34 @@
     font-size: 24px !important;
   }
   
+  .stat-label {
+    font-size: 10px;
+  }
+  
+  .page-title {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
   .page-title h1 {
-    font-size: 24px;
+    font-size: 22px;
   }
   
   .page-title .title-icon {
-    font-size: 24px;
+    font-size: 22px;
+  }
+  
+  .back-button {
+    padding: 10px 18px;
+    font-size: 14px;
+    margin-bottom: 15px;
   }
   
   .ranks-grid,
   .achievements-grid,
   .badges-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .rank-tabs {
@@ -549,6 +589,7 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding-bottom: 2px;
   }
 
   .rank-tabs::-webkit-scrollbar {
@@ -556,41 +597,86 @@
   }
 
   .rank-tab {
-    padding: 10px 16px;
+    padding: 12px 18px;
     font-size: 14px;
+    min-width: max-content;
   }
 
   .achievement-card,
   .badge-card {
-    padding: 15px;
+    padding: 16px;
+  }
+  
+  .rank-tab-content {
+    padding: 15px 0;
+  }
+  
+  .section-title {
+    font-size: 20px;
+    margin-bottom: 15px;
   }
 
   .achievement-icon {
-    font-size: 36px;
-    width: 50px;
-    height: 50px;
+    font-size: 40px;
+    width: 55px;
+    height: 55px;
   }
 
   .achievement-info h4 {
     font-size: 16px;
+    margin-bottom: 6px;
   }
 
   .achievement-info p {
     font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  .achievement-rarity {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .achievement-date {
+    font-size: 11px;
   }
 
   .badge-icon {
-    font-size: 48px;
-    width: 60px;
-    height: 60px;
+    font-size: 52px;
+    width: 65px;
+    height: 65px;
   }
 
   .badge-info h4 {
     font-size: 16px;
+    margin-bottom: 6px;
   }
 
   .badge-info p {
     font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  .badge-date {
+    font-size: 11px;
+  }
+  
+  .rank-item {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .rank-item-icon img {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .rank-item-info h4 {
+    font-size: 15px;
+  }
+  
+  .rank-item-info p {
+    font-size: 12px;
   }
 }
 
@@ -600,38 +686,61 @@
   }
 
   .rank-banner {
-    padding: 15px;
+    padding: 15px 12px;
+  }
+  
+  .rank-banner-left {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .rank-badge-large img {
+    width: 70px;
+    height: 70px;
   }
 
   .rank-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .rank-tier {
-    font-size: 14px;
+    font-size: 13px;
+    margin-bottom: 8px;
   }
 
   .current-xp {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .next-rank {
     font-size: 12px;
   }
+  
+  .xp-info {
+    margin-bottom: 8px;
+  }
+  
+  .xp-progress-bar {
+    height: 8px;
+  }
 
   .rank-stats-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .rank-stat {
     flex-direction: row;
     justify-content: flex-start;
+    align-items: center;
     padding: 12px 15px;
+    gap: 12px;
   }
 
   .stat-icon {
-    font-size: 24px !important;
+    font-size: 28px !important;
   }
 
   .stat-info {
@@ -639,7 +748,7 @@
   }
 
   .stat-value {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .stat-label {
@@ -647,7 +756,8 @@
   }
 
   .page-title {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    gap: 8px;
   }
 
   .page-title h1 {
@@ -659,7 +769,74 @@
   }
 
   .back-button {
-    padding: 8px 16px;
+    padding: 9px 16px;
     font-size: 13px;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  
+  .rank-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  .achievement-card {
+    padding: 14px;
+    gap: 12px;
+  }
+  
+  .badge-card {
+    padding: 20px 14px;
+    gap: 12px;
+  }
+  
+  .achievement-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 36px;
+  }
+  
+  .badge-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 48px;
+  }
+  
+  .achievement-info h4,
+  .badge-info h4 {
+    font-size: 15px;
+  }
+  
+  .achievement-info p,
+  .badge-info p {
+    font-size: 12px;
+  }
+  
+  .rank-item {
+    padding: 14px;
+    gap: 10px;
+  }
+  
+  .rank-item-icon img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .rank-item-info h4 {
+    font-size: 14px;
+  }
+  
+  .rank-item-info p {
+    font-size: 11px;
+  }
+  
+  .current-badge {
+    font-size: 9px;
+    padding: 2px 5px;
   }
 }
