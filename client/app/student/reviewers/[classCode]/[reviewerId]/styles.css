@@ -1,15 +1,19 @@
-/* PDF Viewer Styles */
+/* Reviewer Editor Styles - TinyMCE Version */
 
-.pdf-viewer-container {
+.reviewer-editor-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: var(--bg-main);
+  min-height: 100vh;
+  background: #f5f7fa;
   overflow: hidden;
 }
 
+.reviewer-editor-container.dark-mode {
+  background: #1a1a1a;
+}
+
 /* Toolbar */
-.pdf-toolbar {
+.editor-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -44,53 +48,29 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.toolbar-btn:hover {
+.toolbar-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-.toolbar-btn:active {
-  transform: translateY(0);
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  border-radius: 12px;
-  background: rgba(157, 138, 219, 0.1);
-  border: 2px solid rgba(197, 166, 249, 0.3);
-  color: var(--accent-secondary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.toolbar-btn.back-btn {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.back-btn:hover {
-  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
-  color: white;
-  border-color: transparent;
-  transform: translateX(-5px);
-}
-
-.back-icon {
-  font-size: 18px;
-  transition: transform 0.3s ease;
-}
-
-.back-button:hover .back-icon {
-  transform: translateX(-3px);
+.toolbar-btn.icon-only {
+  padding: 10px;
 }
 
 .document-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex: 1;
 }
 
 .document-title h2 {
@@ -105,192 +85,58 @@
   font-size: 13px;
 }
 
-/* Edit Toolbar */
-.edit-toolbar {
-  padding: 12px 24px;
-  background: rgba(157, 138, 219, 0.1);
-  border-bottom: 1px solid rgba(197, 166, 249, 0.2);
-  display: flex;
-  justify-content: center;
-}
-
-.edit-tools {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tool-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* Save Status */
+.save-status {
   padding: 8px 16px;
-  background: rgba(157, 138, 219, 0.1);
-  border: 2px solid rgba(197, 166, 249, 0.3);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.tool-btn:hover {
-  background: rgba(157, 138, 219, 0.2);
-  border-color: var(--accent-primary);
-  transform: translateY(-2px);
-}
-
-.tool-btn.active {
-  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
   color: white;
-  border-color: transparent;
-}
-
-.tool-btn.save-btn {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  color: white;
-  border-color: transparent;
-}
-
-.tool-btn.save-btn:hover {
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-}
-
-/* PDF Content */
-.pdf-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: auto;
-  padding: 20px;
-  background: var(--bg-main);
-  position: relative;
-  width: 100%;
-}
-
-/* Zoom Controls */
-.zoom-controls {
-  position: absolute;
-  top: 140px;
-  right: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: white;
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 50;
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
-}
-
-.zoom-controls:hover {
-  opacity: 1;
-}
-
-.dark-mode .zoom-controls {
-  background: var(--brand-tertiary);
-}
-
-.zoom-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.zoom-btn:hover:not(:disabled) {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(157, 138, 219, 0.4);
-}
-
-.zoom-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.zoom-level {
-  text-align: center;
   font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  padding: 8px 0;
+  font-weight: 500;
 }
 
-/* PDF Document Wrapper */
-.pdf-document-wrapper {
+/* TinyMCE Editor Styles */
+.editor-content {
   flex: 1;
-  position: relative;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 500px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  overflow: auto;
+  padding: 24px;
+  min-height: 0; /* Important for flex children */
 }
 
-.dark-mode .pdf-document-wrapper {
-  background: var(--bg-main);
-}
-
-.react-pdf__Document {
+.tinymce-wrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 30px;
-  width: 100%;
-  padding: 20px 0;
-}
-
-/* Individual Page Container */
-.pdf-page-container {
-  position: relative;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   background: white;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.pdf-page-container:last-child {
-  margin-bottom: 0;
-}
-
-.react-pdf__Page {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-.react-pdf__Page canvas {
-  max-width: 100%;
-  height: auto !important;
-  display: block;
-}
-
-.page-number-label {
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.05);
-  color: #333;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+  max-width: 1200px;
   width: 100%;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  min-height: 600px; /* Ensure minimum height */
+}
+
+.dark-mode .tinymce-wrapper {
+  background: #2a2a2a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* TinyMCE container height */
+.tinymce-wrapper .tox-tinymce {
+  border: none;
+  height: 100%;
+  min-height: 600px;
+}
+
+.tinymce-wrapper .tox-editor-container {
+  height: 100%;
+}
+
+.tinymce-wrapper .tox-edit-area {
+  height: 100%;
 }
 
 /* Loading Spinner */
@@ -299,27 +145,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px;
-  color: var(--text-primary);
+  height: 400px;
+  gap: 20px;
 }
 
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(157, 138, 219, 0.2);
-  border-top-color: var(--brand-secondary);
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #7c3aed;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .loading-spinner p {
-  margin-top: 20px;
+  color: #666;
   font-size: 16px;
-  font-weight: 600;
+}
+
+.dark-mode .loading-spinner p {
+  color: #aaa;
 }
 
 /* Error Message */
@@ -328,623 +178,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px;
-  color: var(--text-primary);
-  text-align: center;
+  height: 100vh;
+  gap: 20px;
 }
 
 .error-message h2 {
+  color: #333;
   font-size: 24px;
-  margin-bottom: 16px;
-  color: #ef4444;
 }
 
-.error-message p {
-  margin: 8px 0;
-  font-size: 16px;
+.dark-mode .error-message h2 {
+  color: #e0e0e0;
 }
 
-.error-note {
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-style: italic;
-  margin-top: 12px;
-}
-
-/* Page Navigation */
-.page-navigation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(157, 138, 219, 0.1);
-  border-radius: 12px;
-  margin-top: 20px;
-}
-
-.page-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* Annotations */
-.annotation {
-  position: absolute;
-  background: rgba(255, 235, 59, 0.3);
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 2px solid rgba(255, 235, 59, 0.6);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
-
-.annotation:hover {
-  background: rgba(255, 235, 59, 0.5);
-  transform: scale(1.05);
-}
-
-.annotation-note {
-  background: rgba(251, 191, 36, 0.3);
-  border-color: rgba(251, 191, 36, 0.6);
-}
-
-.annotation-text {
-  background: rgba(34, 197, 94, 0.3);
-  border-color: rgba(34, 197, 94, 0.6);
-}
-
-.annotation-content {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.annotation-icon {
-  font-size: 16px;
-}
-
-/* Cursor styles for different tools */
-.tool-active.tool-highlight {
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23fbbf24" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>'), auto;
-}
-
-.tool-active.tool-text {
-  cursor: crosshair;
-}
-
-.tool-active.tool-clear {
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ef4444" d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0M4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53l-4.95-4.95l-4.95 4.95z"/></svg>'), pointer;
-}
-
-/* Annotation Overlays */
-.annotation-overlay {
-  position: absolute;
-  pointer-events: auto;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
-
-.highlight-overlay {
-  background: rgba(255, 235, 59, 0.4);
-  border: 2px solid rgba(255, 193, 7, 0.6);
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.highlight-overlay.erasable {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.highlight-overlay.erasable:hover {
-  background: rgba(239, 68, 68, 0.4);
-  border-color: rgba(239, 68, 68, 0.8);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-}
-
-.text-overlay {
-  background: rgba(96, 165, 250, 0.9);
+.error-message button {
+  padding: 12px 24px;
+  background: #7c3aed;
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  white-space: nowrap;
-  transform: translate(-50%, -100%);
-  margin-top: -10px;
-  pointer-events: auto;
-  border: 2px solid rgba(59, 130, 246, 0.8);
-  cursor: move;
-  user-select: none;
-  transition: box-shadow 0.2s ease, transform 0.1s ease;
-}
-
-.text-overlay:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.text-overlay.dragging {
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.6);
-  transform: translate(-50%, -100%) scale(1.05);
-  z-index: 1000;
-}
-
-.text-overlay.erasable {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.text-overlay.erasable:hover {
-  background: rgba(239, 68, 68, 0.9);
-  border-color: rgba(239, 68, 68, 1);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
-  cursor: pointer;
-}
-
-/* Text Box Input */
-.text-box-input {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  margin-top: -10px;
-  z-index: 100;
-}
-
-.text-box-input input {
-  padding: 8px 12px;
-  border: 2px solid #3b82f6;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  background: white;
-  color: #1e293b;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  min-width: 200px;
-  outline: none;
-}
-
-.dark-mode .text-box-input input {
-  background: var(--brand-tertiary);
-  color: white;
-  border-color: #60a5fa;
-}
-
-.text-box-input input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
-}
-
-/* Main Content Area - Flex Container */
-.viewer-main-content {
-  display: flex;
-  gap: 0;
-  position: relative;
-  min-height: calc(100vh - 200px);
-}
-
-/* Annotations Sidebar - Left Side */
-.annotations-sidebar {
-  width: 320px;
-  min-width: 320px;
-  background: white;
-  border-right: 2px solid rgba(197, 166, 249, 0.3);
-  padding: 20px;
-  overflow-y: auto;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-  max-height: calc(100vh - 200px);
-  position: sticky;
-  top: 0;
-}
-
-.dark-mode .annotations-sidebar {
-  background: var(--brand-tertiary);
-}
-
-.annotations-sidebar h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid rgba(197, 166, 249, 0.3);
-}
-
-.annotations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.annotation-item {
-  padding: 12px;
-  background: rgba(157, 138, 219, 0.1);
-  border: 2px solid rgba(197, 166, 249, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.annotation-item:hover {
-  background: rgba(157, 138, 219, 0.2);
-  border-color: var(--accent-primary);
-  transform: translateX(4px);
-}
-
-.annotation-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: var(--brand-secondary);
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.annotation-page {
-  color: var(--text-secondary);
-}
-
-.annotation-text {
-  font-size: 13px;
-  color: var(--text-primary);
-  line-height: 1.5;
-  margin: 0;
-}
-
-.delete-annotation {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.1);
   border: none;
-  color: #ef4444;
-  font-size: 18px;
-  font-weight: 700;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease;
 }
 
-.delete-annotation:hover {
-  background: #ef4444;
-  color: white;
-  transform: scale(1.1);
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .annotations-sidebar {
-    width: 280px;
-    min-width: 280px;
-  }
-  
-  .viewer-main-content {
-    flex-direction: column;
-  }
-  
-  .annotations-sidebar {
-    width: 100%;
-    max-height: 300px;
-    position: relative;
-    border-right: none;
-    border-bottom: 2px solid rgba(197, 166, 249, 0.3);
-    max-width: 100%;
-  }
-  
-  .zoom-controls {
-    top: 100px;
-    right: 20px;
-    padding: 10px;
-  }
-  
-  .pdf-document-wrapper {
-    padding: 15px;
-  }
-}
-
-@media (max-width: 768px) {
-  .pdf-toolbar {
-    padding: 10px 12px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .toolbar-left {
-    gap: 8px;
-    flex: 1;
-    min-width: 200px;
-  }
-  
-  .toolbar-right {
-    gap: 6px;
-  }
-  
-  .toolbar-btn {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-  
-  .toolbar-btn span {
-    display: none;
-  }
-
-  .document-title {
-    max-width: 150px;
-  }
-
-  .document-title h2 {
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .document-info {
-    font-size: 10px;
-    display: none;
-  }
-
-  .edit-toolbar {
-    padding: 8px 12px;
-    overflow-x: auto;
-  }
-
-  .edit-tools {
-    justify-content: flex-start;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-
-  .tool-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .tool-btn span {
-    display: none;
-  }
-
-  .zoom-controls {
-    top: 80px;
-    right: 10px;
-    padding: 8px;
-    gap: 6px;
-  }
-
-  .zoom-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
-  
-  .zoom-level {
-    font-size: 12px;
-    padding: 6px 0;
-  }
-
-  .page-navigation {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px;
-  }
-  
-  .page-info {
-    font-size: 13px;
-  }
-
-  .annotations-sidebar {
-    width: 100%;
-    padding: 15px;
-    max-height: 250px;
-  }
-  
-  .annotations-sidebar h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
-  }
-  
-  .annotation-item {
-    padding: 10px;
-  }
-  
-  .annotation-text {
-    font-size: 12px;
-  }
-  
-  .pdf-content {
-    padding: 10px;
-  }
-  
-  .pdf-document-wrapper {
-    padding: 10px;
-  }
-  
-  .pdf-page-container {
-    margin-bottom: 15px;
-  }
-  
-  .page-number-label {
-    font-size: 11px;
-    padding: 6px 12px;
-  }
-  
-  .viewer-main-content {
-    min-height: calc(100vh - 150px);
-  }
-}
-
-@media (max-width: 480px) {
-  .pdf-toolbar {
-    padding: 8px;
-  }
-  
-  .toolbar-left {
-    min-width: 120px;
-  }
-  
-  .toolbar-btn {
-    padding: 6px 10px;
-    font-size: 16px;
-  }
-  
-  .back-btn {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-  
-  .document-title {
-    display: none;
-  }
-
-  .edit-toolbar {
-    padding: 6px 8px;
-  }
-
-  .edit-tools {
-    gap: 4px;
-  }
-  
-  .tool-btn {
-    padding: 6px 10px;
-    font-size: 16px;
-    min-width: 40px;
-  }
-
-  .zoom-controls {
-    top: 70px;
-    right: 5px;
-    padding: 6px;
-    gap: 4px;
-  }
-  
-  .zoom-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-  
-  .zoom-level {
-    font-size: 11px;
-    padding: 4px 0;
-  }
-  
-  .annotations-sidebar {
-    padding: 12px;
-    max-height: 200px;
-  }
-  
-  .annotations-sidebar h3 {
-    font-size: 14px;
-    margin-bottom: 10px;
-  }
-  
-  .annotation-item {
-    padding: 8px;
-  }
-  
-  .annotation-header {
-    font-size: 11px;
-  }
-  
-  .annotation-text {
-    font-size: 11px;
-  }
-  
-  .delete-annotation {
-    width: 20px;
-    height: 20px;
-    font-size: 14px;
-  }
-  
-  .pdf-content {
-    padding: 5px;
-  }
-  
-  .pdf-document-wrapper {
-    padding: 5px;
-  }
-  
-  .pdf-page-container {
-    margin-bottom: 10px;
-  }
-  
-  .page-number-label {
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-  
-  .page-navigation {
-    padding: 8px;
-  }
-  
-  .page-info {
-    font-size: 12px;
-  }
-  
-  .viewer-main-content {
-    min-height: calc(100vh - 130px);
-  }
-}
-
-@media (max-width: 360px) {
-  .toolbar-btn {
-    padding: 5px 8px;
-    font-size: 14px;
-  }
-  
-  .edit-tools {
-    gap: 3px;
-  }
-  
-  .tool-btn {
-    padding: 5px 8px;
-    font-size: 14px;
-    min-width: 36px;
-  }
-  
-  .zoom-controls {
-    right: 3px;
-    padding: 5px;
-  }
-  
-  .zoom-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 11px;
-  }
-  
-  .annotations-sidebar {
-    padding: 10px;
-  }
-}
-
-/* Dark Mode Adjustments */
-.dark-mode .toolbar-btn {
-  background: rgba(139, 127, 199, 0.2);
-  border-color: rgba(139, 127, 199, 0.4);
-}
-
-.dark-mode .tool-btn {
-  background: rgba(107, 91, 149, 0.2);
-  border-color: rgba(139, 127, 199, 0.3);
-}
-
-.dark-mode .annotation-item {
-  background: rgba(45, 38, 64, 0.3);
-  border-color: rgba(139, 127, 199, 0.3);
+.error-message button:hover {
+  background: #6d28d9;
 }

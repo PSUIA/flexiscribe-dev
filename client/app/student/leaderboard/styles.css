@@ -40,7 +40,6 @@
 }
 
 .podium-card {
-  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-tertiary) 100%);
   border-radius: 20px;
   padding: 30px 20px;
   display: flex;
@@ -59,6 +58,7 @@
 
 /* Position-specific styling */
 .first-place {
+  background: radial-gradient(circle, #FFF6C5 0%, #FFD700 100%);
   grid-column: 2;
   grid-row: 1;
   transform: scale(1.1);
@@ -66,6 +66,7 @@
 }
 
 .second-place {
+  background: radial-gradient(circle, #A5DEFF 0%, #00A1FF 100%);
   grid-column: 1;
   grid-row: 1;
   margin-top: 20px;
@@ -73,6 +74,7 @@
 }
 
 .third-place {
+  background: radial-gradient(circle, #DD7B65 0%, #873F1E 100%);
   grid-column: 3;
   grid-row: 1;
   margin-top: 20px;
@@ -108,27 +110,27 @@
 }
 
 .gold-medal {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #9E8500 100%);
 }
 
 .gold-medal::before {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #9E8500 100%);
 }
 
 .silver-medal {
-  background: linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 100%);
+  background: linear-gradient(135deg, #00A1FF 0%, #00446C 100%);
 }
 
 .silver-medal::before {
-  background: linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 100%);
+  background: linear-gradient(135deg, #00A1FF 0%, #00446C 100%);
 }
 
 .bronze-medal {
-  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+  background: linear-gradient(135deg, #873F1E 0%, #331703 100%);
 }
 
 .bronze-medal::before {
-  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+  background: linear-gradient(135deg, #873F1E 0%, #331703 100%);
 }
 
 .medal-text {
@@ -158,7 +160,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--brand-primary) 100%);
+  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-tertiary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,20 +185,48 @@
 .podium-username {
   font-size: 20px;
   font-weight: 700;
-  color: var(--accent-secondary);
   margin: 0 0 8px 0;
   text-align: center;
 }
 
+/* 1st Place (Gold) - Shadow is Dark Goldenrod/Brown */
 .first-place .podium-username {
   font-size: 24px;
+  color: #FFFFFF; /* Ensure text is white to pop against gold */
+  text-shadow: 0px 2px 4px rgba(184, 134, 11, 0.6); 
+}
+
+/* 2nd Place (Blue) - Shadow is Deep Navy */
+.second-place .podium-username {
+  color: #FFFFFF;
+  text-shadow: 0px 2px 4px rgba(0, 50, 100, 0.6);
+}
+
+/* 3rd Place (Bronze) - Shadow is Dark Chocolate/Maroon */
+.third-place .podium-username {
+  color: #FFFFFF;
+  text-shadow: 0px 2px 4px rgba(80, 20, 0, 0.7);
 }
 
 .podium-xp {
   font-size: 16px;
-  color: var(--accent-primary);
   margin: 0 0 15px 0;
   font-weight: 600;
+}
+
+.first-place .podium-xp {
+  color: #FFFFFF;
+  text-shadow: 0px 2px 4px rgba(184, 134, 11, 0.6); 
+}
+
+.second-place .podium-xp {
+  color: #FFFFFF;
+  text-shadow: 0px 2px 4px rgba(0, 50, 100, 0.6);
+}
+
+.third-place .podium-xp {
+  color: #FFFFFF;
+  text-shadow: 0px 2px 4px rgba(80, 20, 0, 0.7);
 }
 
 .podium-rank-badge {
@@ -211,7 +241,7 @@
 
 .podium-rank-badge .rank-icon {
   font-size: 18px;
-  color: var(--accent-primary);
+  color: var(--accent-secondary);
 }
 
 .podium-rank-badge span {
@@ -314,11 +344,11 @@
 }
 
 .medal-icon.silver {
-  color: #C0C0C0;
+  color: #00A1FF;
 }
 
 .medal-icon.bronze {
-  color: #CD7F32;
+  color: #873F1E;
 }
 
 /* Username Column */

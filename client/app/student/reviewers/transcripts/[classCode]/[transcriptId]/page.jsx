@@ -21,6 +21,8 @@ export default function TranscriptViewerPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const contentRef = useRef(null);
+  const [lastTouchDistance, setLastTouchDistance] = useState(null);
+  const [touchStartScale, setTouchStartScale] = useState(null);
   
   // Get transcript info
   const transcripts = mockTranscriptsByClass[classCode] || [];
@@ -126,6 +128,42 @@ export default function TranscriptViewerPage() {
     }
   };
 
+  // Touch events for pinch-to-zoom
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      setLastTouchDistance(distance);
+      setTouchStartScale(scale);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && lastTouchDistance && touchStartScale) {
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      const scaleFactor = distance / lastTouchDistance;
+      const newScale = Math.max(0.5, Math.min(touchStartScale * scaleFactor, 3.0));
+      setScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.touches.length < 2) {
+      setLastTouchDistance(null);
+      setTouchStartScale(null);
+    }
+  };
+
   if (!transcript) {
     return (
       <div className="docx-viewer-container">
@@ -195,7 +233,13 @@ export default function TranscriptViewerPage() {
       </div>
 
       {/* Document Content */}
-      <div className="docx-content-wrapper" ref={contentRef}>
+      <div 
+        className="docx-content-wrapper" 
+        ref={contentRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="docx-document-wrapper">
           {loading ? (
             <div className="loading-spinner">

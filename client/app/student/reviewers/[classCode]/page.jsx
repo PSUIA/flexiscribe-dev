@@ -58,9 +58,29 @@ export default function ClassReviewersPage() {
     router.push(`/student/reviewers/${classCode}/${reviewer.id}`);
   };
 
-  const handleGenerateQuiz = (reviewer) => {
-    console.log("Generating quiz from:", reviewer);
-    // TODO: Navigate to quiz generation
+  const handleGenerateQuiz = (reviewer, e) => {
+    // Prevent card click event from firing
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    // In a real application, this would:
+    // 1. Call an API to generate a quiz from the reviewer content
+    // 2. Store the generated quiz
+    // 3. Navigate to the new quiz
+    
+    // For demo purposes, navigate to quizzes page with a success message
+    console.log("Generating quiz from:", reviewer.title);
+    
+    // Store a temporary flag to show success message
+    localStorage.setItem('quiz-generated', JSON.stringify({
+      reviewerTitle: reviewer.title,
+      classCode: classCode,
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Navigate to quizzes page where the new quiz would appear
+    router.push('/student/quizzes');
   };
 
   if (!mounted || !currentTime) {
@@ -219,7 +239,7 @@ export default function ClassReviewersPage() {
                       <FaEye />
                       <span>View</span>
                     </button>
-                    <button className="action-btn quiz-btn" onClick={() => handleGenerateQuiz(reviewer)}>
+                    <button className="action-btn quiz-btn" onClick={(e) => handleGenerateQuiz(reviewer, e)}>
                       <FaGamepad />
                       <span>Generate Quiz</span>
                     </button>

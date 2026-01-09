@@ -1,93 +1,116 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Editor } from "@tinymce/tinymce-react";
 import { 
-  FaMoon, FaSun, FaArrowLeft, FaDownload, FaSearchPlus, FaSearchMinus, 
-  FaChevronLeft, FaChevronRight, FaHighlighter, FaStickyNote,
-  FaFont, FaEraser, FaSave, FaExpand, FaCompress, FaEyeSlash, FaEye
+  FaMoon, FaSun, FaArrowLeft, FaDownload, FaSave
 } from "react-icons/fa";
+import mammoth from "mammoth";
 import { mockReviewersByClass } from "../../../dashboard/mockData";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import "react-pdf/dist/esm/Page/TextLayer.css";
 import "./styles.css";
 
-// PDF.js options - defined outside component to prevent recreation
-const pdfOptions = {
-  cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
-  cMapPacked: true,
-  standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-};
-
-export default function PDFViewerPage() {
+export default function ReviewerEditorPage() {
   const router = useRouter();
   const params = useParams();
   const classCode = params.classCode;
   const reviewerId = params.reviewerId;
   
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [editorContent, setEditorContent] = useState("");
+  const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [activeTool, setActiveTool] = useState(null);
-  const [annotations, setAnnotations] = useState([]);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [showEditToolbar, setShowEditToolbar] = useState(true);
-  const [textBoxPosition, setTextBoxPosition] = useState(null);
-  const [textBoxPage, setTextBoxPage] = useState(null);
-  const [draggingAnnotation, setDraggingAnnotation] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [contentLoaded, setContentLoaded] = useState(false);
+  const editorRef = useRef(null);
   
   // Get reviewer data
   const reviewers = mockReviewersByClass[classCode] || [];
   const reviewer = reviewers.find(r => r.id === parseInt(reviewerId));
+  const docxUrl = "/sample.docx";
 
-  // For demo purposes, we'll use a sample PDF URL
-  // In production, this would come from your backend/storage
-  const pdfUrl = "/sample.pdf"; // You'll need to add a sample PDF to your public folder
-
-  // Set up PDF.js worker
+  // Load theme preference
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark-mode');
+    }
   }, []);
 
+  // Load DOCX document
   useEffect(() => {
-    // Load saved annotations from localStorage
-    const savedAnnotations = localStorage.getItem(`annotations-${classCode}-${reviewerId}`);
-    if (savedAnnotations) {
-      setAnnotations(JSON.parse(savedAnnotations));
-    }
-  }, [classCode, reviewerId]);
+    const loadDocument = async () => {
+      try {
+        console.log("Loading document from:", docxUrl);
+        
+        // Check localStorage first
+        const savedContent = localStorage.getItem(`reviewer-${classCode}-${reviewerId}`);
+        if (savedContent) {
+          console.log("Loading from localStorage");
+          setEditorContent(savedContent);
+          setContentLoaded(true);
+          setLoading(false);
+          return;
+        }
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-  };
+        console.log("Fetching DOCX file...");
+        const response = await fetch(docxUrl);
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) throw new Error(`Document not found: ${response.status}`);
+        
+        const arrayBuffer = await response.arrayBuffer();
+        console.log("ArrayBuffer size:", arrayBuffer.byteLength);
+        
+        const result = await mammoth.convertToHtml({ 
+          arrayBuffer,
+          styleMap: [
+            "p[style-name='Heading 1'] => h1:fresh",
+            "p[style-name='Heading 2'] => h2:fresh",
+            "p[style-name='Heading 3'] => h3:fresh",
+            "b => strong",
+            "i => em",
+          ]
+        });
+        
+        console.log("Conversion result:", result.value.substring(0, 200));
+        setEditorContent(result.value);
+        setContentLoaded(true);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading document:", err);
+        setEditorContent(`
+          <h1>Welcome to the Reviewer Editor</h1>
+          <p>Start typing to create your document...</p>
+          <p><em>Note: Place a DOCX file at public/sample.docx to load it automatically.</em></p>
+          <p style="color: red;"><strong>Error: ${err.message}</strong></p>
+        `);
+        setLoading(false);
+      }
+    };
 
-  const changePage = (offset) => {
-    setPageNumber(prevPageNumber => {
-      const newPage = prevPageNumber + offset;
-      return Math.max(1, Math.min(newPage, numPages));
+    loadDocument();
+  }, [classCode, reviewerId, docxUrl]);
+
+  // Set content after TinyMCE editor is ready
+  useEffect(() => {
+    console.log('Content effect triggered:', {
+      hasEditor: !!editorRef.current,
+      contentLoaded,
+      contentLength: editorContent?.length || 0
     });
-  };
-
-  const handleZoomIn = () => {
-    setScale(prevScale => Math.min(prevScale + 0.2, 3.0));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prevScale => Math.max(prevScale - 0.2, 0.5));
-  };
-
-  const handleDownload = () => {
-    // Create a temporary link element to trigger download
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${reviewer?.title || 'document'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    
+    if (editorRef.current && contentLoaded && editorContent) {
+      console.log('Setting content in editor, length:', editorContent.length);
+      console.log('First 100 chars:', editorContent.substring(0, 100));
+      try {
+        editorRef.current.setContent(editorContent);
+        console.log('✓ Content successfully set in editor');
+      } catch (err) {
+        console.error('✗ Error setting content:', err);
+      }
+    }
+  }, [contentLoaded, editorContent]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -100,457 +123,196 @@ export default function PDFViewerPage() {
     }
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
-
-  const handleToolSelect = (tool) => {
-    setActiveTool(activeTool === tool ? null : tool);
-    setTextBoxPosition(null);
-  };
-
-  const handleSaveAnnotations = () => {
-    localStorage.setItem(`annotations-${classCode}-${reviewerId}`, JSON.stringify(annotations));
-    alert('Annotations saved successfully!');
-  };
-
-  const handleClearAnnotations = () => {
-    if (window.confirm('Are you sure you want to clear all annotations?')) {
-      setAnnotations([]);
-      localStorage.removeItem(`annotations-${classCode}-${reviewerId}`);
-      setActiveTool(null);
-    }
-  };
-
-  const handleAddNote = () => {
-    const noteText = prompt('Enter your note:');
-    if (noteText) {
-      const newAnnotation = {
-        id: Date.now(),
-        type: 'note',
-        page: pageNumber,
-        text: noteText,
-        timestamp: new Date().toISOString()
-      };
-      setAnnotations([...annotations, newAnnotation]);
-    }
-  };
-
-  const handleTextSelection = (e, pageNum) => {
-    if (activeTool !== 'highlight') return;
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveStatus("Saving...");
     
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    if (selectedText) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const pageElement = e.currentTarget;
-      const pageRect = pageElement.getBoundingClientRect();
+    try {
+      localStorage.setItem(`reviewer-${classCode}-${reviewerId}`, editorContent);
       
-      const newAnnotation = {
-        id: Date.now(),
-        type: 'highlight',
-        page: pageNum,
-        text: selectedText,
-        position: {
-          x: ((rect.left - pageRect.left) / pageRect.width) * 100,
-          y: ((rect.top - pageRect.top) / pageRect.height) * 100,
-          width: (rect.width / pageRect.width) * 100,
-          height: (rect.height / pageRect.height) * 100
-        },
-        timestamp: new Date().toISOString()
-      };
+      // TODO: Backend Integration
+      // await fetch('http://your-backend-url/api/reviewers/save', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     classCode,
+      //     reviewerId,
+      //     content: editorContent,
+      //     format: 'html'
+      //   })
+      // });
       
-      setAnnotations([...annotations, newAnnotation]);
-      selection.removeAllRanges();
+      setSaveStatus("✓ Saved");
+      setTimeout(() => setSaveStatus(""), 2000);
+    } catch (error) {
+      console.error("Save error:", error);
+      setSaveStatus("✗ Error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handlePageClick = (e, pageNum) => {
-    if (activeTool === 'text') {
-      const pageElement = e.currentTarget;
-      const rect = pageElement.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
+  const handleDownloadPDF = async () => {
+    try {
+      // TODO: Backend Integration
+      // const response = await fetch('http://your-backend-url/api/reviewers/convert-to-pdf', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ content: editorContent })
+      // });
+      // const blob = await response.blob();
+      // const url = window.URL.createObjectURL(blob);
+      // const a = document.createElement('a');
+      // a.href = url;
+      // a.download = `${reviewer?.title || 'reviewer'}.pdf`;
+      // a.click();
       
-      setTextBoxPosition({ x, y });
-      setTextBoxPage(pageNum);
-    } else if (activeTool === 'clear') {
-      // Clear mode - clicking background does nothing
-      return;
-    }
-  };
-
-  const handleTextBoxSubmit = (text) => {
-    if (text && textBoxPosition && textBoxPage) {
-      const newAnnotation = {
-        id: Date.now(),
-        type: 'text',
-        page: textBoxPage,
-        text: text,
-        position: textBoxPosition,
-        timestamp: new Date().toISOString()
-      };
-      
-      setAnnotations([...annotations, newAnnotation]);
-      setTextBoxPosition(null);
-      setTextBoxPage(null);
-      setActiveTool(null);
-    }
-  };
-
-  const handleDeleteAnnotation = (annotationId, e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    
-    if (activeTool === 'clear') {
-      setAnnotations(annotations.filter(a => a.id !== annotationId));
-    }
-  };
-
-  const handleAddText = () => {
-    setActiveTool('text');
-  };
-
-  const handleTextMouseDown = (e, annotation, pageNum) => {
-    if (activeTool === 'clear') return; // Don't drag in eraser mode
-    
-    e.stopPropagation();
-    const pageElement = e.currentTarget.closest('.pdf-page-container');
-    const rect = pageElement.getBoundingClientRect();
-    
-    const clickX = ((e.clientX - rect.left) / rect.width) * 100;
-    const clickY = ((e.clientY - rect.top) / rect.height) * 100;
-    
-    setDraggingAnnotation(annotation.id);
-    setDragOffset({
-      x: clickX - annotation.position.x,
-      y: clickY - annotation.position.y
-    });
-  };
-
-  const handleMouseMove = (e, pageNum) => {
-    if (!draggingAnnotation) return;
-    
-    const pageElement = e.currentTarget;
-    const rect = pageElement.getBoundingClientRect();
-    
-    const newX = ((e.clientX - rect.left) / rect.width) * 100 - dragOffset.x;
-    const newY = ((e.clientY - rect.top) / rect.height) * 100 - dragOffset.y;
-    
-    // Clamp values to keep text within page bounds
-    const clampedX = Math.max(0, Math.min(100, newX));
-    const clampedY = Math.max(0, Math.min(100, newY));
-    
-    setAnnotations(annotations.map(ann => 
-      ann.id === draggingAnnotation
-        ? { ...ann, position: { ...ann.position, x: clampedX, y: clampedY } }
-        : ann
-    ));
-  };
-
-  const handleMouseUp = () => {
-    if (draggingAnnotation) {
-      setDraggingAnnotation(null);
-      setDragOffset({ x: 0, y: 0 });
+      alert("PDF download will be implemented with backend. See BACKEND_INTEGRATION.md");
+    } catch (error) {
+      console.error("PDF download error:", error);
     }
   };
 
   if (!reviewer) {
     return (
-      <div className="pdf-viewer-container">
+      <div className="reviewer-editor-container">
         <div className="error-message">
           <h2>Reviewer not found</h2>
-          <button onClick={() => router.push(`/student/reviewers/${classCode}`)}>
-            Go Back
-          </button>
+          <button onClick={() => router.push(`/student/reviewers/${classCode}`)}>Go Back</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pdf-viewer-container">
-      {/* Header Toolbar */}
-      <div className="pdf-toolbar">
+    <div className={`reviewer-editor-container ${darkMode ? 'dark-mode' : ''}`}>
+      {/* Toolbar */}
+      <div className="editor-toolbar">
         <div className="toolbar-left">
-          <button className="back-btn" onClick={() => router.push(`/student/reviewers/${classCode}`)}>
-            <FaArrowLeft className="back-icon" />
+          <button className="toolbar-btn back-btn" onClick={() => router.back()}>
+            <FaArrowLeft />
             <span>Back</span>
           </button>
           <div className="document-title">
             <h2>{reviewer.title}</h2>
-            <span className="document-info">{reviewer.subject} • {reviewer.fileSize}</span>
+            <div className="document-info">{classCode} • Editable Document</div>
           </div>
         </div>
-
         <div className="toolbar-right">
-          <button 
-            className="toolbar-btn" 
-            onClick={() => setShowEditToolbar(!showEditToolbar)} 
-            title={showEditToolbar ? "Hide Annotation Toolbar" : "Show Annotation Toolbar"}
-          >
-            {showEditToolbar ? <FaEyeSlash /> : <FaEye />}
+          {saveStatus && <div className="save-status">{saveStatus}</div>}
+          <button className="toolbar-btn" onClick={handleSave} disabled={isSaving}>
+            <FaSave />
+            <span>{isSaving ? "Saving..." : "Save"}</span>
           </button>
-          <button className="toolbar-btn" onClick={toggleDarkMode} title={darkMode ? "Light Mode" : "Dark Mode"}>
+          <button className="toolbar-btn" onClick={handleDownloadPDF}>
+            <FaDownload />
+            <span>Download PDF</span>
+          </button>
+          <button className="toolbar-btn icon-only" onClick={toggleDarkMode}>
             {darkMode ? <FaSun /> : <FaMoon />}
           </button>
-          <button className="toolbar-btn" onClick={handleDownload} title="Download PDF">
-            <FaDownload />
-          </button>
-          <button className="toolbar-btn" onClick={toggleFullscreen} title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
-            {isFullscreen ? <FaCompress /> : <FaExpand />}
-          </button>
         </div>
       </div>
 
-      {/* Edit Toolbar */}
-      {showEditToolbar && (
-      <div className="edit-toolbar">
-        <div className="edit-tools">
-          <button 
-            className={`tool-btn ${activeTool === 'highlight' ? 'active' : ''}`}
-            onClick={() => handleToolSelect('highlight')}
-            title="Highlight"
-          >
-            <FaHighlighter />
-            <span>Highlight</span>
-          </button>
-          <button 
-            className={`tool-btn ${activeTool === 'note' ? 'active' : ''}`}
-            onClick={handleAddNote}
-            title="Add Note"
-          >
-            <FaStickyNote />
-            <span>Note</span>
-          </button>
-          <button 
-            className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`}
-            onClick={handleAddText}
-            title="Add Text"
-          >
-            <FaFont />
-            <span>Text</span>
-          </button>
-          <button 
-            className="tool-btn"
-            onClick={handleClearAnnotations}
-            title="Clear All Annotations"
-          >
-            <FaEraser />
-            <span>Clear All</span>
-          </button>
-          <button 
-            className={`tool-btn ${activeTool === 'clear' ? 'active' : ''}`}
-            onClick={() => handleToolSelect('clear')}
-            title="Eraser Mode"
-          >
-            <FaEraser />
-            <span>Eraser</span>
-          </button>
-          <button 
-            className="tool-btn save-btn"
-            onClick={handleSaveAnnotations}
-            title="Save Annotations"
-          >
-            <FaSave />
-            <span>Save</span>
-          </button>
-        </div>
-      </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="viewer-main-content">
-        {/* Annotations Sidebar - Left Side */}
-        {annotations.length > 0 && (
-          <div className="annotations-sidebar">
-            <h3>Annotations ({annotations.length})</h3>
-            <div className="annotations-list">
-              {annotations.map(annotation => (
-                <div 
-                  key={annotation.id} 
-                  className="annotation-item"
-                  onClick={() => setPageNumber(annotation.page)}
-                >
-                  <div className="annotation-header">
-                    {annotation.type === 'note' && <FaStickyNote />}
-                    {annotation.type === 'text' && <FaFont />}
-                    {annotation.type === 'highlight' && <FaHighlighter />}
-                    <span className="annotation-page">Page {annotation.page}</span>
-                  </div>
-                  <p className="annotation-text">{annotation.text}</p>
-                  <button 
-                    className="delete-annotation"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setAnnotations(annotations.filter(a => a.id !== annotation.id));
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+      {/* Editor */}
+      <div className="editor-content">
+        {loading ? (
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p>Loading document...</p>
+          </div>
+        ) : (
+          <div className="tinymce-wrapper">
+            <Editor
+              tinymceScriptSrc="/tinymce/tinymce.min.js"
+              initialValue="<p>Loading content...</p>"
+              onInit={(evt, editor) => {
+                editorRef.current = editor;
+                console.log("TinyMCE initialized, editor ready");
+                console.log("Content available at init:", editorContent?.length || 0, "chars");
+                
+                // If content is already loaded, set it now
+                if (contentLoaded && editorContent) {
+                  console.log('Content already loaded, setting immediately');
+                  console.log('First 100 chars of content:', editorContent.substring(0, 100));
+                  try {
+                    editor.setContent(editorContent);
+                    console.log('✓ Content set successfully in onInit');
+                    
+                    // Verify content was actually set
+                    const currentContent = editor.getContent();
+                    console.log('Verified content in editor:', currentContent.length, 'chars');
+                  } catch (err) {
+                    console.error('✗ Error setting content in onInit:', err);
+                  }
+                }
+              }}
+              onEditorChange={(content) => setEditorContent(content)}
+              init={{
+                height: 700,
+                width: '100%',
+                menubar: false,
+                promotion: false,
+                license_key: 'gpl',
+                plugins: [
+                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                  'anchor', 'searchreplace', 'visualblocks', 'code',
+                  'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                ],
+                toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright | bullist numlist | table | removeformat',
+                table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol | tablecellprops tablemergecells tablesplitcells',
+                content_style: `
+                  body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #1a1a1a;
+                    padding: 20px;
+                  }
+                  table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 20px 0;
+                    table-layout: fixed;
+                  }
+                  table td, table th {
+                    border: 2px solid #5b21b6;
+                    padding: 12px;
+                    vertical-align: top;
+                  }
+                  table tr:first-child td, table tr:first-child th {
+                    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+                    color: white;
+                    font-weight: 700;
+                  }
+                  table td[style*="width: 30%"] {
+                    background: #f3f4f6;
+                    width: 30%;
+                  }
+                  table td[style*="width: 70%"] {
+                    background: #white;
+                    width: 70%;
+                  }
+                  table td[colspan] {
+                    background: #fefce8;
+                  }
+                `,
+                skin: darkMode ? 'oxide-dark' : 'oxide',
+                content_css: darkMode ? 'dark' : 'default',
+                branding: false,
+                resize: false,
+                statusbar: true,
+                table_default_attributes: {
+                  border: '2'
+                },
+                table_default_styles: {
+                  'border-collapse': 'collapse',
+                  'width': '100%'
+                }
+              }}
+            />
           </div>
         )}
-
-      {/* PDF Viewer Container */}
-      <div className={`pdf-content ${activeTool ? `tool-active tool-${activeTool}` : ''}`}>
-        {/* Zoom Controls */}
-        <div className="zoom-controls">
-          <button className="zoom-btn" onClick={handleZoomOut} disabled={scale <= 0.5}>
-            <FaSearchMinus />
-          </button>
-          <span className="zoom-level">{Math.round(scale * 100)}%</span>
-          <button className="zoom-btn" onClick={handleZoomIn} disabled={scale >= 3.0}>
-            <FaSearchPlus />
-          </button>
-        </div>
-
-        {/* PDF Document */}
-        <div className="pdf-document-wrapper">
-          <Document
-            file={pdfUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            options={pdfOptions}
-            loading={
-              <div className="loading-spinner">
-                <div className="spinner"></div>
-                <p>Loading PDF...</p>
-              </div>
-            }
-            error={
-              <div className="error-message">
-                <p>Failed to load PDF. Please make sure a sample PDF exists in the public folder.</p>
-                <p className="error-note">For demo: Add a file named "sample.pdf" to the public folder</p>
-              </div>
-            }
-          >
-            {/* Render all pages for scrolling */}
-            {Array.from(new Array(numPages), (el, index) => (
-              <div 
-                key={`page_${index + 1}`} 
-                className="pdf-page-container"
-                onMouseUp={(e) => handleTextSelection(e, index + 1)}
-                onClick={(e) => handlePageClick(e, index + 1)}
-                onMouseMove={(e) => handleMouseMove(e, index + 1)}
-                onMouseUpCapture={handleMouseUp}
-              >
-                <Page 
-                  pageNumber={index + 1} 
-                  scale={scale}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                  className="pdf-page"
-                />
-                <div className="page-number-label">Page {index + 1} of {numPages}</div>
-                
-                {/* Render Highlight Annotations */}
-                {annotations
-                  .filter(ann => ann.page === index + 1 && ann.type === 'highlight' && ann.position)
-                  .map(annotation => (
-                    <div 
-                      key={annotation.id} 
-                      className={`annotation-overlay highlight-overlay ${activeTool === 'clear' ? 'erasable' : ''}`}
-                      style={{
-                        left: `${annotation.position.x}%`,
-                        top: `${annotation.position.y}%`,
-                        width: `${annotation.position.width}%`,
-                        height: `${annotation.position.height}%`,
-                      }}
-                      onClick={(e) => handleDeleteAnnotation(annotation.id, e)}
-                      title={activeTool === 'clear' ? 'Click to erase' : annotation.text}
-                    />
-                  ))}
-                
-                {/* Render Text Annotations */}
-                {annotations
-                  .filter(ann => ann.page === index + 1 && ann.type === 'text' && ann.position)
-                  .map(annotation => (
-                    <div 
-                      key={annotation.id} 
-                      className={`annotation-overlay text-overlay ${activeTool === 'clear' ? 'erasable' : ''} ${draggingAnnotation === annotation.id ? 'dragging' : ''}`}
-                      style={{
-                        left: `${annotation.position.x}%`,
-                        top: `${annotation.position.y}%`,
-                      }}
-                      onMouseDown={(e) => handleTextMouseDown(e, annotation, index + 1)}
-                      onClick={(e) => {
-                        if (activeTool === 'clear') {
-                          handleDeleteAnnotation(annotation.id, e);
-                        }
-                      }}
-                      title={activeTool === 'clear' ? 'Click to erase' : 'Drag to move'}
-                    >
-                      {annotation.text}
-                    </div>
-                  ))}
-                
-                {/* Text Box Input (when placing new text) */}
-                {textBoxPosition && textBoxPage === index + 1 && (
-                  <div 
-                    className="text-box-input"
-                    style={{
-                      left: `${textBoxPosition.x}%`,
-                      top: `${textBoxPosition.y}%`,
-                    }}
-                  >
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder="Enter text..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleTextBoxSubmit(e.target.value);
-                        } else if (e.key === 'Escape') {
-                          setTextBoxPosition(null);
-                          setTextBoxPage(null);
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value.trim()) {
-                          handleTextBoxSubmit(e.target.value);
-                        } else {
-                          setTextBoxPosition(null);
-                          setTextBoxPage(null);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-                
-                {/* Annotations for sidebar (notes only) */}
-                {annotations
-                  .filter(ann => ann.page === index + 1 && ann.type === 'note')
-                  .map(annotation => (
-                    <div key={annotation.id} className={`annotation annotation-${annotation.type}`}>
-                      <div className="annotation-content">
-                        <FaStickyNote className="annotation-icon" />
-                        <span>{annotation.text}</span>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </Document>
-        </div>
-
-        {/* Page Navigation Info */}
-        <div className="page-navigation">
-          <div className="page-info">
-            <span>Total Pages: {numPages || '--'}</span>
-          </div>
-        </div>
-      </div>
       </div>
     </div>
   );

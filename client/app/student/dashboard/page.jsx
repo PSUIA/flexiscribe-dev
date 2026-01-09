@@ -357,7 +357,7 @@ export default function StudentDashboard() {
             <div className="card rank-card lg:col-span-4" onClick={() => router.push("/student/rank")} style={{ cursor: 'pointer' }}>
               <div className="rank-card-content">
                 <div className="rank-badge-container">
-                  <img src="/img/ascendant-badge.png" alt="Badge" className="rank-badge-img" />
+                  <img src="/img/ascendant.png" alt="Badge" className="rank-badge-img" />
                 </div>
                 <div className="rank-info">
                   <div className="rank-name">{mockRankSystem.currentRank.name}</div>
@@ -434,7 +434,7 @@ export default function StudentDashboard() {
                       <div className="doc-subject">{getRecentReviewer().subject}</div>
                     </div>
                   </div>
-                  <button className="generate-quiz-btn" onClick={handleGenerateQuiz}>Generate Quiz</button>
+                  <button className="generate-quiz" onClick={handleGenerateQuiz}>Generate Quiz</button>
                 </div>
             </div>
 
