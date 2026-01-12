@@ -11,7 +11,7 @@ export const mockUserProfile = {
   course: "BSCpE",
   yearLevel: "4th Year",
   role: "Student",
-  profileImage: "/img/default-avatar.png"
+  profileImage: "/img/learner-1.png"
 };
 
 // Dashboard Stats

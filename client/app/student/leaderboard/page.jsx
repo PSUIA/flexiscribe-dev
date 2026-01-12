@@ -15,6 +15,9 @@ export default function StudentLeaderboard() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [displayedCount, setDisplayedCount] = useState(10); // Start with top 10
+  const [isLoading, setIsLoading] = useState(false);
+  const [userProfileImage, setUserProfileImage] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -30,8 +33,37 @@ export default function StudentLeaderboard() {
       document.documentElement.classList.add('dark-mode');
     }
 
+    // Load user's profile image
+    const savedImage = localStorage.getItem('userProfileImage');
+    if (savedImage) {
+      setUserProfileImage(savedImage);
+    }
+
     return () => clearInterval(timer);
   }, []);
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near the bottom
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Load more when within 200px of bottom
+      if (scrollPosition >= documentHeight - 200 && !isLoading && displayedCount < 100) {
+        setIsLoading(true);
+        
+        // Simulate loading delay (remove in production with real API)
+        setTimeout(() => {
+          setDisplayedCount(prev => Math.min(prev + 10, 100)); // Add 10 more, max 100
+          setIsLoading(false);
+        }, 300);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [displayedCount, isLoading]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -122,6 +154,9 @@ export default function StudentLeaderboard() {
   // Get top 3 users
   const topThree = mockLeaderboard.slice(0, 3);
   const restOfLeaderboard = mockLeaderboard.slice(3);
+
+  // Display only the number of users based on displayedCount
+  const displayedLeaderboard = mockLeaderboard.slice(0, displayedCount);
 
   // Find current user's rank
   const currentUserRank = mockLeaderboard.find(user => user.username === mockUserProfile.username);
@@ -282,7 +317,11 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    <FaStar className="avatar-icon" />
+                    {topThree[1]?.username === mockUserProfile.username && userProfileImage ? (
+                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    ) : (
+                      <FaStar className="avatar-icon" />
+                    )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[1]?.username}</h3>
@@ -302,7 +341,11 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    <FaStar className="avatar-icon" />
+                    {topThree[0]?.username === mockUserProfile.username && userProfileImage ? (
+                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    ) : (
+                      <FaStar className="avatar-icon" />
+                    )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[0]?.username}</h3>
@@ -322,7 +365,11 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    <FaStar className="avatar-icon" />
+                    {topThree[2]?.username === mockUserProfile.username && userProfileImage ? (
+                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    ) : (
+                      <FaStar className="avatar-icon" />
+                    )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[2]?.username}</h3>
@@ -345,7 +392,7 @@ export default function StudentLeaderboard() {
             </div>
 
             <div className="leaderboard-list">
-              {mockLeaderboard.map((user) => (
+              {displayedLeaderboard.map((user) => (
                 <div 
                   key={user.rank} 
                   className={`leaderboard-row ${user.username === mockUserProfile.username ? 'current-user' : ''}`}
@@ -363,7 +410,11 @@ export default function StudentLeaderboard() {
                   <div className="cell username-col">
                     <div className="leaderboard-user-info">
                       <div className="leaderboard-user-avatar">
-                        <FaStar className="avatar-icon" />
+                        {user.username === mockUserProfile.username && userProfileImage ? (
+                          <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        ) : (
+                          <FaStar className="avatar-icon" />
+                        )}
                       </div>
                       <span className="username">{user.username}</span>
                       {user.username === mockUserProfile.username && (
@@ -388,6 +439,21 @@ export default function StudentLeaderboard() {
                   </div>
                 </div>
               ))}
+              
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="loading-more">
+                  <div className="loading-spinner"></div>
+                  <span>Loading more...</span>
+                </div>
+              )}
+              
+              {/* End message when reached 100 */}
+              {displayedCount >= 100 && !isLoading && (
+                <div className="end-message">
+                  <span>🏆 You've reached the top 100! 🏆</span>
+                </div>
+              )}
             </div>
           </div>
 

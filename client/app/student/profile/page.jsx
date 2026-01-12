@@ -1,12 +1,28 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaCamera, FaSave } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaSave, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
 import UserMenu from "../dashboard/UserMenu";
 import NotificationMenu from "../dashboard/NotificationMenu";
 import SearchBar from "../dashboard/SearchBar";
 import { mockUserProfile } from "../dashboard/mockData";
 import "../../student/dashboard/styles.css";
+
+// Default avatar options
+const DEFAULT_AVATARS = [
+  "/img/learner-1.png",
+  "/img/learner-2.png",
+  "/img/learner-3.png",
+  "/img/habit-builder-1.png",
+  "/img/habit-builder-2.png",
+  "/img/habit-builder-3.png",
+  "/img/growth-seeker-1.png",
+  "/img/growth-seeker-2.png",
+  "/img/self-driven-1.png",
+  "/img/mastery-1.png",
+  "/img/peak-performer-1.png",
+  "/img/ascendant.png"
+];
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -14,7 +30,30 @@ export default function StudentProfile() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [profileImage, setProfileImage] = useState(mockUserProfile.profileImage);
+  const [profileImage, setProfileImage] = useState(() => {
+    // Load saved profile image from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('userProfileImage');
+      return saved || mockUserProfile.profileImage;
+    }
+    return mockUserProfile.profileImage;
+  });
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  
+  // Password state
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    verificationCode: ""
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [passwordStep, setPasswordStep] = useState(1); // 1: Enter passwords, 2: Verify code
+  const [generatedCode, setGeneratedCode] = useState("");
+  const [countdown, setCountdown] = useState(0);
 
   // Form state - initialized with mock data
   const [formData, setFormData] = useState({
@@ -41,8 +80,26 @@ export default function StudentProfile() {
       document.documentElement.classList.add('dark-mode');
     }
 
+    // Check if URL has hash for change-password
+    if (window.location.hash === '#change-password') {
+      setTimeout(() => {
+        const passwordSection = document.getElementById('change-password-section');
+        if (passwordSection) {
+          passwordSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+
     return () => clearInterval(timer);
   }, []);
+
+  // Countdown timer for resend code
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -67,20 +124,204 @@ export default function StudentProfile() {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleAvatarSelect = (avatarUrl) => {
+    setProfileImage(avatarUrl);
+    setShowAvatarSelector(false);
+    // Save to localStorage so it persists across pages
+    localStorage.setItem('userProfileImage', avatarUrl);
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error for this field
+    if (passwordErrors[name]) {
+      setPasswordErrors(prev => ({
+        ...prev,
+        [name]: ""
+      }));
     }
   };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality with API call
-    alert("Profile updated successfully!");
+  const validatePassword = () => {
+    const newErrors = {};
+
+    if (!passwordData.currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+    }
+
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = "New password is required";
+    } else if (passwordData.newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+    }
+
+    if (!passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      newErrors.newPassword = "New password must be different from current password";
+    }
+
+    setPasswordErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const generateVerificationCode = () => {
+    // Generate a 4-digit verification code
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  const sendVerificationCode = () => {
+    const code = generateVerificationCode();
+    setGeneratedCode(code);
+    setCountdown(60); // 60 seconds cooldown
+    
+    // TODO: Backend Integration - Send Verification Code
+    // API Endpoint: POST /api/student/send-verification-code
+    // Request Body: {
+    //   studentId: formData.studentId,
+    //   email: formData.email
+    // }
+    // Expected Response: {
+    //   success: boolean,
+    //   message: string
+    // }
+    
+    // In a real app, this would send the code via email
+    // For demo purposes, we'll just show it in console
+    console.log("Verification code:", code);
+    alert(`Verification code sent to ${formData.email}! (Demo code: ${code})`);
+  };
+
+  const handleContinueToVerification = () => {
+    if (!validatePassword()) {
+      return;
+    }
+    sendVerificationCode();
+    setPasswordStep(2);
+  };
+
+  const handleVerifyAndChangePassword = async () => {
+    if (!passwordData.verificationCode) {
+      setPasswordErrors({ verificationCode: "Please enter the verification code" });
+      return;
+    }
+
+    if (passwordData.verificationCode !== generatedCode) {
+      setPasswordErrors({ verificationCode: "Invalid verification code" });
+      return;
+    }
+
+    // Code is valid, proceed with password change
+    // API Endpoint: POST /api/student/change-password
+    // Request Body: {
+    //   studentId: formData.studentId,
+    //   currentPassword: passwordData.currentPassword,
+    //   newPassword: passwordData.newPassword
+    // }
+    // Expected Response: {
+    //   success: boolean,
+    //   message: string
+    // }
+    
+    try {
+      // const response = await fetch('/api/student/change-password', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     studentId: formData.studentId,
+      //     currentPassword: passwordData.currentPassword,
+      //     newPassword: passwordData.newPassword,
+      //     verificationCode: passwordData.verificationCode
+      //   })
+      // });
+      // const data = await response.json();
+      // if (data.success) {
+      //   alert("Password changed successfully!");
+      //   setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "", verificationCode: "" });
+      //   setPasswordStep(1);
+      //   setGeneratedCode("");
+      // } else {
+      //   setPasswordErrors({ verificationCode: data.message || "Failed to change password" });
+      // }
+      
+      // Mock success for now
+      alert("Password changed successfully!");
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "", verificationCode: "" });
+      setPasswordStep(1);
+      setGeneratedCode("");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      setPasswordErrors({ verificationCode: "An error occurred while changing password" });
+    }
+  };
+
+  const handleResendCode = () => {
+    if (countdown === 0) {
+      sendVerificationCode();
+    }
+  };
+
+  const handleBackToPasswordForm = () => {
+    setPasswordStep(1);
+    setPasswordData(prev => ({ ...prev, verificationCode: "" }));
+    setPasswordErrors({});
+  };
+
+  const handleSave = async () => {
+    // TODO: Backend Integration - Update Profile
+    // API Endpoint: PUT /api/student/profile
+    // Request Body: {
+    //   studentId: formData.studentId,
+    //   username: formData.username,
+    //   firstName: formData.firstName,
+    //   lastName: formData.lastName,
+    //   email: formData.email,
+    //   course: formData.course,
+    //   yearLevel: formData.yearLevel,
+    //   profileImage: profileImage
+    // }
+    // Expected Response: {
+    //   success: boolean,
+    //   message: string,
+    //   data: { updated user profile }
+    // }
+    
+    try {
+      // const response = await fetch('/api/student/profile', {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     studentId: formData.studentId,
+      //     username: formData.username,
+      //     firstName: formData.firstName,
+      //     lastName: formData.lastName,
+      //     email: formData.email,
+      //     course: formData.course,
+      //     yearLevel: formData.yearLevel,
+      //     profileImage: profileImage
+      //   })
+      // });
+      // const data = await response.json();
+      // if (data.success) {
+      //   alert("Profile updated successfully!");
+      // } else {
+      //   alert(data.message || "Failed to update profile");
+      // }
+      
+      // Mock success for now
+      alert("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("An error occurred while updating profile");
+    }
   };
 
   const handleBack = () => {
@@ -138,15 +379,15 @@ export default function StudentProfile() {
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/reviewers")}>
             <FaBook className="nav-icon" />
             <span>Reviewers</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/quizzes")}>
             <FaGamepad className="nav-icon" />
             <span>Quizzes</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/leaderboard")}>
             <FaTrophy className="nav-icon" />
             <span>Leaderboard</span>
           </div>
@@ -246,18 +487,33 @@ export default function StudentProfile() {
             <div className="profile-picture-section">
               <div className="profile-picture-container">
                 <img src={profileImage} alt="Profile Picture" className="profile-picture" />
-                <label htmlFor="profile-upload" className="profile-picture-overlay">
-                  <FaCamera />
-                  <span>Change Photo</span>
-                </label>
-                <input
-                  id="profile-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
+                <button 
+                  className="profile-picture-overlay"
+                  onClick={() => setShowAvatarSelector(!showAvatarSelector)}
+                  type="button"
+                >
+                  <FaUser />
+                  <span>Change Avatar</span>
+                </button>
               </div>
+              
+              {/* Avatar Selector */}
+              {showAvatarSelector && (
+                <div className="avatar-selector">
+                  <h3 className="avatar-selector-title">Choose Your Avatar</h3>
+                  <div className="avatar-grid">
+                    {DEFAULT_AVATARS.map((avatar, index) => (
+                      <div
+                        key={index}
+                        className={`avatar-option ${profileImage === avatar ? 'selected' : ''}`}
+                        onClick={() => handleAvatarSelect(avatar)}
+                      >
+                        <img src={avatar} alt={`Avatar ${index + 1}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Profile Form */}
@@ -357,6 +613,163 @@ export default function StudentProfile() {
                   <FaSave /> Save Changes
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Change Password Section */}
+          <div id="change-password-section" className="profile-card" style={{ marginTop: '2rem' }}>
+            <div className="password-section">
+              <div className="password-header">
+                <FaLock className="password-icon" />
+                <h2 className="password-title">Change Password</h2>
+              </div>
+              
+              {/* Step 1: Enter Passwords */}
+              {passwordStep === 1 && (
+                <div className="password-form">
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">Current Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        id="currentPassword"
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordChange}
+                        className={passwordErrors.currentPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {passwordErrors.currentPassword && (
+                      <span className="error-message">{passwordErrors.currentPassword}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="newPassword">New Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        id="newPassword"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordChange}
+                        className={passwordErrors.newPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {passwordErrors.newPassword && (
+                      <span className="error-message">{passwordErrors.newPassword}</span>
+                    )}
+                    <span className="hint-text">Password must be at least 8 characters</span>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm New Password</label>
+                    <div className="password-input-container">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordChange}
+                        className={passwordErrors.confirmPassword ? "error" : ""}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                    {passwordErrors.confirmPassword && (
+                      <span className="error-message">{passwordErrors.confirmPassword}</span>
+                    )}
+                  </div>
+
+                  <div className="form-actions">
+                    <button className="save-btn" onClick={handleContinueToVerification}>
+                      <FaLock /> Continue
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Verification Code */}
+              {passwordStep === 2 && (
+                <div className="password-form verification-step">
+                  <p className="verification-text">
+                    A verification code has been sent to <strong>{formData.email}</strong>. 
+                    Please enter the 4-digit code below to complete the password change.
+                  </p>
+                  
+                  <div className="form-group">
+                    <label htmlFor="verificationCode">Verification Code</label>
+                    <input
+                      type="text"
+                      id="verificationCode"
+                      name="verificationCode"
+                      value={passwordData.verificationCode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                        setPasswordData(prev => ({ ...prev, verificationCode: value }));
+                        setPasswordErrors(prev => ({ ...prev, verificationCode: "" }));
+                      }}
+                      className={passwordErrors.verificationCode ? "error" : ""}
+                      placeholder="0000"
+                      maxLength={4}
+                      style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }}
+                    />
+                    {passwordErrors.verificationCode && (
+                      <span className="error-message">{passwordErrors.verificationCode}</span>
+                    )}
+                  </div>
+
+                  <div className="resend-code-section">
+                    <button
+                      type="button"
+                      className="resend-code-btn"
+                      onClick={handleResendCode}
+                      disabled={countdown > 0}
+                    >
+                      {countdown > 0 
+                        ? `Resend code in ${countdown}s` 
+                        : "Resend code"
+                      }
+                    </button>
+                  </div>
+
+                  <div className="form-actions" style={{ display: 'flex', gap: '1rem' }}>
+                    <button 
+                      className="save-btn" 
+                      onClick={handleBackToPasswordForm}
+                      style={{ flex: 1, background: 'var(--text-secondary)' }}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      className="save-btn" 
+                      onClick={handleVerifyAndChangePassword}
+                      style={{ flex: 1 }}
+                    >
+                      <FaLock /> Verify & Change Password
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -78,9 +78,9 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const handleNext = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      // Load the flipped state for the next question
+      // Maintain the current flip state for the next card
       const nextFlipped = flippedStates[currentQuestionIndex + 1];
-      setIsFlipped(nextFlipped !== undefined ? nextFlipped : false);
+      setIsFlipped(nextFlipped !== undefined ? nextFlipped : isFlipped);
       setShowHint(false);
     }
   };
@@ -88,9 +88,9 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      // Load the flipped state for the previous question
+      // Maintain the current flip state for the previous card
       const prevFlipped = flippedStates[currentQuestionIndex - 1];
-      setIsFlipped(prevFlipped !== undefined ? prevFlipped : false);
+      setIsFlipped(prevFlipped !== undefined ? prevFlipped : isFlipped);
       setShowHint(false);
     }
   };
@@ -329,13 +329,24 @@ export default function FlashcardQuiz({ quiz, questions }) {
               >
                 <FaArrowLeft />
               </button>
-              <button 
-                className="nav-button next"
-                onClick={handleNext}
-                disabled={currentQuestionIndex === totalQuestions - 1}
-              >
-                <FaArrowRight />
-              </button>
+              {currentQuestionIndex === totalQuestions - 1 ? (
+                <button 
+                  className="submit-quiz-btn"
+                  onClick={() => {
+                    alert('Flashcards reviewed successfully!');
+                    router.push('/student/quizzes');
+                  }}
+                >
+                  Complete Review
+                </button>
+              ) : (
+                <button 
+                  className="nav-button next"
+                  onClick={handleNext}
+                >
+                  <FaArrowRight />
+                </button>
+              )}
             </div>
           </div>
         </div>

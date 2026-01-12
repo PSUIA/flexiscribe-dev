@@ -72,6 +72,11 @@
   font-weight: 700;
   text-align: center;
   margin-bottom: 32px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  padding: 0 20px;
 }
 
 /* Hint Button */
@@ -353,6 +358,31 @@
 .nav-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Submit Quiz Button */
+.submit-quiz-btn {
+  background: var(--brand-primary);
+  color: white;
+  padding: 16px 48px;
+  border-radius: 32px;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(157, 138, 219, 0.4);
+  min-width: 200px;
+}
+
+.submit-quiz-btn:hover {
+  background: var(--accent-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(157, 138, 219, 0.6);
 }
 
 /* ============================================

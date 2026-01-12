@@ -322,13 +322,26 @@ export default function MCQQuiz({ quiz, questions }) {
               >
                 <FaArrowLeft />
               </button>
-              <button 
-                className="nav-button next"
-                onClick={handleNext}
-                disabled={currentQuestionIndex === totalQuestions - 1}
-              >
-                <FaArrowRight />
-              </button>
+              {currentQuestionIndex === totalQuestions - 1 ? (
+                <button 
+                  className="submit-quiz-btn"
+                  onClick={() => {
+                    // TODO: Calculate score and save to backend
+                    const answeredCount = Object.keys(answers).length;
+                    alert(`Quiz submitted! You answered ${answeredCount} out of ${totalQuestions} questions.`);
+                    router.push('/student/quizzes');
+                  }}
+                >
+                  Submit Quiz
+                </button>
+              ) : (
+                <button 
+                  className="nav-button next"
+                  onClick={handleNext}
+                >
+                  <FaArrowRight />
+                </button>
+              )}
             </div>
           </div>
         </div>

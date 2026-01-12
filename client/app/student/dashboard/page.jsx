@@ -16,6 +16,11 @@ export default function StudentDashboard() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [streakData, setStreakData] = useState({
+    count: 0,
+    isActive: false,
+    lastActivityDate: null
+  });
 
   // Calculate XP progress for rank bar
   const currentRank = mockRankSystem.currentRank;
@@ -51,8 +56,136 @@ export default function StudentDashboard() {
     const diff = currentTime - startOfYear;
     const oneDay = 1000 * 60 * 60 * 24;
     const dayOfYear = Math.floor(diff / oneDay);
-    const quoteIndex = dayOfYear % 14; // 14 quotes for 2-week rotation
+    const quoteIndex = dayOfYear % 14;
     return mockQuotes[quoteIndex];
+  };
+
+  // Calculate streak based on activity
+  const calculateStreak = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedStreak = localStorage.getItem('studyStreak');
+    
+    if (savedStreak) {
+      const parsed = JSON.parse(savedStreak);
+      const lastActivity = new Date(parsed.lastActivityDate);
+      const currentDate = new Date(today);
+      const daysDiff = Math.floor((currentDate - lastActivity) / (1000 * 60 * 60 * 24));
+      
+      // If last activity was today, streak is active
+      if (daysDiff === 0) {
+        return {
+          count: parsed.count,
+          isActive: true,
+          lastActivityDate: parsed.lastActivityDate
+        };
+      }
+      // If last activity was yesterday, streak continues but not active today yet
+      else if (daysDiff === 1) {
+        return {
+          count: parsed.count,
+          isActive: false,
+          lastActivityDate: parsed.lastActivityDate
+        };
+      }
+      // If more than 1 day passed, streak is broken
+      else {
+        return {
+          count: 0,
+          isActive: false,
+          lastActivityDate: null
+        };
+      }
+    }
+    
+    // No saved streak
+    return {
+      count: 0,
+      isActive: false,
+      lastActivityDate: null
+    };
+  };
+
+  // Track daily activities (quiz completion, reviewer view, etc.)
+  const trackActivity = (activityType) => {
+    const today = new Date().toISOString().split('T')[0];
+    const activitiesKey = 'dailyActivities';
+    const savedActivities = localStorage.getItem(activitiesKey);
+    
+    let activities = savedActivities ? JSON.parse(savedActivities) : {};
+    
+    // Initialize today's activities if not exists
+    if (!activities[today]) {
+      activities[today] = [];
+    }
+    
+    // Add activity if not already recorded
+    if (!activities[today].includes(activityType)) {
+      activities[today].push(activityType);
+      localStorage.setItem(activitiesKey, JSON.stringify(activities));
+    }
+    
+    // After tracking activity, update streak
+    recordActivity();
+  };
+
+  // Check if user has completed at least 1 activity today
+  const hasActivityToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedActivities = localStorage.getItem('dailyActivities');
+    
+    if (!savedActivities) return false;
+    
+    const activities = JSON.parse(savedActivities);
+    return activities[today] && activities[today].length > 0;
+  };
+
+  // Record activity to update streak (only activates if at least 1 activity done)
+  const recordActivity = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const currentStreak = calculateStreak();
+    
+    // Check if user has done at least 1 activity today
+    if (!hasActivityToday()) {
+      return;
+    }
+    
+    // If already active today, don't update
+    if (currentStreak.isActive) {
+      return;
+    }
+    
+    // If last activity was yesterday or today is first activity
+    const lastActivity = currentStreak.lastActivityDate;
+    let newCount = currentStreak.count;
+    
+    if (!lastActivity) {
+      // First activity ever
+      newCount = 1;
+    } else {
+      const lastDate = new Date(lastActivity);
+      const currentDate = new Date(today);
+      const daysDiff = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 1) {
+        // Consecutive day - increment streak
+        newCount = currentStreak.count + 1;
+      } else if (daysDiff === 0) {
+        // Same day - keep count
+        newCount = currentStreak.count;
+      } else {
+        // Streak broken - start new
+        newCount = 1;
+      }
+    }
+    
+    const newStreak = {
+      count: newCount,
+      isActive: true,
+      lastActivityDate: today
+    };
+    
+    localStorage.setItem('studyStreak', JSON.stringify(newStreak));
+    setStreakData(newStreak);
   };
 
   // Get most recently added reviewer
@@ -118,8 +251,34 @@ export default function StudentDashboard() {
       document.documentElement.classList.add('dark-mode');
     }
 
+    // Initialize streak data (don't record activity on load, only when user does something)
+    const currentStreak = calculateStreak();
+    setStreakData(currentStreak);
+
     return () => clearInterval(timer);
   }, []);
+
+  /* ============================================
+   * ACTIVITY TRACKING INTEGRATION GUIDE
+   * ============================================
+   * To activate the streak, call trackActivity() when users complete activities.
+   * 
+   * Examples:
+   * 
+   * 1. Quiz Completion:
+   *    trackActivity('quiz_completed');
+   * 
+   * 2. Reviewer Viewed:
+   *    trackActivity('reviewer_viewed');
+   * 
+   * 3. Flashcard Session:
+   *    trackActivity('flashcard_session');
+   * 
+   * 4. MCQ Practice:
+   *    trackActivity('mcq_practice');
+   * 
+   * The streak will only increment after at least 1 activity is tracked per day.
+   * ============================================ */
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -371,14 +530,14 @@ export default function StudentDashboard() {
             </div>
 
             {/* Study Streak */}
-            <div className={`card study-streak lg:col-span-4 ${mockDashboardStats.streakActive ? 'streak-active' : 'streak-inactive'}`}>
+            <div className={`card study-streak lg:col-span-4 ${streakData.isActive ? 'streak-active' : 'streak-inactive'}`}>
                 <div className="card-header-compact">
                   <h3>Study Streak</h3>
                 </div>
                 <div className="streak-content">
                   <div className="streak-icon-container">
-                    <div className="streak-icon">{mockDashboardStats.streakIcon}</div>
-                    {mockDashboardStats.streakActive && (
+                    <div className="streak-icon">🔥</div>
+                    {streakData.isActive && (
                       <>
                         <div className="fire-particle fire-particle-1"></div>
                         <div className="fire-particle fire-particle-2"></div>
@@ -387,8 +546,8 @@ export default function StudentDashboard() {
                       </>
                     )}
                   </div>
-                  <div className="streak-count">{mockDashboardStats.studyStreak} days</div>
-                  {mockDashboardStats.streakActive ? (
+                  <div className="streak-count">{streakData.count} days</div>
+                  {streakData.isActive ? (
                     <div className="streak-status active">✓ Active</div>
                   ) : (
                     <div className="streak-status inactive">Keep going!</div>
