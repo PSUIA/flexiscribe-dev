@@ -8,6 +8,9 @@ const inter = Inter({
 
 export const metadata = {
   title: "fLexiScribe",
+  icons: {
+    icon: "/fLexiScribe-logo.ico",
+  },
 };
 
 export default function RootLayout({ children }) {

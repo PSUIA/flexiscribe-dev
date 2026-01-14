@@ -41,6 +41,14 @@ export default function PrototypeDashboard() {
     };
   }, []);
 
+  // Stop recording when mic is disconnected
+  useEffect(() => {
+    if (!micConnected && isRecording) {
+      setIsRecording(false);
+      console.log("Recording stopped: Microphone disconnected");
+    }
+  }, [micConnected, isRecording]);
+
   const checkMicrophonePermission = async () => {
     // Check if we're in a browser environment
     if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {

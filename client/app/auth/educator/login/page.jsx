@@ -76,7 +76,7 @@ export default function EducatorLogin() {
         {/* Title */}
         <div className="flex flex-col items-center mb-6 mt-2">
           <span className="font-extrabold text-4xl text-center mb-2">
-            {isPrototypeMode ? "Prototype Login" : "Educator Log In"}
+            {isPrototypeMode ? "Educator Login" : "Educator Log In"}
           </span>
           <span className="text-center text-md mb-2">
             {isPrototypeMode ? "Sign in to access the recording prototype" : "Access your fLexiScribe educator portal"}
