@@ -1,6 +1,6 @@
 # Backend Integration Guide for Reviewer Editor
 
-This document provides Python code snippets for integrating the Quill.js editor with your Python backend.
+This document provides Python code snippets for integrating the TinyMCE editor with your Python backend.
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ def get_db_connection():
 class ReviewerContent(BaseModel):
     classCode: str
     reviewerId: int
-    content: str  # HTML content from Quill
+    content: str  # HTML content from TinyMCE
     format: str = "html"
 
 @app.post("/api/reviewers/save")
@@ -344,34 +344,70 @@ if __name__ == "__main__":
 
 Once your backend is ready, update the frontend `page.jsx` file:
 
-### Update the API URLs:
+### Update the handleSave function:
 
 ```javascript
-// In handleSave function
-const response = await fetch('http://localhost:8000/api/reviewers/save', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    classCode,
-    reviewerId,
-    content: editorContent,
-    format: 'html'
-  })
-});
+const handleSave = async () => {
+  if (!editorRef.current) return;
+  
+  setIsSaving(true);
+  setSaveStatus('Saving...');
+  
+  try {
+    const content = editorRef.current.getContent();
+    
+    const response = await fetch('http://localhost:8000/api/reviewers/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        classCode,
+        reviewerId,
+        content: content,
+        format: 'html'
+      })
+    });
+    
+    if (response.ok) {
+      setSaveStatus('✓ Saved');
+      localStorage.setItem(`reviewer-${classCode}-${reviewerId}`, content);
+      setTimeout(() => setSaveStatus(''), 2000);
+    } else {
+      throw new Error('Save failed');
+    }
+  } catch (error) {
+    console.error('Save error:', error);
+    setSaveStatus('✗ Save failed');
+    setTimeout(() => setSaveStatus(''), 3000);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
-// In handleDownloadPDF function
-const response = await fetch('http://localhost:8000/api/reviewers/convert-to-pdf', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    content: editorContent,
-    filename: reviewer?.title || 'document'
-  })
-});
+### Update the handleDownloadPDF function:
+
+```javascript
+const handleDownloadPDF = async () => {
+  if (!editorRef.current) return;
+  
+  try {
+    const content = editorRef.current.getContent();
+    
+    const response = await fetch('http://localhost:8000/api/reviewers/convert-to-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: content,
+        filename: reviewer?.title || 'document'
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('PDF conversion failed');
+    }
 
 const blob = await response.blob();
 const url = window.URL.createObjectURL(blob);
@@ -392,18 +428,39 @@ useEffect(() => {
     try {
       setLoading(true);
       
-      // Try to load from backend first
+      // Check localStorage first
+      const savedContent = localStorage.getItem(`reviewer-${classCode}-${reviewerId}`);
+      if (savedContent) {
+        console.log("Loading from localStorage");
+        setEditorContent(savedContent);
+        setContentLoaded(true);
+        setLoading(false);
+        return;
+      }
+      
+      // Try to load from backend
       const response = await fetch(`http://localhost:8000/api/reviewers/${classCode}/${reviewerId}`);
       
       if (response.ok) {
         const data = await response.json();
         setEditorContent(data.content);
+        setContentLoaded(true);
       } else {
         // Fallback to loading DOCX if not in database
         const docxResponse = await fetch(docxUrl);
         const arrayBuffer = await docxResponse.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const result = await mammoth.convertToHtml({ 
+          arrayBuffer,
+          styleMap: [
+            "p[style-name='Heading 1'] => h1:fresh",
+            "p[style-name='Heading 2'] => h2:fresh",
+            "p[style-name='Heading 3'] => h3:fresh",
+            "b => strong",
+            "i => em",
+          ]
+        });
         setEditorContent(result.value);
+        setContentLoaded(true);
       }
       
       setLoading(false);
@@ -415,6 +472,19 @@ useEffect(() => {
 
   loadDocument();
 }, [classCode, reviewerId]);
+
+// Set content in TinyMCE after editor is ready
+useEffect(() => {
+  if (editorRef.current && contentLoaded && editorContent) {
+    console.log('Setting content in editor');
+    try {
+      editorRef.current.setContent(editorContent);
+      console.log('✓ Content successfully set');
+    } catch (err) {
+      console.error('✗ Error setting content:', err);
+    }
+  }
+}, [contentLoaded, editorContent]);
 ```
 
 ## 7. Jetson Orin Integration Notes
@@ -585,7 +655,7 @@ async def generate_cornell_notes(transcript_data: dict):
 
 ### Cornell Format HTML Structure (after conversion)
 
-When the DOCX is converted by mammoth.js, it becomes:
+When the DOCX is converted by mammoth.js, it becomes HTML tables that TinyMCE can natively edit with full table manipulation support (merge/split cells, insert/delete rows and columns):
 
 ```html
 <h1>Cornell note-taking method</h1>
@@ -624,7 +694,12 @@ When the DOCX is converted by mammoth.js, it becomes:
 </table>
 ```
 
-The CSS in the frontend automatically styles this table to match the Cornell format appearance.
+The CSS in TinyMCE's `content_style` configuration automatically styles this table to match the Cornell format appearance. TinyMCE's native table plugin provides full editing capabilities including:
+- Cell merging and splitting
+- Row and column insertion/deletion
+- Table properties editing
+- Cell background colors
+- Responsive table layouts
 
 ## Notes
 
@@ -632,3 +707,7 @@ The CSS in the frontend automatically styles this table to match the Cornell for
 - For production, add authentication middleware
 - Consider adding rate limiting for PDF conversion
 - Store large files (DOCX/PDF) in object storage (S3, Azure Blob) instead of database for better performance
+- TinyMCE requires a specific numeric height (e.g., `height: 700`) instead of percentage-based heights
+- TinyMCE's table plugin provides native Cornell format support without additional dependencies
+- The GPL license key is free but requires `promotion: false` to hide upgrade prompts
+- TinyMCE is self-hosted in `/public/tinymce` directory for offline use and faster loading

@@ -111,15 +111,15 @@ export default function StudentRank() {
             <FaHome className="nav-icon" />
             <span>Dashboard</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/reviewers")}>
             <FaBook className="nav-icon" />
             <span>Reviewers</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/quizzes")}>
             <FaGamepad className="nav-icon" />
             <span>Quizzes</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => router.push("/student/leaderboard")}>
             <FaTrophy className="nav-icon" />
             <span>Leaderboard</span>
           </div>

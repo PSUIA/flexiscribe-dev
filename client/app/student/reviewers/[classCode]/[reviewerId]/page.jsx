@@ -22,11 +22,21 @@ export default function ReviewerEditorPage() {
   const [saveStatus, setSaveStatus] = useState("");
   const [contentLoaded, setContentLoaded] = useState(false);
   const editorRef = useRef(null);
+  const contentInitialized = useRef(false);
+  const initialContentRef = useRef("");
+  const isTyping = useRef(false);
   
   // Get reviewer data
   const reviewers = mockReviewersByClass[classCode] || [];
   const reviewer = reviewers.find(r => r.id === parseInt(reviewerId));
-  const docxUrl = "/sample.docx";
+  
+  // Use absolute URL for both localhost and network access
+  const getDocxUrl = () => {
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/sample.docx`;
+    }
+    return "/sample.docx";
+  };
 
   // Load theme preference
   useEffect(() => {
@@ -41,12 +51,14 @@ export default function ReviewerEditorPage() {
   useEffect(() => {
     const loadDocument = async () => {
       try {
+        const docxUrl = getDocxUrl();
         console.log("Loading document from:", docxUrl);
         
         // Check localStorage first
         const savedContent = localStorage.getItem(`reviewer-${classCode}-${reviewerId}`);
         if (savedContent) {
           console.log("Loading from localStorage");
+          initialContentRef.current = savedContent;
           setEditorContent(savedContent);
           setContentLoaded(true);
           setLoading(false);
@@ -54,8 +66,15 @@ export default function ReviewerEditorPage() {
         }
 
         console.log("Fetching DOCX file...");
-        const response = await fetch(docxUrl);
+        const response = await fetch(docxUrl, {
+          method: 'GET',
+          cache: 'no-cache',
+          headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          }
+        });
         console.log("Response status:", response.status);
+        console.log("Response headers:", response.headers);
         
         if (!response.ok) throw new Error(`Document not found: ${response.status}`);
         
@@ -74,6 +93,7 @@ export default function ReviewerEditorPage() {
         });
         
         console.log("Conversion result:", result.value.substring(0, 200));
+        initialContentRef.current = result.value;
         setEditorContent(result.value);
         setContentLoaded(true);
         setLoading(false);
@@ -90,27 +110,7 @@ export default function ReviewerEditorPage() {
     };
 
     loadDocument();
-  }, [classCode, reviewerId, docxUrl]);
-
-  // Set content after TinyMCE editor is ready
-  useEffect(() => {
-    console.log('Content effect triggered:', {
-      hasEditor: !!editorRef.current,
-      contentLoaded,
-      contentLength: editorContent?.length || 0
-    });
-    
-    if (editorRef.current && contentLoaded && editorContent) {
-      console.log('Setting content in editor, length:', editorContent.length);
-      console.log('First 100 chars:', editorContent.substring(0, 100));
-      try {
-        editorRef.current.setContent(editorContent);
-        console.log('✓ Content successfully set in editor');
-      } catch (err) {
-        console.error('✗ Error setting content:', err);
-      }
-    }
-  }, [contentLoaded, editorContent]);
+  }, [classCode, reviewerId]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -224,30 +224,19 @@ export default function ReviewerEditorPage() {
         ) : (
           <div className="tinymce-wrapper">
             <Editor
+              key={contentLoaded ? 'loaded' : 'loading'}
               tinymceScriptSrc="/tinymce/tinymce.min.js"
-              initialValue="<p>Loading content...</p>"
+              initialValue={initialContentRef.current || "<p>Loading content...</p>"}
               onInit={(evt, editor) => {
                 editorRef.current = editor;
+                contentInitialized.current = true;
                 console.log("TinyMCE initialized, editor ready");
-                console.log("Content available at init:", editorContent?.length || 0, "chars");
-                
-                // If content is already loaded, set it now
-                if (contentLoaded && editorContent) {
-                  console.log('Content already loaded, setting immediately');
-                  console.log('First 100 chars of content:', editorContent.substring(0, 100));
-                  try {
-                    editor.setContent(editorContent);
-                    console.log('✓ Content set successfully in onInit');
-                    
-                    // Verify content was actually set
-                    const currentContent = editor.getContent();
-                    console.log('Verified content in editor:', currentContent.length, 'chars');
-                  } catch (err) {
-                    console.error('✗ Error setting content in onInit:', err);
-                  }
-                }
+                console.log("Content loaded:", contentLoaded, "Content length:", initialContentRef.current?.length || 0);
               }}
-              onEditorChange={(content) => setEditorContent(content)}
+              onEditorChange={(content) => {
+                isTyping.current = true;
+                setEditorContent(content);
+              }}
               init={{
                 height: 700,
                 width: '100%',

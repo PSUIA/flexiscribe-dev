@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { FiArrowLeft } from "react-icons/fi";
 
@@ -10,6 +10,13 @@ export default function EducatorLogin() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPrototypeMode, setIsPrototypeMode] = useState(false);
+
+  useEffect(() => {
+    const redirect = searchParams.get('redirect');
+    setIsPrototypeMode(redirect === 'prototype');
+  }, [searchParams]);
 
   // Password Strength Checker
   const getPasswordStrength = (pwd) => {
@@ -22,7 +29,11 @@ export default function EducatorLogin() {
   const strength = getPasswordStrength(password);
 
   const handleBack = () => {
-    router.push("/auth/role-selection");
+    if (isPrototypeMode) {
+      router.push("/");
+    } else {
+      router.push("/auth/role-selection");
+    }
   };
 
   // Handle form submission
@@ -42,7 +53,11 @@ export default function EducatorLogin() {
     }
 
     if (email === "educator@example.com" && password === "educatoracc0123") {
-      router.push("/educator/dashboard");
+      if (isPrototypeMode) {
+        router.push("/prototype");
+      } else {
+        router.push("/educator/dashboard");
+      }
       setError("");
       setSuccess("Login successful ✅");
     } else {
@@ -61,10 +76,10 @@ export default function EducatorLogin() {
         {/* Title */}
         <div className="flex flex-col items-center mb-6 mt-2">
           <span className="font-extrabold text-4xl text-center mb-2">
-            Educator Log In
+            {isPrototypeMode ? "Educator Login" : "Educator Log In"}
           </span>
           <span className="text-center text-md mb-2">
-            Access your fLexiScribe educator portal
+            {isPrototypeMode ? "Sign in to access the recording prototype" : "Access your fLexiScribe educator portal"}
           </span>
         </div>
         {/* Success message */}

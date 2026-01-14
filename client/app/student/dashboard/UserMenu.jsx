@@ -5,8 +5,17 @@ import { FaRegUserCircle, FaUser, FaKey, FaSignOutAlt, FaTrophy } from "react-ic
 
 export default function UserMenu({ userName, userRole }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const menuRef = useRef(null);
   const router = useRouter();
+
+  // Load profile image from localStorage
+  useEffect(() => {
+    const savedImage = localStorage.getItem('userProfileImage');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,7 +47,7 @@ export default function UserMenu({ userName, userRole }) {
 
   const handleChangePassword = () => {
     setIsOpen(false);
-    router.push("/student/change-password");
+    router.push("/student/profile#change-password");
   };
 
   const handleLogout = () => {
@@ -52,7 +61,11 @@ export default function UserMenu({ userName, userRole }) {
     <div className="user-menu-container" ref={menuRef}>
       <div className="user-profile" onClick={toggleMenu}>
         <div className="user-avatar">
-          <FaRegUserCircle />
+          {profileImage ? (
+            <img src={profileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            <FaRegUserCircle />
+          )}
         </div>
         <div className="user-info">
           <div className="user-name">{userName}</div>

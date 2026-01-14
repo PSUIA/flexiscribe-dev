@@ -19,6 +19,9 @@ export default function Landing() {
 
         {/* Actions */}
         <div className="neu-navbar-actions">
+          <button className="btn-login text-md" onClick={() => router.push("/auth/educator/login?redirect=prototype")}>
+            Prototype
+          </button>
           <button className="btn-login text-md" onClick={() => router.push("/auth/role-selection")}>
             Student & Educator Portal
           </button>

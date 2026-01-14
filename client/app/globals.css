@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Global Reset */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 /* CSS Variables */
 :root {
   --brand-primary: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
@@ -18,6 +28,9 @@ body {
   font-family: 'Inter', sans-serif;
   background: var(--brand-primary);
   color: #fff;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 /* Container */
@@ -26,9 +39,11 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   animation: gradientMove 30s ease infinite;
-
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   background: var(--brand-primary);
   background-image: var(--bg-image);
   background-size: 200% 200%;
@@ -147,6 +162,8 @@ body {
   top: 0;
   left: 0;
   width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   z-index: 50;
 }
 
