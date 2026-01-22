@@ -6,6 +6,7 @@ import { mockNotifications } from "./mockData";
 
 export default function NotificationMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAllModal, setShowAllModal] = useState(false);
   
   // Map notification types to icons
   const getIconForType = (type) => {
@@ -67,7 +68,17 @@ export default function NotificationMenu() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handleViewAll = () => {
+    setIsOpen(false);
+    setShowAllModal(true);
+  };
+
+  const closeModal = () => {
+    setShowAllModal(false);
+  };
+
   return (
+    <>
     <div className="notification-menu-container" ref={menuRef}>
       <button className="notification-btn" onClick={toggleMenu}>
         <FaBell />
@@ -121,11 +132,70 @@ export default function NotificationMenu() {
 
           {notifications.length > 0 && (
             <div className="notification-footer">
-              <button className="view-all-btn">View All Notifications</button>
+              <button className="view-all-btn" onClick={handleViewAll}>View All Notifications</button>
             </div>
           )}
         </div>
       )}
     </div>
+
+    {/* Full Notifications Modal */}
+    {showAllModal && (
+      <>
+        <div className="modal-overlay" onClick={closeModal}></div>
+        <div className="notifications-modal">
+          <div className="modal-header">
+            <h2>All Notifications</h2>
+            <button className="modal-close-btn" onClick={closeModal}>
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-actions">
+            {unreadCount > 0 && (
+              <button className="mark-all-read-modal" onClick={markAllAsRead}>
+                <FaCheckCircle /> Mark all as read
+              </button>
+            )}
+          </div>
+
+          <div className="modal-notification-list">
+            {notifications.length === 0 ? (
+              <div className="no-notifications-modal">
+                <FaBell className="empty-icon-modal" />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((notification) => {
+                const IconComponent = notification.icon;
+                return (
+                  <div
+                    key={notification.id}
+                    className={`modal-notification-item ${notification.read ? 'read' : 'unread'}`}
+                    onClick={() => {
+                      handleNotificationClick(notification);
+                      closeModal();
+                    }}
+                  >
+                    <div className="modal-notification-icon-wrapper">
+                      <IconComponent className="modal-notification-icon" />
+                    </div>
+                    <div className="modal-notification-content">
+                      <div className="modal-notification-title">{notification.title}</div>
+                      <div className="modal-notification-message">{notification.message}</div>
+                      <div className="modal-notification-time">{notification.time}</div>
+                    </div>
+                    {!notification.read && (
+                      <div className="modal-unread-indicator"></div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </>
+    )}
+    </>
   );
 }
