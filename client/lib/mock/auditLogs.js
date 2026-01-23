@@ -1,0 +1,42 @@
+export const auditLogs = [
+  {
+    id: 1,
+    datetime: "2026-01-20T18:15:00",
+    name: "Sky",
+    role: "Admin",
+    action: "Edited a user",
+    ip: "192.168.1.23",
+  },
+  {
+    id: 2,
+    datetime: "2026-01-20T18:30:00",
+    name: "Uia",
+    role: "Educator",
+    action: "Admitted a student to their class",
+    ip: "192.168.1.44",
+  },
+  {
+    id: 3,
+    datetime: "2026-01-20T19:04:00",
+    name: "Eru",
+    role: "Student",
+    action: "Generated a MCQ quiz",
+    ip: "192.168.1.68",
+  },
+  {
+    id: 4,
+    datetime: "2026-01-20T19:31:00",
+    name: "Ai",
+    role: "Student",
+    action: "Generated a FITB quiz",
+    ip: "192.168.1.34",
+  },
+  {
+    id: 5,
+    datetime: "2026-01-20T20:00:00",
+    name: "Ia",
+    role: "Student",
+    action: "Generated a Flashcard",
+    ip: "192.168.1.26",
+  },
+];
