@@ -1,0 +1,38 @@
+export const classes = [
+  {
+    id: "cpp116-b",
+    subject: "CPP116",
+    section: "B",
+    room: "107",
+    day: "Friday",
+    start: "7:30 AM",
+    students: 53,
+  },
+  {
+    id: "cpp116-a",
+    subject: "CPP116",
+    section: "A",
+    room: "108",
+    day: "Thursday",
+    start: "9:00 AM",
+    students: 51,
+  },
+  {
+    id: "cpp117-a",
+    subject: "CPP117",
+    section: "A",
+    room: "109",
+    day: "Wednesday",
+    start: "10:00 AM",
+    students: 53,
+  },
+  {
+    id: "cpp117-b",
+    subject: "CPP117",
+    section: "B",
+    room: "108",
+    day: "Friday",
+    start: "10:00 AM",
+    students: 51,
+  },
+];
