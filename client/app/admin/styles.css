@@ -1,0 +1,222 @@
+/* Admin Landing Page Styles */
+.admin-landing-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #9d8adb 0%, #4c4172 100%);
+  background-image: url('/img/bg-img.png');
+  background-size: 200% 200%;
+  animation: gradientMove 30s ease infinite;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.admin-landing-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.admin-landing-content {
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* Title */
+.admin-landing-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.confidence-text {
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Subtitle */
+.admin-landing-subtitle {
+  font-size: 1.15rem;
+  color: #ffffff;
+  line-height: 1.7;
+  margin-bottom: 3.5rem;
+  opacity: 0.95;
+}
+
+/* Feature Grid */
+.admin-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3rem;
+  margin-bottom: 3.5rem;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.admin-feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Feature Icons */
+.admin-feature-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.admin-feature-icon:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.icon-svg {
+  width: 40px;
+  height: 40px;
+}
+
+/* Icon Colors */
+.purple-icon {
+  background: linear-gradient(135deg, #b39ddb 0%, #9575cd 100%);
+}
+
+.green-icon {
+  background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+}
+
+.blue-icon {
+  background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+}
+
+.yellow-icon {
+  background: linear-gradient(135deg, #ffd54f 0%, #ffca28 100%);
+}
+
+/* Feature Text */
+.admin-feature-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Admin Login Button */
+.admin-login-btn {
+  display: inline-block;
+  padding: 1rem 4rem;
+  border-radius: 9999px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #b39ddb 0%, #9575cd 100%);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.admin-login-btn:hover {
+  background: linear-gradient(135deg, #9575cd 0%, #7e57c2 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.admin-login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Admin Portal Button in Navbar */
+.admin-portal-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.admin-portal-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-landing-title {
+    font-size: 2.5rem;
+  }
+
+  .admin-landing-subtitle {
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .admin-features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .admin-feature-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .icon-svg {
+    width: 35px;
+    height: 35px;
+  }
+
+  .admin-login-btn {
+    padding: 0.9rem 3rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-landing-title {
+    font-size: 2rem;
+  }
+
+  .admin-landing-subtitle {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .admin-feature-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .icon-svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .admin-feature-text {
+    font-size: 0.95rem;
+  }
+
+  .admin-login-btn {
+    padding: 0.8rem 2.5rem;
+    font-size: 1rem;
+  }
+}

@@ -10,18 +10,12 @@ import "../../student/dashboard/styles.css";
 
 // Default avatar options
 const DEFAULT_AVATARS = [
-  "/img/learner-1.png",
-  "/img/learner-2.png",
-  "/img/learner-3.png",
-  "/img/habit-builder-1.png",
-  "/img/habit-builder-2.png",
-  "/img/habit-builder-3.png",
-  "/img/growth-seeker-1.png",
-  "/img/growth-seeker-2.png",
-  "/img/self-driven-1.png",
-  "/img/mastery-1.png",
-  "/img/peak-performer-1.png",
-  "/img/ascendant.png"
+  "/img/cat-pfp.png",
+  "/img/bookworm-pfp.png",
+  "/img/bee-pfp.png",
+  "/img/beaver-pfp.png",
+  "/img/bird-pfp.png",
+  "/img/owl-pfp.png"
 ];
 
 export default function StudentProfile() {

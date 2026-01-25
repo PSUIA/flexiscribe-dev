@@ -11,6 +11,7 @@ import {
   Menu,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ProfileModal from "../modals/ProfileModal";
 
 /* MOCK */
@@ -28,6 +29,7 @@ const notifications = [
 ];
 
 export default function TopBar({ onMenuClick }) {
+  const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
 
@@ -39,6 +41,11 @@ export default function TopBar({ onMenuClick }) {
   const closeAll = () => {
     setNotifOpen(false);
     setUserOpen(false);
+  };
+
+  const handleSignOut = () => {
+    closeAll();
+    router.push("/admin");
   };
 
   return (
@@ -192,6 +199,7 @@ export default function TopBar({ onMenuClick }) {
                   <MenuItem
                     icon={<LogOut size={16} />}
                     label="Sign out"
+                    onClick={handleSignOut}
                     danger
                   />
                 </div>

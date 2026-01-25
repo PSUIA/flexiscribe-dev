@@ -2,6 +2,7 @@
 
 /* ================= IMPORTS ================= */
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Sun, Moon, X } from "lucide-react";
 
 /* ================= FALLBACK MOCK DATA ================= */
@@ -34,6 +35,7 @@ const notifications = [
 /* ================= MAIN ================= */
 
 export default function ProfessorProfileCard() {
+  const router = useRouter();
   const [openNotif, setOpenNotif] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -56,6 +58,14 @@ export default function ProfessorProfileCard() {
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
+  }
+
+  function handleSignOut() {
+    // Clear any stored authentication data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    // Navigate to login page
+    router.push("/auth/educator/login");
   }
 
   const initial = name?.charAt(0)?.toUpperCase() || "?";
@@ -81,6 +91,7 @@ export default function ProfessorProfileCard() {
           openNotif={openNotif}
           setOpenNotif={setOpenNotif}
           setEditOpen={setEditOpen}
+          handleSignOut={handleSignOut}
         />
       </div>
 
@@ -98,6 +109,7 @@ export default function ProfessorProfileCard() {
               setMobileOpen(false);
               setEditOpen(v);
             }}
+            handleSignOut={handleSignOut}
           />
         </Modal>
       )}
@@ -125,6 +137,7 @@ function ProfileCard({
   openNotif,
   setOpenNotif,
   setEditOpen,
+  handleSignOut,
   mobile = false,
 }) {
   return (
@@ -169,7 +182,12 @@ function ProfileCard({
           Edit Profile
         </p>
 
-        <p className="cursor-pointer hover:underline">Sign Out</p>
+        <p 
+          onClick={handleSignOut}
+          className="cursor-pointer hover:underline"
+        >
+          Sign Out
+        </p>
       </div>
 
       {/* DARK MODE */}
