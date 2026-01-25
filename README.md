@@ -7,7 +7,7 @@
 ### Setup Instructions
 1. **Navigate to the frontend directory:**
    ```powershell
-   cd client
+   cd frontend
    ```
 2. **Install dependencies:**
    ```powershell
@@ -27,7 +27,7 @@ npm start
 ```
 
 ### Transferring to Another Device
-- Copy the entire `client` folder.
+- Copy the entire `frontend` folder.
 - On the new device, repeat the setup steps above.
 - All dependencies are listed in `package.json` and will be installed with `npm install`.
 
