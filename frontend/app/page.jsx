@@ -1,9 +1,6 @@
-"use client";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function Landing() {
-  const router = useRouter();
-
+export default async function Landing() {
   return (
     <div className="container min-h-screen flex flex-col">
       {/* Navbar */}
@@ -19,12 +16,12 @@ export default function Landing() {
 
         {/* Actions */}
         <div className="neu-navbar-actions">
-          <button className="btn-login text-md" onClick={() => router.push("/auth/educator/login?redirect=prototype")}>
+          <Link href="/auth/educator/login?redirect=prototype" className="btn-login text-md">
             Prototype
-          </button>
-          <button className="btn-login text-md" onClick={() => router.push("/auth/role-selection")}>
+          </Link>
+          <Link href="/auth/role-selection" className="btn-login text-md">
             Student & Educator Portal
-          </button>
+          </Link>
         </div>
       </nav>
 
@@ -64,9 +61,7 @@ export default function Landing() {
           </div>
 
           {/* Get Started Button */}
-          <button className="btn-get-started" onClick={() => router.push("/auth/role-selection")}>
-            Get Started
-          </button>
+          <Link href="/auth/role-selection" className="btn-get-started">Get Started</Link>
         </div>
       </main>
     </div>

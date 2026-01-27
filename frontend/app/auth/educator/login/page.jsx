@@ -18,12 +18,26 @@ export default function EducatorLogin() {
     setIsPrototypeMode(redirect === 'prototype');
   }, [searchParams]);
 
-  // Password Strength Checker
+  // Password Strength Checker - based on complexity, not just length
   const getPasswordStrength = (pwd) => {
-    if (!pwd) return { label: "", color: "" };
-    if (pwd.length < 6) return { label: "Weak", color: "bg-red-400" };
-    if (pwd.length < 10) return { label: "Medium", color: "bg-yellow-300" };
-    return { label: "Strong", color: "bg-green-400" };
+    if (!pwd) return { label: "", color: "", width: "0%" };
+    
+    let score = 0;
+    
+    // Length check
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    
+    // Character variety checks
+    if (/[a-z]/.test(pwd)) score++; // lowercase
+    if (/[A-Z]/.test(pwd)) score++; // uppercase
+    if (/[0-9]/.test(pwd)) score++; // numbers
+    if (/[^a-zA-Z0-9]/.test(pwd)) score++; // special characters
+    
+    // Determine strength based on score
+    if (score <= 2) return { label: "Weak", color: "bg-red-400", width: "33%" };
+    if (score <= 4) return { label: "Medium", color: "bg-yellow-300", width: "66%" };
+    return { label: "Strong", color: "bg-green-400", width: "100%" };
   };
 
   const strength = getPasswordStrength(password);
@@ -38,8 +52,13 @@ export default function EducatorLogin() {
 
   // Handle form submission
   const [success, setSuccess] = useState("");
-  const handleSubmit = (e) => {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
@@ -52,17 +71,47 @@ export default function EducatorLogin() {
       return;
     }
 
-    if (email === "educator@example.com" && password === "educatoracc0123") {
-      if (isPrototypeMode) {
-        router.push("/prototype");
-      } else {
-        router.push("/educator/dashboard");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          role: "EDUCATOR",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Login failed");
+        setIsLoading(false);
+        return;
       }
-      setError("");
+
       setSuccess("Login successful ✅");
-    } else {
-      setError("Invalid email or password ❌");
-      setSuccess("");
+      
+      // Store user data in sessionStorage or localStorage if needed
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+      }
+
+      setTimeout(() => {
+        if (isPrototypeMode) {
+          router.push("/prototype");
+        } else {
+          router.push("/educator/dashboard");
+        }
+      }, 1000);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred during login. Please try again.");
+      setIsLoading(false);
     }
   };
 
@@ -147,12 +196,7 @@ export default function EducatorLogin() {
                   <div
                     className={`h-2 rounded-full ${strength.color}`}
                     style={{
-                      width:
-                        strength.label === "Weak"
-                          ? "33%"
-                          : strength.label === "Medium"
-                          ? "66%"
-                          : "100%",
+                      width: strength.width,
                     }}
                   ></div>
                 </div>
@@ -161,8 +205,8 @@ export default function EducatorLogin() {
           </div>
 
           {/* Submit */}
-          <button type="submit" className="neu-btn">
-            Log In
+          <button type="submit" className="neu-btn" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Log In"}
           </button>
         </form>
 

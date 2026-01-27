@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { FiArrowLeft } from "react-icons/fi";
@@ -10,7 +10,8 @@ export default function EducatorRegister() {
 
   // Step 1: Personal Details
   const [fullName, setFullName] = useState("");
-  const [department, setDepartment] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [departmentId, setDepartmentId] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
 
@@ -25,6 +26,21 @@ export default function EducatorRegister() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch("/api/departments");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setDepartments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+        setDepartments([]); // fallback to empty array
+      }
+    };
+    fetchDepartments();
+  }, []);
+
   const handleBack = () => {
     if (step === 1) {
       router.push("/auth/role-selection");
@@ -35,12 +51,26 @@ export default function EducatorRegister() {
     }
   };
 
-  // Password Strength Checker
+  // Password Strength Checker - based on complexity, not just length
   const getPasswordStrength = (pwd) => {
-    if (!pwd) return { label: "", color: "" };
-    if (pwd.length < 6) return { label: "Weak", color: "bg-red-400" };
-    if (pwd.length < 10) return { label: "Medium", color: "bg-yellow-300" };
-    return { label: "Strong", color: "bg-green-400" };
+    if (!pwd) return { label: "", color: "", width: "0%" };
+    
+    let score = 0;
+    
+    // Length check
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    
+    // Character variety checks
+    if (/[a-z]/.test(pwd)) score++; // lowercase
+    if (/[A-Z]/.test(pwd)) score++; // uppercase
+    if (/[0-9]/.test(pwd)) score++; // numbers
+    if (/[^a-zA-Z0-9]/.test(pwd)) score++; // special characters
+    
+    // Determine strength based on score
+    if (score <= 2) return { label: "Weak", color: "bg-red-400", width: "33%" };
+    if (score <= 4) return { label: "Medium", color: "bg-yellow-300", width: "66%" };
+    return { label: "Strong", color: "bg-green-400", width: "100%" };
   };
 
   const strength = getPasswordStrength(password);
@@ -51,7 +81,7 @@ export default function EducatorRegister() {
     setError("");
     setSuccess("");
 
-    if (!fullName || !department || !dateOfBirth || !gender) {
+    if (!fullName || !departmentId || !dateOfBirth || !gender) {
       setError("Please fill in all fields");
       return;
     }
@@ -64,7 +94,7 @@ export default function EducatorRegister() {
   };
 
   // Step 2 Validation and Submit
-  const handleStep2Submit = (e) => {
+  const handleStep2Submit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -92,20 +122,38 @@ export default function EducatorRegister() {
       return;
     }
 
-    // In production, this would call an API to create the account
-    console.log("Educator Registration data:", {
-      fullName,
-      department,
-      dateOfBirth,
-      gender,
-      username,
-      email,
-    });
+    try {
+      const response = await fetch("/api/educators", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          departmentId,
+          dateOfBirth,
+          gender,
+          username,
+          email,
+          password,
+        }),
+      });
 
-    setSuccess("Account created successfully! Redirecting to login...");
-    setTimeout(() => {
-      router.push("/auth/educator/login");
-    }, 2000);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Registration failed");
+        return;
+      }
+
+      setSuccess("Account created successfully! Redirecting to login...");
+      setTimeout(() => {
+        router.push("/auth/educator/login");
+      }, 2000);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError("An error occurred during registration. Please try again.");
+    }
   };
 
   return (
@@ -156,19 +204,15 @@ export default function EducatorRegister() {
               </label>
               <select
                 className="neu-input"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
               >
                 <option value="">Select Department</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">
-                  Information Technology
-                </option>
-                <option value="Information Systems">Information Systems</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Physics">Physics</option>
-                <option value="Other">Other</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -274,12 +318,7 @@ export default function EducatorRegister() {
                     <div
                       className={`h-2 rounded-full ${strength.color}`}
                       style={{
-                        width:
-                          strength.label === "Weak"
-                            ? "33%"
-                            : strength.label === "Medium"
-                            ? "66%"
-                            : "100%",
+                        width: strength.width,
                       }}
                     ></div>
                   </div>
@@ -315,19 +354,14 @@ export default function EducatorRegister() {
             </div>
 
             {/* Submit Button */}
-            <button type="submit" className="neu-btn">
-              Create Account
-            </button>
+            <button type="submit" className="neu-btn">Create Account</button>
           </form>
         )}
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm">
           Already have an account?{" "}
-          <a
-            href="/auth/educator/login"
-            className="font-semibold hover:underline"
-          >
+          <a href="/auth/educator/login" className="font-semibold hover:underline">
             Log In
           </a>
         </p>
