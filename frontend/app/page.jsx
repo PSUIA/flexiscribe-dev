@@ -1,9 +1,6 @@
-import prisma from "@/lib/db";
 import Link from "next/link";
 
 export default async function Landing() {
-  const posts = await prisma.post.findMany();
-
   return (
     <div className="container min-h-screen flex flex-col">
       {/* Navbar */}
