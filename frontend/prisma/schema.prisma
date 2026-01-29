@@ -26,6 +26,10 @@ model User {
   password String
   role     Role
 
+  // Password reset fields
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
   // Role-specific relations
   student  Student?
   educator Educator?

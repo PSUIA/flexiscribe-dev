@@ -60,12 +60,22 @@ export default function ProfessorProfileCard() {
     localStorage.setItem("theme", next ? "dark" : "light");
   }
 
-  function handleSignOut() {
-    // Clear any stored authentication data
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    // Navigate to login page
-    router.push("/auth/educator/login");
+  async function handleSignOut() {
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Redirect to login
+      window.location.href = "/auth/educator/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = "/auth/educator/login";
+    }
   }
 
   const initial = name?.charAt(0)?.toUpperCase() || "?";

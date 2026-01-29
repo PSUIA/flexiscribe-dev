@@ -155,14 +155,28 @@ export default function PrototypeDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Clean up audio monitoring
     stopAudioMonitoring();
     setMicConnected(false);
     setIsRecording(false);
     
-    // Navigate to landing page
-    router.push('/');
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Navigate to landing page
+      window.location.href = '/';
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = '/';
+    }
+  };
   };
 
   const toggleGuide = () => {

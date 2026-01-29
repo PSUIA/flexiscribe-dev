@@ -6,12 +6,12 @@ import { generateToken, setAuthCookie } from "@/lib/auth";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, role } = body;
+    const { email, password } = body;
 
     // Validate required fields
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Email, password, and role are required" },
+        { error: "Email and password are required" },
         { status: 400 }
       );
     }
@@ -25,17 +25,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user by email
+    // Find admin user by email
     const user = await prisma.user.findUnique({
       where: { email },
-      include: {
-        educator: {
-          include: {
-            department: true,
-          },
-        },
-        student: true,
-      },
     });
 
     if (!user) {
@@ -45,11 +37,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify role matches
-    if (user.role !== role) {
+    // Verify user is an admin
+    if (user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Invalid credentials for this role" },
-        { status: 401 }
+        { error: "Access denied. Admin credentials required." },
+        { status: 403 }
       );
     }
 
@@ -63,36 +55,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Prepare response based on role
-    let userData: any = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    if (user.role === "EDUCATOR" && user.educator) {
-      userData.educator = {
-        id: user.educator.id,
-        username: user.educator.username,
-        fullName: user.educator.fullName,
-        gender: user.educator.gender,
-        department: {
-          id: user.educator.department.id,
-          name: user.educator.department.name,
-        },
-      };
-    } else if (user.role === "STUDENT" && user.student) {
-      userData.student = {
-        id: user.student.id,
-        studentNumber: user.student.studentNumber,
-        fullName: user.student.fullName,
-        yearLevel: user.student.yearLevel,
-        section: user.student.section,
-        program: user.student.program,
-        gender: user.student.gender,
-      };
-    }
-
     // Generate JWT token
     const token = await generateToken({
       userId: user.id,
@@ -104,8 +66,12 @@ export async function POST(request: Request) {
     const response = NextResponse.json(
       {
         message: "Login successful",
-        user: userData,
-        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        },
+        token, // Send token in response for client-side storage if needed
       },
       { status: 200 }
     );
@@ -121,7 +87,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Admin login error:", error);
     return NextResponse.json(
       { error: "An error occurred during login" },
       { status: 500 }

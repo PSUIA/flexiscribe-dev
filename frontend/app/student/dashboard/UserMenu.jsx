@@ -50,11 +50,23 @@ export default function UserMenu({ userName, userRole }) {
     router.push("/student/profile#change-password");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsOpen(false);
-    localStorage.removeItem("token");
-    sessionStorage.clear();
-    router.push("/auth/student/login");
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Redirect to login
+      window.location.href = "/auth/student/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = "/auth/student/login";
+    }
   };
 
   return (

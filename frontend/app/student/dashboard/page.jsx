@@ -295,10 +295,22 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.clear();
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Redirect to login
+      window.location.href = "/auth/student/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = "/auth/student/login";
+    }
   };
 
   // Don't render clock until mounted to avoid hydration mismatch

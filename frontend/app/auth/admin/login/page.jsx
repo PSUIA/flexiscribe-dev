@@ -10,6 +10,7 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Password Strength Checker
@@ -27,8 +28,11 @@ export default function AdminLogin() {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
@@ -41,13 +45,38 @@ export default function AdminLogin() {
       return;
     }
 
-    if (email === "skyadmin@example.com" && password === "skyadminacc0123") {
-      router.push("/admin/dashboard");
-      setError("");
-      setSuccess("Login successful ✅");
-    } else {
-      setError("Invalid email or password ❌");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess("Login successful ✅");
+        setError("");
+        setIsLoading(false);
+        
+        // Wait for browser to process Set-Cookie header before redirecting
+        setTimeout(() => {
+          window.location.href = "/admin/dashboard";
+        }, 200);
+      } else {
+        setError(data.error || "Invalid email or password ❌");
+        setSuccess("");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("An error occurred during login. Please try again.");
       setSuccess("");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,8 +177,12 @@ export default function AdminLogin() {
           </div>
 
           {/* Submit */}
-          <button type="submit" className="neu-btn">
-            Log In
+          <button 
+            type="submit" 
+            className="neu-btn"
+            disabled={isLoading}
+          >
+            {isLoading ? "Logging in..." : "Log In"}
           </button>
         </form>
       </div>
