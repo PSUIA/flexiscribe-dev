@@ -1,7 +1,9 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import { generateToken, setAuthCookie } from "@/lib/auth";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this-in-production";
 
 export async function POST(request: Request) {
   try {
@@ -94,10 +96,23 @@ export async function POST(request: Request) {
     }
 
     // Generate JWT token
-    const token = await generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Calculate token expiry (7 days from now)
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+
+    // Update user with token in database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        token,
+        tokenExpiry,
+      },
     });
 
     // Create response

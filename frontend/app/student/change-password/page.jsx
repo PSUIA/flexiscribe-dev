@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
-import UserMenu from "../dashboard/UserMenu";
-import NotificationMenu from "../dashboard/NotificationMenu";
-import SearchBar from "../dashboard/SearchBar";
-import { mockUserProfile } from "../dashboard/mockData";
+import UserMenu from "@/components/student/UserMenu";
+import NotificationMenu from "@/components/student/NotificationMenu";
+import SearchBar from "@/components/student/SearchBar";
 import "../../student/dashboard/styles.css";
 
 export default function ChangePassword() {
@@ -14,6 +13,7 @@ export default function ChangePassword() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [studentProfile, setStudentProfile] = useState(null);
   
   // Password visibility states
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -47,6 +47,23 @@ export default function ChangePassword() {
       setDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     }
+
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      }
+    };
+
+    fetchStudentProfile();
 
     return () => clearInterval(timer);
   }, []);
@@ -337,7 +354,7 @@ export default function ChangePassword() {
             
             <NotificationMenu />
             
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
+            <UserMenu userName={studentProfile?.username || 'Student'} userRole={studentProfile?.role || 'Student'} userAvatar={studentProfile?.avatar} />
           </div>
         </header>
         

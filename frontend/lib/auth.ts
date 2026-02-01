@@ -12,9 +12,7 @@ export interface JWTPayload {
   role: "ADMIN" | "STUDENT" | "EDUCATOR";
 }
 
-/**
- * Generate a JWT token for authenticated users
- */
+// Generate a JWT token for authenticated users
 export async function generateToken(payload: JWTPayload): Promise<string> {
   console.log("Generating token with secret length:", JWT_SECRET?.length);
   const token = await new SignJWT({ ...payload })
@@ -25,9 +23,7 @@ export async function generateToken(payload: JWTPayload): Promise<string> {
   return token;
 }
 
-/**
- * Verify and decode a JWT token
- */
+// Verify and decode a JWT token
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET_KEY);
@@ -44,9 +40,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
   }
 }
 
-/**
- * Set authentication cookie
- */
+// Set authentication cookie
 export async function setAuthCookie(token: string) {
   const cookieStore = await cookies();
   cookieStore.set("auth-token", token, {
@@ -58,35 +52,27 @@ export async function setAuthCookie(token: string) {
   });
 }
 
-/**
- * Get authentication token from cookies
- */
+// Get authentication token from cookies
 export async function getAuthToken(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth-token");
   return token?.value || null;
 }
 
-/**
- * Clear authentication cookie
- */
+// Clear authentication cookie
 export async function clearAuthCookie() {
   const cookieStore = await cookies();
   cookieStore.delete("auth-token");
 }
 
-/**
- * Get current authenticated user from token
- */
+// Get current authenticated user from token
 export async function getCurrentUser(): Promise<JWTPayload | null> {
   const token = await getAuthToken();
   if (!token) return null;
   return await verifyToken(token);
 }
 
-/**
- * Middleware to verify authentication
- */
+// Middleware to verify authentication
 export async function requireAuth(request: NextRequest): Promise<NextResponse | JWTPayload> {
   const token = request.cookies.get("auth-token")?.value;
 
@@ -108,18 +94,12 @@ export async function requireAuth(request: NextRequest): Promise<NextResponse | 
   return user;
 }
 
-/**
- * Middleware to verify role-based authorization
- */
-export async function requireRole(
-  request: NextRequest,
-  allowedRoles: Array<"ADMIN" | "STUDENT" | "EDUCATOR">
-): Promise<NextResponse | JWTPayload> {
+// Middleware to verify role-based authorization
+export async function requireRole(request: NextRequest, allowedRoles: Array<"ADMIN" | "STUDENT" | "EDUCATOR">): Promise<NextResponse | JWTPayload> {
   const authResult = await requireAuth(request);
 
-  // If auth failed, return the error response
   if (authResult instanceof NextResponse) {
-    return authResult;
+    return authResult; // Auth failed, return error response
   }
 
   const user = authResult as JWTPayload;

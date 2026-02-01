@@ -1,19 +1,6 @@
 // Mock data for UI visualization
 // This file acts as a placeholder until connected to the database
 
-// User Profile Data
-export const mockUserProfile = {
-  username: "erunim",
-  firstName: "Camille",
-  lastName: "Enraca",
-  email: "camille.enraca@example.com",
-  studentId: "2201000",
-  course: "BSCpE",
-  yearLevel: "4th Year",
-  role: "Student",
-  profileImage: "/img/learner-1.png"
-};
-
 // Dashboard Stats
 export const mockDashboardStats = {
   rank: "Ascendant",

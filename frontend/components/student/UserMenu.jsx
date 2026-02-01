@@ -3,19 +3,25 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaRegUserCircle, FaUser, FaKey, FaSignOutAlt, FaTrophy } from "react-icons/fa";
 
-export default function UserMenu({ userName, userRole }) {
+export default function UserMenu({ userName, userRole, userAvatar }) {
   const [isOpen, setIsOpen] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const menuRef = useRef(null);
   const router = useRouter();
 
-  // Load profile image from localStorage
+  // Load profile image from database or localStorage
   useEffect(() => {
-    const savedImage = localStorage.getItem('userProfileImage');
-    if (savedImage) {
-      setProfileImage(savedImage);
+    // First priority: avatar from database (passed as prop)
+    if (userAvatar) {
+      setProfileImage(userAvatar);
+    } else {
+      // Fallback to localStorage
+      const savedImage = localStorage.getItem('userProfileImage');
+      if (savedImage) {
+        setProfileImage(savedImage);
+      }
     }
-  }, []);
+  }, [userAvatar]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -47,7 +53,7 @@ export default function UserMenu({ userName, userRole }) {
 
   const handleChangePassword = () => {
     setIsOpen(false);
-    router.push("/student/profile#change-password");
+    router.push("/student/change-password");
   };
 
   const handleLogout = async () => {
