@@ -268,19 +268,39 @@
   white-space: nowrap;
   box-shadow: 0 4px 16px rgba(157, 138, 219, 0.4);
   letter-spacing: 0.5px;
-  align-self: flex-end;
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
-.generate-quiz-btn:hover {
+.generate-quiz-btn:hover:not(:disabled) {
   background: var(--accent-primary);
   color: var(--brand-tertiary);
   transform: translateY(-4px);
   box-shadow: 0 6px 24px rgba(157, 138, 219, 0.5);
 }
 
-.generate-quiz-btn:active {
+.generate-quiz-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 12px rgba(157, 138, 219, 0.3);
+}
+
+.generate-quiz-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Transcript dropdown item meta */
+.transcript-meta {
+  font-size: 12px;
+  color: rgba(157, 138, 219, 0.7);
+  margin-top: 4px;
+}
+
+.quiz-dropdown-item.disabled {
+  color: #999;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Section Container */
