@@ -19,30 +19,57 @@ export default function QuizzesPage() {
   const [studentProfile, setStudentProfile] = useState(null);
   
   // Quiz generation states
+  const [lessons, setLessons] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState("");
   const [selectedQuizType, setSelectedQuizType] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [selectedNumQuestions, setSelectedNumQuestions] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Dropdown states
   const [lessonDropdownOpen, setLessonDropdownOpen] = useState(false);
   const [quizTypeDropdownOpen, setQuizTypeDropdownOpen] = useState(false);
+  const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
   const [numQuestionsDropdownOpen, setNumQuestionsDropdownOpen] = useState(false);
   
   // Refs for dropdowns
   const lessonDropdownRef = useRef(null);
   const quizTypeDropdownRef = useRef(null);
+  const difficultyDropdownRef = useRef(null);
   const numQuestionsDropdownRef = useRef(null);
   
   const quizTypes = [
     { value: "MCQ", label: "Multiple Choice" },
-    { value: "Fill-in", label: "Fill in the Blanks" },
-    { value: "Flashcard", label: "Flashcards" }
+    { value: "FILL_IN_BLANK", label: "Fill in the Blanks" },
+    { value: "FLASHCARD", label: "Flashcards" }
+  ];
+
+  const difficulties = [
+    { value: "EASY", label: "Easy" },
+    { value: "MEDIUM", label: "Medium" },
+    { value: "HARD", label: "Hard" }
   ];
   
   const questionNumbers = [10, 15, 20, 25, 30];
 
   const [showGeneratedNotification, setShowGeneratedNotification] = useState(false);
   const [generatedQuizInfo, setGeneratedQuizInfo] = useState(null);
+
+  // Fetch available lessons
+  useEffect(() => {
+    async function fetchLessons() {
+      try {
+        const response = await fetch('/api/quizzes/generate');
+        const data = await response.json();
+        if (data.success) {
+          setLessons(data.lessons);
+        }
+      } catch (error) {
+        console.error('Error fetching lessons:', error);
+      }
+    }
+    fetchLessons();
+  }, []);
 
   useEffect(() => {
     // Check if a quiz was just generated
@@ -123,6 +150,9 @@ export default function QuizzesPage() {
       if (quizTypeDropdownRef.current && !quizTypeDropdownRef.current.contains(event.target)) {
         setQuizTypeDropdownOpen(false);
       }
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target)) {
+        setDifficultyDropdownOpen(false);
+      }
       if (numQuestionsDropdownRef.current && !numQuestionsDropdownRef.current.contains(event.target)) {
         setNumQuestionsDropdownOpen(false);
       }
@@ -149,20 +179,44 @@ export default function QuizzesPage() {
     }
   };
 
-  const handleGenerateQuiz = () => {
-    if (selectedLesson && selectedQuizType && selectedNumQuestions) {
-      console.log("Generating quiz:", {
-        lesson: selectedLesson,
-        quizType: selectedQuizType,
-        numQuestions: selectedNumQuestions
-      });
-      // TODO: Implement quiz generation logic
-      alert(`Quiz generated!\nLesson: ${selectedLesson}\nType: ${selectedQuizType}\nQuestions: ${selectedNumQuestions}`);
-      
-      // Reset form
-      setSelectedLesson("");
-      setSelectedQuizType("");
-      setSelectedNumQuestions("");
+  const handleGenerateQuiz = async () => {
+    if (selectedLesson && selectedQuizType && selectedDifficulty && selectedNumQuestions) {
+      setIsGenerating(true);
+      try {
+        const response = await fetch('/api/quizzes/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lessonId: selectedLesson,
+            type: selectedQuizType,
+            difficulty: selectedDifficulty,
+            count: selectedNumQuestions,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Store quiz info for notification
+          localStorage.setItem('quiz-generated', JSON.stringify({
+            type: data.quiz.type,
+            difficulty: data.quiz.difficulty,
+            count: data.quiz.totalQuestions,
+          }));
+
+          // Navigate to the generated quiz
+          router.push(`/student/quizzes/${data.quiz.id}`);
+        } else {
+          alert(`Failed to generate quiz: ${data.error || 'Unknown error'}\n${data.details || ''}`);
+        }
+      } catch (error) {
+        console.error('Error generating quiz:', error);
+        alert('Failed to generate quiz. Please ensure Ollama is running and try again.');
+      } finally {
+        setIsGenerating(false);
+      }
     } else {
       alert("Please fill in all fields to generate a quiz");
     }
@@ -406,7 +460,7 @@ export default function QuizzesPage() {
 
           {/* Generate Quiz Section */}
           <div className="generate-quiz-section">
-            <h2 className="generate-quiz-title">Generate Quiz</h2>
+            <h2 className="generate-quiz-title">Generate Quiz from Lesson</h2>
             <div className="generate-quiz-form">
               {/* Lesson Dropdown */}
               <div className="quiz-input-group" ref={lessonDropdownRef}>
@@ -416,28 +470,38 @@ export default function QuizzesPage() {
                   onClick={() => {
                     setLessonDropdownOpen(!lessonDropdownOpen);
                     setQuizTypeDropdownOpen(false);
+                    setDifficultyDropdownOpen(false);
                     setNumQuestionsDropdownOpen(false);
                   }}
                 >
                   <span className={!selectedLesson ? "quiz-placeholder" : ""}>
-                    {selectedLesson || "Select a lesson"}
+                    {selectedLesson 
+                      ? lessons.find(l => l.id === selectedLesson)?.title 
+                      : "Select a lesson"}
                   </span>
                   <FaChevronDown className={`quiz-dropdown-icon ${lessonDropdownOpen ? 'open' : ''}`} />
                 </div>
                 {lessonDropdownOpen && (
                   <div className="quiz-dropdown-menu">
-                    {mockAvailableLessons.map((lesson) => (
-                      <div
-                        key={lesson.id}
-                        className={`quiz-dropdown-item ${selectedLesson === lesson.title ? 'selected' : ''}`}
-                        onClick={() => {
-                          setSelectedLesson(lesson.title);
-                          setLessonDropdownOpen(false);
-                        }}
-                      >
-                        {lesson.title}
-                      </div>
-                    ))}
+                    {lessons.length === 0 ? (
+                      <div className="quiz-dropdown-item disabled">No lessons available</div>
+                    ) : (
+                      lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className={`quiz-dropdown-item ${selectedLesson === lesson.id ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedLesson(lesson.id);
+                            setLessonDropdownOpen(false);
+                          }}
+                        >
+                          <div>{lesson.title}</div>
+                          <div className="transcript-meta">
+                            {lesson.subject}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -450,6 +514,7 @@ export default function QuizzesPage() {
                   onClick={() => {
                     setQuizTypeDropdownOpen(!quizTypeDropdownOpen);
                     setLessonDropdownOpen(false);
+                    setDifficultyDropdownOpen(false);
                     setNumQuestionsDropdownOpen(false);
                   }}
                 >
@@ -476,6 +541,41 @@ export default function QuizzesPage() {
                 )}
               </div>
 
+              {/* Difficulty Dropdown */}
+              <div className="quiz-input-group" ref={difficultyDropdownRef}>
+                <label className="quiz-input-label">Difficulty</label>
+                <div 
+                  className="quiz-dropdown-trigger"
+                  onClick={() => {
+                    setDifficultyDropdownOpen(!difficultyDropdownOpen);
+                    setLessonDropdownOpen(false);
+                    setQuizTypeDropdownOpen(false);
+                    setNumQuestionsDropdownOpen(false);
+                  }}
+                >
+                  <span className={!selectedDifficulty ? "quiz-placeholder" : ""}>
+                    {selectedDifficulty ? difficulties.find(d => d.value === selectedDifficulty)?.label : "Select difficulty"}
+                  </span>
+                  <FaChevronDown className={`quiz-dropdown-icon ${difficultyDropdownOpen ? 'open' : ''}`} />
+                </div>
+                {difficultyDropdownOpen && (
+                  <div className="quiz-dropdown-menu">
+                    {difficulties.map((difficulty) => (
+                      <div
+                        key={difficulty.value}
+                        className={`quiz-dropdown-item ${selectedDifficulty === difficulty.value ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedDifficulty(difficulty.value);
+                          setDifficultyDropdownOpen(false);
+                        }}
+                      >
+                        {difficulty.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Number of Questions Dropdown */}
               <div className="quiz-input-group" ref={numQuestionsDropdownRef}>
                 <label className="quiz-input-label">No. of Questions</label>
@@ -485,6 +585,7 @@ export default function QuizzesPage() {
                     setNumQuestionsDropdownOpen(!numQuestionsDropdownOpen);
                     setLessonDropdownOpen(false);
                     setQuizTypeDropdownOpen(false);
+                    setDifficultyDropdownOpen(false);
                   }}
                 >
                   <span className={!selectedNumQuestions ? "quiz-placeholder" : ""}>
@@ -497,9 +598,9 @@ export default function QuizzesPage() {
                     {questionNumbers.map((num) => (
                       <div
                         key={num}
-                        className={`quiz-dropdown-item ${selectedNumQuestions === num.toString() ? 'selected' : ''}`}
+                        className={`quiz-dropdown-item ${selectedNumQuestions === num ? 'selected' : ''}`}
                         onClick={() => {
-                          setSelectedNumQuestions(num.toString());
+                          setSelectedNumQuestions(num);
                           setNumQuestionsDropdownOpen(false);
                         }}
                       >
@@ -510,8 +611,12 @@ export default function QuizzesPage() {
                 )}
               </div>
 
-              <button className="generate-quiz-btn" onClick={handleGenerateQuiz}>
-                Generate Quiz
+              <button 
+                className="generate-quiz-btn" 
+                onClick={handleGenerateQuiz}
+                disabled={isGenerating}
+              >
+                {isGenerating ? 'Generating Quiz...' : 'Generate Quiz'}
               </button>
             </div>
           </div>

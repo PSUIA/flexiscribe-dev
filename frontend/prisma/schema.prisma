@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -51,6 +50,8 @@ model Student {
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  quizAttempts  QuizAttempt[]
 
   achievements StudentAchievement[]
   badges       StudentBadge[]
@@ -74,6 +75,80 @@ model Department {
   id        String     @id @default(cuid())
   name      String     @unique
   educators Educator[]
+}
+
+enum QuizType {
+  MCQ
+  FILL_IN_BLANK
+  FLASHCARD
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  quizzes     Quiz[]
+  
+  @@index([subject])
+}
+
+model Quiz {
+  id            String     @id @default(cuid())
+  lessonId      String
+  lesson        Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  type          QuizType
+  difficulty    Difficulty
+  totalQuestions Int
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  questions     QuizQuestion[]
+  attempts      QuizAttempt[]
+  
+  @@index([lessonId])
+}
+
+model QuizQuestion {
+  id            String   @id @default(cuid())
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  questionText  String   @db.Text
+  questionData  Json     // Stores type-specific data (choices, answer, distractors, etc.)
+  orderIndex    Int
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  score       Float
+  totalQuestions Int
+  answers     Json     // Stores student answers
+  completedAt DateTime @default(now())
+  
+  @@index([quizId])
+  @@index([studentId])
 }
 
 model Achievement {
