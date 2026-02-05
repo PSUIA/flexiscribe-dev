@@ -89,15 +89,12 @@ export default function Login() {
       }
 
       setSuccess("Login successful ✅");
+      setIsLoading(false);
       
-      // Store user data in sessionStorage
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("user", JSON.stringify(loginData.user));
-      }
-
+      // Wait for browser to process Set-Cookie header before redirecting
       setTimeout(() => {
-        router.push("/student/dashboard");
-      }, 1000);
+        window.location.href = "/student/dashboard";
+      }, 200);
     } catch (err) {
       console.error("Login error:", err);
       setError("An error occurred during login. Please try again.");

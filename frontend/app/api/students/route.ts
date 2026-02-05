@@ -1,6 +1,9 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this-in-production";
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +11,7 @@ export async function POST(request: Request) {
     const {
       fullName,
       studentNumber,
+      username,
       yearLevel,
       section,
       program,
@@ -21,6 +25,7 @@ export async function POST(request: Request) {
     if (
       !fullName ||
       !studentNumber ||
+      !username ||
       !yearLevel ||
       !section ||
       !program ||
@@ -84,6 +89,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if username already exists
+    const existingStudentByUsername = await prisma.student.findUnique({
+      where: { username },
+    });
+
+    if (existingStudentByUsername) {
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 409 }
+      );
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -105,6 +122,7 @@ export async function POST(request: Request) {
       const student = await tx.student.create({
         data: {
           studentNumber,
+          username,
           fullName,
           yearLevel,
           section,
@@ -118,15 +136,37 @@ export async function POST(request: Request) {
       return { user, student };
     });
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: result.user.id, email: result.user.email, role: result.user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Calculate token expiry (7 days from now)
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+
+    // Update user with token
+    await prisma.user.update({
+      where: { id: result.user.id },
+      data: {
+        token,
+        tokenExpiry,
+      },
+    });
+
     return NextResponse.json(
       {
         message: "Student registered successfully",
         student: {
           id: result.student.id,
           studentNumber: result.student.studentNumber,
+          username: result.student.username,
           fullName: result.student.fullName,
           email: result.user.email,
         },
+        token,
       },
       { status: 201 }
     );

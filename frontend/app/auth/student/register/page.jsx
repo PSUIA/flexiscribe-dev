@@ -124,6 +124,7 @@ export default function StudentRegister() {
         body: JSON.stringify({
           fullName,
           studentNumber,
+          username,
           yearLevel,
           section,
           program,

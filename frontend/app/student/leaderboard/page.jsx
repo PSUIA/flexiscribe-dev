@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaCrown, FaMedal, FaStar, FaFire } from "react-icons/fa";
-import UserMenu from "../dashboard/UserMenu";
-import NotificationMenu from "../dashboard/NotificationMenu";
-import SearchBar from "../dashboard/SearchBar";
-import { mockUserProfile, mockLeaderboard } from "../dashboard/mockData";
+import StudentSidebar from "../../../components/student/StudentSidebar";
+import StudentHeader from "../../../components/student/StudentHeader";
+import { toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode, handleNavigation as utilHandleNavigation } from "../../../utils/student";
+import { ALL_RANKS } from "@/utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -18,6 +18,8 @@ export default function StudentLeaderboard() {
   const [displayedCount, setDisplayedCount] = useState(10); // Start with top 10
   const [isLoading, setIsLoading] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState(null);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +41,44 @@ export default function StudentLeaderboard() {
       setUserProfileImage(savedImage);
     }
 
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+          
+          // Set avatar from database if available
+          if (data.profile.avatar) {
+            setUserProfileImage(data.profile.avatar);
+          }
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      }
+    };
+
+    // Fetch leaderboard from database
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch('/api/students/leaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboard(data.leaderboard);
+        } else {
+          console.error('Failed to fetch leaderboard');
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    };
+
+    fetchStudentProfile();
+    fetchLeaderboard();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -50,10 +90,10 @@ export default function StudentLeaderboard() {
       const documentHeight = document.documentElement.scrollHeight;
       
       // Load more when within 200px of bottom
-      if (scrollPosition >= documentHeight - 200 && !isLoading && displayedCount < 100) {
+      if (scrollPosition >= documentHeight - 200 && !isLoading && displayedCount < leaderboard.length) {
         setIsLoading(true);
         
-        // Simulate loading delay (remove in production with real API)
+        // Load more entries
         setTimeout(() => {
           setDisplayedCount(prev => Math.min(prev + 10, 100)); // Add 10 more, max 100
           setIsLoading(false);
@@ -65,25 +105,25 @@ export default function StudentLeaderboard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [displayedCount, isLoading]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const handleToggleSidebar = () => utilToggleSidebar(sidebarOpen, setSidebarOpen);
+  const handleToggleDarkMode = () => utilToggleDarkMode(darkMode, setDarkMode);
+  const handleNav = (path) => utilHandleNavigation(path, router, sidebarOpen, setSidebarOpen);
+
+  const getTierFromXP = (xp) => {
+    const rank = ALL_RANKS.find(
+      r => xp >= r.xpMin && xp <= r.xpMax
+    );
+    return rank ? rank.name : "";
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
-      document.documentElement.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  const getOrdinalSuffix = (n) => {
+    if (n % 100 >= 11 && n % 100 <= 13) return "TH";
 
-  const handleNavigation = (path) => {
-    router.push(path);
-    if (sidebarOpen) {
-      setSidebarOpen(false);
+    switch (n % 10) {
+      case 1: return "ST";
+      case 2: return "ND";
+      case 3: return "RD";
+      default: return "TH";
     }
   };
 
@@ -152,14 +192,14 @@ export default function StudentLeaderboard() {
   });
 
   // Get top 3 users
-  const topThree = mockLeaderboard.slice(0, 3);
-  const restOfLeaderboard = mockLeaderboard.slice(3);
+  const topThree = leaderboard.slice(0, 3);
+  const restOfLeaderboard = leaderboard.slice(3);
 
   // Display only the number of users based on displayedCount
-  const displayedLeaderboard = mockLeaderboard.slice(0, displayedCount);
+  const displayedLeaderboard = leaderboard.slice(0, displayedCount);
 
   // Find current user's rank
-  const currentUserRank = mockLeaderboard.find(user => user.username === mockUserProfile.username);
+  const currentUserRank = leaderboard.find(user => user.username === studentProfile?.username);
 
   const getRankColor = (rank) => {
     if (rank === 1) return "#FFD700"; // Gold
@@ -177,130 +217,24 @@ export default function StudentLeaderboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Mobile Menu Toggle Button */}
-      <button className="mobile-menu-toggle" onClick={toggleSidebar}>
-        {sidebarOpen ? <FaTimes /> : <FaBars />}
-      </button>
-
-      {/* Sidebar Overlay for Mobile */}
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="logo-section">
-          <div className="logo-content">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="nav-menu">
-          <div className="nav-item" onClick={() => handleNavigation("/student/dashboard")}>
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => handleNavigation("/student/reviewers")}>
-            <FaBook className="nav-icon" />
-            <span>Reviewers</span>
-          </div>
-          <div className="nav-item" onClick={() => handleNavigation("/student/quizzes")}>
-            <FaGamepad className="nav-icon" />
-            <span>Quizzes</span>
-          </div>
-          <div className="nav-item active" onClick={() => handleNavigation("/student/leaderboard")}>
-            <FaTrophy className="nav-icon" />
-            <span>Leaderboard</span>
-          </div>
-        </nav>
-
-        <div className="clock-widget">
-          <svg className="clock-svg" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-            />
-            {/* Hour markers */}
-            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(
-              (angle) => (
-                <line
-                  key={angle}
-                  x1="50"
-                  y1="10"
-                  x2="50"
-                  y2="15"
-                  stroke="white"
-                  strokeWidth="2"
-                  transform={`rotate(${angle} 50 50)`}
-                />
-              )
-            )}
-            {/* Hour hand */}
-            <line
-              className="hour-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="30"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              transform={`rotate(${hourAngle} 50 50)`}
-            />
-            {/* Minute hand */}
-            <line
-              className="minute-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="20"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              transform={`rotate(${minuteAngle} 50 50)`}
-            />
-            {/* Second hand */}
-            <line
-              className="second-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="15"
-              stroke="var(--accent-primary)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              transform={`rotate(${secondAngle} 50 50)`}
-            />
-            {/* Center dot */}
-            <circle cx="50" cy="50" r="3" fill="white" />
-          </svg>
-          <div className="clock-time">{timeString}</div>
-          <div className="clock-date">{dateString}</div>
-        </div>
-      </aside>
+      <StudentSidebar 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        currentTime={currentTime}
+        hourAngle={hourAngle}
+        minuteAngle={minuteAngle}
+        secondAngle={secondAngle}
+        timeString={timeString}
+        dateString={dateString}
+      />
 
       {/* Main Content */}
       <main className="main-content flex flex-col justify-between min-h-screen">
-        {/* Header */}
-        <header className="dashboard-header">
-          <SearchBar />
-          <div className="header-actions">
-            {/* Theme Toggle Button */}
-            <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-              {darkMode ? <FaSun /> : <FaMoon />}
-            </button>
-            
-            <NotificationMenu />
-            
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
-          </div>
-        </header>
+        <StudentHeader 
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          studentProfile={studentProfile}
+        />
 
         {/* Leaderboard Content */}
         <div className="leaderboard-page-container">
@@ -317,18 +251,18 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    {topThree[1]?.username === mockUserProfile.username && userProfileImage ? (
-                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    {topThree[1]?.username === studentProfile?.username && (studentProfile?.avatar || userProfileImage) ? (
+                      <img src={studentProfile?.avatar || userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     ) : (
                       <FaStar className="avatar-icon" />
                     )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[1]?.username}</h3>
-                <p className="podium-xp">{topThree[1]?.xp.toLocaleString()} XP</p>
+                <p className="podium-xp">{topThree[1]?.xp.toLocaleString() || "0"} XP</p>
                 <div className="podium-rank-badge">
                   <FaMedal className="rank-icon" />
-                  <span>{topThree[1]?.level}</span>
+                  <span>{getTierFromXP(topThree[1]?.xp) || "N/A"}</span>
                 </div>
               </div>
 
@@ -341,18 +275,18 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    {topThree[0]?.username === mockUserProfile.username && userProfileImage ? (
-                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    {topThree[0]?.username === studentProfile?.username && (studentProfile?.avatar || userProfileImage) ? (
+                      <img src={studentProfile?.avatar || userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     ) : (
                       <FaStar className="avatar-icon" />
                     )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[0]?.username}</h3>
-                <p className="podium-xp">{topThree[0]?.xp.toLocaleString()} XP</p>
+                <p className="podium-xp">{topThree[0]?.xp.toLocaleString() || "0"} XP</p>
                 <div className="podium-rank-badge">
                   <FaCrown className="rank-icon" />
-                  <span>{topThree[0]?.level}</span>
+                  <span>{getTierFromXP(topThree[0]?.xp) || "N/A"}</span>
                 </div>
               </div>
 
@@ -365,18 +299,18 @@ export default function StudentLeaderboard() {
                 </div>
                 <div className="podium-avatar">
                   <div className="avatar-circle">
-                    {topThree[2]?.username === mockUserProfile.username && userProfileImage ? (
-                      <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    {topThree[2]?.username === studentProfile?.username && (studentProfile?.avatar || userProfileImage) ? (
+                      <img src={studentProfile?.avatar || userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     ) : (
                       <FaStar className="avatar-icon" />
                     )}
                   </div>
                 </div>
                 <h3 className="podium-username">{topThree[2]?.username}</h3>
-                <p className="podium-xp">{topThree[2]?.xp.toLocaleString()} XP</p>
+                <p className="podium-xp">{topThree[2]?.xp.toLocaleString() || "0"} XP</p>
                 <div className="podium-rank-badge">
                   <FaMedal className="rank-icon" />
-                  <span>{topThree[2]?.level}</span>
+                  <span>{getTierFromXP(topThree[2]?.xp) || "N/A"}</span>
                 </div>
               </div>
             </div>
@@ -395,7 +329,7 @@ export default function StudentLeaderboard() {
               {displayedLeaderboard.map((user) => (
                 <div 
                   key={user.rank} 
-                  className={`leaderboard-row ${user.username === mockUserProfile.username ? 'current-user' : ''}`}
+                  className={`leaderboard-row ${user.username === studentProfile?.username ? 'current-user' : ''}`}
                   style={{ 
                     borderLeft: user.rank <= 3 ? `4px solid ${getRankColor(user.rank)}` : 'none'
                   }}
@@ -403,21 +337,26 @@ export default function StudentLeaderboard() {
                   <div className="cell rank-col">
                     <div className="rank-number" style={{ color: getRankColor(user.rank) }}>
                       {user.rank <= 3 && getMedalIcon(user.rank)}
-                      {user.rank > 3 && <span className="rank-text">{user.rank}TH</span>}
+                      {user.rank > 3 && (
+                        <span className="rank-text">
+                          {user.rank}
+                          {getOrdinalSuffix(user.rank)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
                   <div className="cell username-col">
                     <div className="leaderboard-user-info">
                       <div className="leaderboard-user-avatar">
-                        {user.username === mockUserProfile.username && userProfileImage ? (
-                          <img src={userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        {user.username === studentProfile?.username && (studentProfile?.avatar || userProfileImage) ? (
+                          <img src={studentProfile?.avatar || userProfileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                         ) : (
                           <FaStar className="avatar-icon" />
                         )}
                       </div>
                       <span className="username">{user.username}</span>
-                      {user.username === mockUserProfile.username && (
+                      {user.username === studentProfile?.username && (
                         <span className="you-badge">You</span>
                       )}
                     </div>
@@ -430,7 +369,7 @@ export default function StudentLeaderboard() {
                       ) : (
                         <FaMedal className="ranking-icon" />
                       )}
-                      <span>{user.level}</span>
+                      <span>{getTierFromXP(user.xp)}</span>
                     </div>
                   </div>
                   
@@ -473,21 +412,23 @@ export default function StudentLeaderboard() {
                   <FaStar className="stat-icon" />
                   <div className="stat-info">
                     <p className="stat-label">Total XP</p>
-                    <p className="stat-value">{currentUserRank.xp.toLocaleString()}</p>
+                    <p className="stat-value">{currentUserRank.xp.toLocaleString() || 0}</p>
                   </div>
                 </div>
                 <div className="stat-item">
                   <FaFire className="stat-icon" />
                   <div className="stat-info">
                     <p className="stat-label">Study Streak</p>
-                    <p className="stat-value">{currentUserRank.streak} days</p>
+                    <p className="stat-value">
+                      {currentUserRank.streak || 0} {currentUserRank.streak === 1 ? "day" : "days"}
+                    </p>
                   </div>
                 </div>
                 <div className="stat-item">
                   <FaGamepad className="stat-icon" />
                   <div className="stat-info">
                     <p className="stat-label">Quizzes Taken</p>
-                    <p className="stat-value">{currentUserRank.quizzesTaken}</p>
+                    <p className="stat-value">{currentUserRank.quizzesTaken || 0}</p>
                   </div>
                 </div>
               </div>

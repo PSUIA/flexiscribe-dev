@@ -43,9 +43,23 @@ export default function TopBar({ onMenuClick }) {
     setUserOpen(false);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     closeAll();
-    router.push("/admin");
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Redirect to login
+      window.location.href = "/auth/admin/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = "/auth/admin/login";
+    }
   };
 
   return (

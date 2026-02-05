@@ -1,6 +1,9 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this-in-production";
 
 export async function POST(request: Request) {
   try {
@@ -92,13 +95,46 @@ export async function POST(request: Request) {
       };
     }
 
-    return NextResponse.json(
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Calculate token expiry (7 days from now)
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+
+    // Update user with token in database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        token,
+        tokenExpiry,
+      },
+    });
+
+    // Create response
+    const response = NextResponse.json(
       {
         message: "Login successful",
         user: userData,
+        token,
       },
       { status: 200 }
     );
+
+    // Set secure HTTP-only cookie on the response
+    response.cookies.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

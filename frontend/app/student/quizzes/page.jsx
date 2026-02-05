@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaChevronDown } from "react-icons/fa";
-import UserMenu from "../dashboard/UserMenu";
-import NotificationMenu from "../dashboard/NotificationMenu";
-import SearchBar from "../dashboard/SearchBar";
-import { mockUserProfile, mockCompletedQuizzes, mockAvailableLessons } from "../dashboard/mockData";
+import UserMenu from "@/components/student/UserMenu";
+import NotificationMenu from "@/components/student/NotificationMenu";
+import SearchBar from "@/components/student/SearchBar";
+import { mockCompletedQuizzes, mockAvailableLessons } from "../dashboard/mockData";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -16,6 +16,7 @@ export default function QuizzesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [sortedQuizzes, setSortedQuizzes] = useState([]);
+  const [studentProfile, setStudentProfile] = useState(null);
   
   // Quiz generation states
   const [lessons, setLessons] = useState([]);
@@ -103,6 +104,23 @@ export default function QuizzesPage() {
       setDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     }
+
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      }
+    };
+
+    fetchStudentProfile();
 
     // Load quiz access times from localStorage and sort quizzes
     const savedAccessTimes = JSON.parse(localStorage.getItem('quizAccessTimes') || '{}');
@@ -417,7 +435,7 @@ export default function QuizzesPage() {
             
             <NotificationMenu />
             
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
+            <UserMenu userName={studentProfile?.username || 'Student'} userRole={studentProfile?.role || 'Student'} userAvatar={studentProfile?.avatar} />
           </div>
         </header>
         

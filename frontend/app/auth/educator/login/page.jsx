@@ -95,19 +95,16 @@ export default function EducatorLogin() {
       }
 
       setSuccess("Login successful ✅");
-      
-      // Store user data in sessionStorage or localStorage if needed
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("user", JSON.stringify(data.user));
-      }
+      setIsLoading(false);
 
+      // Wait for browser to process Set-Cookie header before redirecting
       setTimeout(() => {
         if (isPrototypeMode) {
-          router.push("/prototype");
+          window.location.href = "/prototype";
         } else {
-          router.push("/educator/dashboard");
+          window.location.href = "/educator/dashboard";
         }
-      }, 1000);
+      }, 200);
     } catch (err) {
       console.error("Login error:", err);
       setError("An error occurred during login. Please try again.");
