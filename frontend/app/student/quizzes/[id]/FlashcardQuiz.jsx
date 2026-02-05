@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaLightbulb, FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import UserMenu from "../../dashboard/UserMenu";
-import NotificationMenu from "../../dashboard/NotificationMenu";
-import SearchBar from "../../dashboard/SearchBar";
-import { mockUserProfile } from "../../dashboard/mockData";
+import UserMenu from "@/components/student/UserMenu";
+import NotificationMenu from "@/components/student/NotificationMenu";
+import SearchBar from "@/components/student/SearchBar";
 import "../../dashboard/styles.css";
 import "./quiz-styles.css";
 

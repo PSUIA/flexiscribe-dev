@@ -5,7 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "../../../dashboard/UserMenu";
 import NotificationMenu from "../../../dashboard/NotificationMenu";
 import SearchBar from "../../../dashboard/SearchBar";
-import { mockUserProfile, mockTranscriptsByClass } from "../../../dashboard/mockData";
+import { mockTranscriptsByClass } from "../../../dashboard/mockData";
 import "../../../dashboard/styles.css";
 import "./styles.css";
 
@@ -18,6 +18,7 @@ export default function ClassTranscriptsPage() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [studentProfile, setStudentProfile] = useState(null);
   
   // Get transcripts for this class
   const transcripts = mockTranscriptsByClass[classCode] || [];
@@ -35,6 +36,23 @@ export default function ClassTranscriptsPage() {
       setDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     }
+
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      }
+    };
+
+    fetchStudentProfile();
 
     return () => clearInterval(timer);
   }, []);
@@ -158,7 +176,7 @@ export default function ClassTranscriptsPage() {
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
             <NotificationMenu />
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
+            <UserMenu userName={studentProfile?.username || 'Student'} userRole={studentProfile?.role || 'Student'} userAvatar={studentProfile?.avatar} />
           </div>
         </header>
         

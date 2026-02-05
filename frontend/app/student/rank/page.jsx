@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaMedal, FaStar, FaCrown } from "react-icons/fa";
-import UserMenu from "../dashboard/UserMenu";
-import NotificationMenu from "../dashboard/NotificationMenu";
-import SearchBar from "../dashboard/SearchBar";
-import { mockUserProfile, mockRankSystem, mockAchievements, mockBadges } from "../dashboard/mockData";
+import StudentSidebar from "../../../components/student/StudentSidebar";
+import StudentHeader from "../../../components/student/StudentHeader";
+import { calculateRank, ALL_RANKS, toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode } from "../../../utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -16,6 +15,73 @@ export default function StudentRank() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState("overview"); // overview, achievements, badges
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [achievements, setAchievements] = useState([]);
+  const [badges, setBadges] = useState([]);
+  const [leaderboardRank, setLeaderboardRank] = useState(null);
+  const [currentRank, setCurrentRank] = useState({
+    name: "Learner V",
+    tier: "V",
+    xp: 0,
+    xpMin: 0,
+    xpMax: 199,
+    color: "#CD7F32",
+    icon: "/img/learner-5.png"
+  });
+
+  // Helper function to get ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
+  const getOrdinalSuffix = (num) => {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) return "st";
+    if (j === 2 && k !== 12) return "nd";
+    if (j === 3 && k !== 13) return "rd";
+    return "th";
+  };
+
+  // Calculate rank based on XP
+  const calculateRank = (xp) => {
+    const allRanks = [
+      { name: "Learner V", tier: "V", xpMin: 0, xpMax: 199, color: "#CD7F32", icon: "/img/learner-5.png" },
+      { name: "Learner IV", tier: "IV", xpMin: 200, xpMax: 399, color: "#CD7F32", icon: "/img/learner-4.png" },
+      { name: "Learner III", tier: "III", xpMin: 400, xpMax: 599, color: "#CD7F32", icon: "/img/learner-3.png" },
+      { name: "Learner II", tier: "II", xpMin: 600, xpMax: 799, color: "#CD7F32", icon: "/img/learner-2.png" },
+      { name: "Learner I", tier: "I", xpMin: 800, xpMax: 999, color: "#CD7F32", icon: "/img/learner-1.png" },
+      { name: "Habit Builder V", tier: "V", xpMin: 1000, xpMax: 1199, color: "#C0C0C0", icon: "/img/habit-builder-5.png" },
+      { name: "Habit Builder IV", tier: "IV", xpMin: 1200, xpMax: 1399, color: "#C0C0C0", icon: "/img/habit-builder-4.png" },
+      { name: "Habit Builder III", tier: "III", xpMin: 1400, xpMax: 1599, color: "#C0C0C0", icon: "/img/habit-builder-3.png" },
+      { name: "Habit Builder II", tier: "II", xpMin: 1600, xpMax: 1799, color: "#C0C0C0", icon: "/img/habit-builder-2.png" },
+      { name: "Habit Builder I", tier: "I", xpMin: 1800, xpMax: 1999, color: "#C0C0C0", icon: "/img/habit-builder-1.png" },
+      { name: "Growth Seeker V", tier: "V", xpMin: 2000, xpMax: 2299, color: "#FFD700", icon: "/img/growth-seeker-5.png" },
+      { name: "Growth Seeker IV", tier: "IV", xpMin: 2300, xpMax: 2599, color: "#FFD700", icon: "/img/growth-seeker-4.png" },
+      { name: "Growth Seeker III", tier: "III", xpMin: 2600, xpMax: 2899, color: "#FFD700", icon: "/img/growth-seeker-3.png" },
+      { name: "Growth Seeker II", tier: "II", xpMin: 2900, xpMax: 3199, color: "#FFD700", icon: "/img/growth-seeker-2.png" },
+      { name: "Growth Seeker I", tier: "I", xpMin: 3200, xpMax: 3499, color: "#FFD700", icon: "/img/growth-seeker-1.png" },
+      { name: "Self-Driven V", tier: "V", xpMin: 3500, xpMax: 3899, color: "#90EE90", icon: "/img/self-driven-5.png" },
+      { name: "Self-Driven IV", tier: "IV", xpMin: 3900, xpMax: 4299, color: "#90EE90", icon: "/img/self-driven-4.png" },
+      { name: "Self-Driven III", tier: "III", xpMin: 4300, xpMax: 4699, color: "#90EE90", icon: "/img/self-driven-3.png" },
+      { name: "Self-Driven II", tier: "II", xpMin: 4700, xpMax: 5099, color: "#90EE90", icon: "/img/self-driven-2.png" },
+      { name: "Self-Driven I", tier: "I", xpMin: 5100, xpMax: 5499, color: "#90EE90", icon: "/img/self-driven-1.png" },
+      { name: "Mastery V", tier: "V", xpMin: 5500, xpMax: 5999, color: "#9370DB", icon: "/img/mastery-5.png" },
+      { name: "Mastery IV", tier: "IV", xpMin: 6000, xpMax: 6499, color: "#9370DB", icon: "/img/mastery-4.png" },
+      { name: "Mastery III", tier: "III", xpMin: 6500, xpMax: 6999, color: "#9370DB", icon: "/img/mastery-3.png" },
+      { name: "Mastery II", tier: "II", xpMin: 7000, xpMax: 7499, color: "#9370DB", icon: "/img/mastery-2.png" },
+      { name: "Mastery I", tier: "I", xpMin: 7500, xpMax: 7999, color: "#9370DB", icon: "/img/mastery-1.png" },
+      { name: "Peak Performer V", tier: "V", xpMin: 8000, xpMax: 8499, color: "#00CED1", icon: "/img/peak-performer-5.png" },
+      { name: "Peak Performer IV", tier: "IV", xpMin: 8500, xpMax: 8999, color: "#00CED1", icon: "/img/peak-performer-4.png" },
+      { name: "Peak Performer III", tier: "III", xpMin: 9000, xpMax: 9499, color: "#00CED1", icon: "/img/peak-performer-3.png" },
+      { name: "Peak Performer II", tier: "II", xpMin: 9500, xpMax: 9999, color: "#00CED1", icon: "/img/peak-performer-2.png" },
+      { name: "Peak Performer I", tier: "I", xpMin: 10000, xpMax: 10499, color: "#00CED1", icon: "/img/peak-performer-1.png" },
+      { name: "Ascendant", tier: "VII", xpMin: 10500, xpMax: 999999, color: "#FF1493", icon: "/img/ascendant.png" }
+    ];
+
+    for (const rank of allRanks) {
+      if (xp >= rank.xpMin && xp <= rank.xpMax) {
+        return { ...rank, xp, allRanks };
+      }
+    }
+    return { ...allRanks[0], xp, allRanks }; // Default to Learner V
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -31,23 +97,113 @@ export default function StudentRank() {
       document.documentElement.classList.add('dark-mode');
     }
 
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+          
+          // Set XP and calculate rank
+          const studentXP = data.profile.xp || 0;
+          const rank = calculateRank(studentXP);
+          setCurrentRank(rank);
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      }
+    };
+
+    // Fetch achievements from database
+    const fetchAchievements = async () => {
+      try {
+        const response = await fetch('/api/students/achievements');
+        if (response.ok) {
+          const data = await response.json();
+          setAchievements(data.achievements);
+        } else {
+          console.error('Failed to fetch achievements');
+        }
+      } catch (error) {
+        console.error('Error fetching achievements:', error);
+      }
+    };
+
+    // Fetch badges from database
+    const fetchBadges = async () => {
+      try {
+        const response = await fetch('/api/students/badges');
+        if (response.ok) {
+          const data = await response.json();
+          setBadges(data.badges);
+        } else {
+          console.error('Failed to fetch badges');
+        }
+      } catch (error) {
+        console.error('Error fetching badges:', error);
+      }
+    };
+
+    // Fetch leaderboard rank
+    const fetchLeaderboardRank = async () => {
+      try {
+        const response = await fetch('/api/students/leaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          // Find current student's rank in leaderboard
+          const currentStudent = data.leaderboard.find(
+            (student) => student.id === studentProfile?.id
+          );
+          if (currentStudent) {
+            setLeaderboardRank(currentStudent.rank);
+          }
+        } else {
+          console.error('Failed to fetch leaderboard');
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    };
+
+    fetchStudentProfile();
+    fetchAchievements();
+    fetchBadges();
+
     return () => clearInterval(timer);
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
-      document.documentElement.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
+  // Fetch leaderboard rank when student profile is loaded
+  useEffect(() => {
+    if (studentProfile) {
+      const fetchLeaderboardRank = async () => {
+        try {
+          const response = await fetch('/api/students/leaderboard');
+          if (response.ok) {
+            const data = await response.json();
+            // Find current student's rank in leaderboard
+            const currentStudent = data.leaderboard.find(
+              (student) => student.id === studentProfile.id
+            );
+            if (currentStudent) {
+              setLeaderboardRank(currentStudent.rank);
+            }
+          } else {
+            console.error('Failed to fetch leaderboard');
+          }
+        } catch (error) {
+          console.error('Error fetching leaderboard:', error);
+        }
+      };
+      
+      fetchLeaderboardRank();
     }
-  };
+  }, [studentProfile]);
+
+  const handleToggleSidebar = () => utilToggleSidebar(sidebarOpen, setSidebarOpen);
+  const handleToggleDarkMode = () => utilToggleDarkMode(darkMode, setDarkMode);
 
   const handleBack = () => {
     router.push("/student/dashboard");
@@ -77,133 +233,33 @@ export default function StudentRank() {
     year: "numeric",
   });
 
-  const currentRank = mockRankSystem.currentRank;
   const xpProgress = ((currentRank.xp - currentRank.xpMin) / (currentRank.xpMax - currentRank.xpMin)) * 100;
-  const earnedAchievements = mockAchievements.filter(a => a.earned);
-  const lockedAchievements = mockAchievements.filter(a => !a.earned);
-  const earnedBadges = mockBadges.filter(b => b.earned);
-  const lockedBadges = mockBadges.filter(b => !b.earned);
+  const earnedAchievements = achievements.filter(a => a.earned);
+  const lockedAchievements = achievements.filter(a => !a.earned);
+  const earnedBadges = badges.filter(b => b.earned);
+  const lockedBadges = badges.filter(b => !b.earned);
+  const allRanks = currentRank.allRanks || [];
 
   return (
     <div className="dashboard-container">
-      {/* Mobile Menu Toggle Button */}
-      <button className="mobile-menu-toggle" onClick={toggleSidebar}>
-        {sidebarOpen ? <FaTimes /> : <FaBars />}
-      </button>
-
-      {/* Sidebar Overlay for Mobile */}
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="logo-section">
-          <div className="logo-content">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="nav-menu">
-          <div className="nav-item" onClick={() => router.push("/student/dashboard")}>
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push("/student/reviewers")}>
-            <FaBook className="nav-icon" />
-            <span>Reviewers</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push("/student/quizzes")}>
-            <FaGamepad className="nav-icon" />
-            <span>Quizzes</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push("/student/leaderboard")}>
-            <FaTrophy className="nav-icon" />
-            <span>Leaderboard</span>
-          </div>
-        </nav>
-
-        <div className="clock-widget">
-          <svg className="clock-svg" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-            />
-            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(
-              (angle) => (
-                <line
-                  key={angle}
-                  x1="50"
-                  y1="10"
-                  x2="50"
-                  y2="15"
-                  stroke="white"
-                  strokeWidth="2"
-                  transform={`rotate(${angle} 50 50)`}
-                />
-              )
-            )}
-            <line
-              className="hour-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="30"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              transform={`rotate(${hourAngle} 50 50)`}
-            />
-            <line
-              className="minute-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="20"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              transform={`rotate(${minuteAngle} 50 50)`}
-            />
-            <line
-              className="second-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="15"
-              stroke="var(--accent-primary)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              transform={`rotate(${secondAngle} 50 50)`}
-            />
-            <circle cx="50" cy="50" r="3" fill="white" />
-          </svg>
-          <div className="clock-time">{timeString}</div>
-          <div className="clock-date">{dateString}</div>
-        </div>
-      </aside>
+      <StudentSidebar 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        currentTime={currentTime}
+        hourAngle={hourAngle}
+        minuteAngle={minuteAngle}
+        secondAngle={secondAngle}
+        timeString={timeString}
+        dateString={dateString}
+      />
 
       {/* Main Content */}
       <main className="main-content flex flex-col justify-between min-h-screen">
-        {/* Header */}
-        <header className="dashboard-header">
-          <SearchBar />
-          <div className="header-actions">
-            <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-              {darkMode ? <FaSun /> : <FaMoon />}
-            </button>
-            
-            <NotificationMenu />
-            
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
-          </div>
-        </header>
+        <StudentHeader 
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          studentProfile={studentProfile}
+        />
         
         {/* Rank Content */}
         <div className="rank-page-container">
@@ -257,7 +313,9 @@ export default function StudentRank() {
                 <div className="rank-stat">
                   <FaCrown className="stat-icon" />
                   <div className="stat-info">
-                    <span className="stat-value">4th</span>
+                    <span className="stat-value">
+                      {leaderboardRank ? `${leaderboardRank}${getOrdinalSuffix(leaderboardRank)}` : '-'}
+                    </span>
                     <span className="stat-label">Leaderboard</span>
                   </div>
                 </div>
@@ -277,13 +335,13 @@ export default function StudentRank() {
               className={`rank-tab ${activeTab === "achievements" ? "active" : ""}`}
               onClick={() => setActiveTab("achievements")}
             >
-              Achievements ({earnedAchievements.length}/{mockAchievements.length})
+              Achievements ({earnedAchievements.length}/{achievements.length})
             </button>
             <button 
               className={`rank-tab ${activeTab === "badges" ? "active" : ""}`}
               onClick={() => setActiveTab("badges")}
             >
-              Badges ({earnedBadges.length}/{mockBadges.length})
+              Badges ({earnedBadges.length}/{badges.length})
             </button>
           </div>
 
@@ -294,7 +352,7 @@ export default function StudentRank() {
               <div className="overview-content">
                 <h3 className="section-title">All Ranks</h3>
                 <div className="ranks-grid">
-                  {mockRankSystem.allRanks.slice().sort((a, b) => b.xpMin - a.xpMin).map((rank, index) => {
+                  {allRanks.slice().sort((a, b) => b.xpMin - a.xpMin).map((rank, index) => {
                     const isCurrentRank = rank.name === currentRank.name;
                     const isPassed = currentRank.xp >= rank.xpMin;
                     
@@ -359,7 +417,7 @@ export default function StudentRank() {
                 <div className="badges-grid">
                   {earnedBadges.map((badge) => (
                     <div key={badge.id} className="badge-card earned">
-                      <div className="badge-icon" style={{ color: badge.color }}>
+                      <div className="badge-icon">
                         {badge.icon}
                       </div>
                       <div className="badge-info">

@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaSave, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
-import UserMenu from "../dashboard/UserMenu";
-import NotificationMenu from "../dashboard/NotificationMenu";
-import SearchBar from "../dashboard/SearchBar";
-import { mockUserProfile } from "../dashboard/mockData";
+import UserMenu from "@/components/student/UserMenu";
+import NotificationMenu from "@/components/student/NotificationMenu";
+import SearchBar from "@/components/student/SearchBar";
 import "../../student/dashboard/styles.css";
 
 // Default avatar options
@@ -24,13 +23,15 @@ export default function StudentProfile() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState(() => {
     // Load saved profile image from localStorage
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('userProfileImage');
-      return saved || mockUserProfile.profileImage;
+      return saved || DEFAULT_AVATARS[0];
     }
-    return mockUserProfile.profileImage;
+    return DEFAULT_AVATARS[0];
   });
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   
@@ -49,15 +50,17 @@ export default function StudentProfile() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [countdown, setCountdown] = useState(0);
 
-  // Form state - initialized with mock data
+  // Form state - will be populated from database
   const [formData, setFormData] = useState({
-    username: mockUserProfile.username,
-    firstName: mockUserProfile.firstName,
-    lastName: mockUserProfile.lastName,
-    email: mockUserProfile.email,
-    studentId: mockUserProfile.studentId,
-    course: mockUserProfile.course,
-    yearLevel: mockUserProfile.yearLevel
+    username: "",
+    fullName: "",
+    email: "",
+    studentNumber: "",
+    program: "",
+    yearLevel: "",
+    section: "",
+    gender: "",
+    birthDate: ""
   });
 
   useEffect(() => {
@@ -73,6 +76,44 @@ export default function StudentProfile() {
       setDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     }
+
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+          
+          // Set avatar from database if available
+          if (data.profile.avatar) {
+            setProfileImage(data.profile.avatar);
+            localStorage.setItem('userProfileImage', data.profile.avatar);
+          }
+          
+          // Populate form with fetched data
+          setFormData({
+            username: data.profile.username || "",
+            fullName: data.profile.fullName || "",
+            email: data.profile.email || "",
+            studentNumber: data.profile.studentNumber || "",
+            program: data.profile.program || "",
+            yearLevel: data.profile.yearLevel || "",
+            section: data.profile.section || "",
+            gender: data.profile.gender || "",
+            birthDate: data.profile.birthDate ? new Date(data.profile.birthDate).toISOString().split('T')[0] : ""
+          });
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentProfile();
 
     // Check if URL has hash for change-password
     if (window.location.hash === '#change-password') {
@@ -118,11 +159,33 @@ export default function StudentProfile() {
     }));
   };
 
-  const handleAvatarSelect = (avatarUrl) => {
+  const handleAvatarSelect = async (avatarUrl) => {
     setProfileImage(avatarUrl);
     setShowAvatarSelector(false);
-    // Save to localStorage so it persists across pages
+    
+    // Save to localStorage for immediate persistence
     localStorage.setItem('userProfileImage', avatarUrl);
+    
+    // Save to database
+    try {
+      const response = await fetch('/api/students/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: avatarUrl })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to save avatar to database:', errorData);
+        // Avatar is still saved to localStorage, so user experience is not affected
+        // The database will be updated once migrations are run
+      } else {
+        console.log('Avatar saved successfully to database');
+      }
+    } catch (error) {
+      console.error('Error saving avatar:', error);
+      // Avatar is still saved to localStorage, so user experience is not affected
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -463,7 +526,7 @@ export default function StudentProfile() {
             
             <NotificationMenu />
             
-            <UserMenu userName={formData.username} userRole="Student" />
+            <UserMenu userName={studentProfile?.username || formData.username || "Student"} userRole="Student" />
           </div>
         </header>
         
@@ -514,35 +577,12 @@ export default function StudentProfile() {
             <div className="profile-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="username">Username</label>
+                  <label htmlFor="fullName">Full Name</label>
                   <input
                     type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="firstName">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="lastName">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -557,18 +597,19 @@ export default function StudentProfile() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    disabled
                   />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="studentId">Student ID</label>
+                  <label htmlFor="studentNumber">Student Number</label>
                   <input
                     type="text"
-                    id="studentId"
-                    name="studentId"
-                    value={formData.studentId}
+                    id="studentNumber"
+                    name="studentNumber"
+                    value={formData.studentNumber}
                     onChange={handleInputChange}
                     disabled
                   />
@@ -577,12 +618,12 @@ export default function StudentProfile() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="course">Course</label>
+                  <label htmlFor="program">Program</label>
                   <input
                     type="text"
-                    id="course"
-                    name="course"
-                    value={formData.course}
+                    id="program"
+                    name="program"
+                    value={formData.program}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -599,6 +640,46 @@ export default function StudentProfile() {
                     <option value="3rd Year">3rd Year</option>
                     <option value="4th Year">4th Year</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="section">Section</label>
+                  <input
+                    type="text"
+                    id="section"
+                    name="section"
+                    value={formData.section}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="gender">Gender</label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="birthDate">Birth Date</label>
+                  <input
+                    type="date"
+                    id="birthDate"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
 

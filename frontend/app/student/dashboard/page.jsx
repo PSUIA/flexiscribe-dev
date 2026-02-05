@@ -4,11 +4,24 @@ import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import UserMenu from "./UserMenu";
-import NotificationMenu from "./NotificationMenu";
-import SearchBar from "./SearchBar";
-import { mockUserProfile, mockDashboardStats, mockDailyMessages, mockRankSystem, mockQuotes, mockReviewers, mockLeaderboard, mockStudyProgress } from "./mockData";
+import StudentSidebar from "../../../components/student/StudentSidebar";
+import StudentHeader from "../../../components/student/StudentHeader";
+import { mockDailyMessages, mockQuotes } from "./mockData";
+import { 
+  getGreeting, 
+  getDailyMessage, 
+  getDailyQuote, 
+  calculateStreak, 
+  trackActivity, 
+  hasActivityToday, 
+  recordActivity, 
+  calculateRank, 
+  toggleSidebar as utilToggleSidebar, 
+  toggleDarkMode as utilToggleDarkMode, 
+  handleNavigation as utilHandleNavigation 
+} from "../../../utils/student";
 import "./styles.css";
+
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -16,224 +29,26 @@ export default function StudentDashboard() {
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [streakData, setStreakData] = useState({
     count: 0,
     isActive: false,
     lastActivityDate: null
   });
+  const [currentRank, setCurrentRank] = useState({
+    name: "Learner V",
+    tier: "V",
+    xp: 0,
+    xpMin: 0,
+    xpMax: 199,
+    color: "#CD7F32",
+    icon: "/img/learner-5.png"
+  });
 
   // Calculate XP progress for rank bar
-  const currentRank = mockRankSystem.currentRank;
   const xpProgress = ((currentRank.xp - currentRank.xpMin) / (currentRank.xpMax - currentRank.xpMin)) * 100;
-  
-  // Get time-based greeting
-  const getGreeting = () => {
-    if (!currentTime) return "Welcome";
-    const hour = currentTime.getHours();
-    if (hour >= 5 && hour < 12) return "Good Morning";
-    if (hour >= 12 && hour < 18) return "Good Afternoon";
-    if (hour >= 18 && hour < 22) return "Good Evening";
-    return "Good Night";
-  };
-
-  // Get daily rotating message (changes every day)
-  const getDailyMessage = () => {
-    if (!currentTime) return mockDailyMessages[0];
-    // Get day of year (0-365) and use modulo to cycle through 7 messages
-    const startOfYear = new Date(currentTime.getFullYear(), 0, 0);
-    const diff = currentTime - startOfYear;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    const messageIndex = dayOfYear % 7;
-    return mockDailyMessages[messageIndex];
-  };
-
-  // Get daily rotating quote (changes every day, cycles through 14 quotes)
-  const getDailyQuote = () => {
-    if (!currentTime) return mockQuotes[0];
-    // Get day of year (0-365) and use modulo to cycle through 14 quotes
-    const startOfYear = new Date(currentTime.getFullYear(), 0, 0);
-    const diff = currentTime - startOfYear;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    const quoteIndex = dayOfYear % 14;
-    return mockQuotes[quoteIndex];
-  };
-
-  // Calculate streak based on activity
-  const calculateStreak = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const savedStreak = localStorage.getItem('studyStreak');
-    
-    if (savedStreak) {
-      const parsed = JSON.parse(savedStreak);
-      const lastActivity = new Date(parsed.lastActivityDate);
-      const currentDate = new Date(today);
-      const daysDiff = Math.floor((currentDate - lastActivity) / (1000 * 60 * 60 * 24));
-      
-      // If last activity was today, streak is active
-      if (daysDiff === 0) {
-        return {
-          count: parsed.count,
-          isActive: true,
-          lastActivityDate: parsed.lastActivityDate
-        };
-      }
-      // If last activity was yesterday, streak continues but not active today yet
-      else if (daysDiff === 1) {
-        return {
-          count: parsed.count,
-          isActive: false,
-          lastActivityDate: parsed.lastActivityDate
-        };
-      }
-      // If more than 1 day passed, streak is broken
-      else {
-        return {
-          count: 0,
-          isActive: false,
-          lastActivityDate: null
-        };
-      }
-    }
-    
-    // No saved streak
-    return {
-      count: 0,
-      isActive: false,
-      lastActivityDate: null
-    };
-  };
-
-  // Track daily activities (quiz completion, reviewer view, etc.)
-  const trackActivity = (activityType) => {
-    const today = new Date().toISOString().split('T')[0];
-    const activitiesKey = 'dailyActivities';
-    const savedActivities = localStorage.getItem(activitiesKey);
-    
-    let activities = savedActivities ? JSON.parse(savedActivities) : {};
-    
-    // Initialize today's activities if not exists
-    if (!activities[today]) {
-      activities[today] = [];
-    }
-    
-    // Add activity if not already recorded
-    if (!activities[today].includes(activityType)) {
-      activities[today].push(activityType);
-      localStorage.setItem(activitiesKey, JSON.stringify(activities));
-    }
-    
-    // After tracking activity, update streak
-    recordActivity();
-  };
-
-  // Check if user has completed at least 1 activity today
-  const hasActivityToday = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const savedActivities = localStorage.getItem('dailyActivities');
-    
-    if (!savedActivities) return false;
-    
-    const activities = JSON.parse(savedActivities);
-    return activities[today] && activities[today].length > 0;
-  };
-
-  // Record activity to update streak (only activates if at least 1 activity done)
-  const recordActivity = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const currentStreak = calculateStreak();
-    
-    // Check if user has done at least 1 activity today
-    if (!hasActivityToday()) {
-      return;
-    }
-    
-    // If already active today, don't update
-    if (currentStreak.isActive) {
-      return;
-    }
-    
-    // If last activity was yesterday or today is first activity
-    const lastActivity = currentStreak.lastActivityDate;
-    let newCount = currentStreak.count;
-    
-    if (!lastActivity) {
-      // First activity ever
-      newCount = 1;
-    } else {
-      const lastDate = new Date(lastActivity);
-      const currentDate = new Date(today);
-      const daysDiff = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff === 1) {
-        // Consecutive day - increment streak
-        newCount = currentStreak.count + 1;
-      } else if (daysDiff === 0) {
-        // Same day - keep count
-        newCount = currentStreak.count;
-      } else {
-        // Streak broken - start new
-        newCount = 1;
-      }
-    }
-    
-    const newStreak = {
-      count: newCount,
-      isActive: true,
-      lastActivityDate: today
-    };
-    
-    localStorage.setItem('studyStreak', JSON.stringify(newStreak));
-    setStreakData(newStreak);
-  };
-
-  // Get most recently added reviewer
-  const getRecentReviewer = () => {
-    // Sort reviewers by uploadDate in descending order and return the most recent
-    const sortedReviewers = [...mockReviewers].sort((a, b) => 
-      new Date(b.uploadDate) - new Date(a.uploadDate)
-    );
-    return sortedReviewers[0];
-  };
-
-  // Handle Generate Quiz button click
-  const handleGenerateQuiz = () => {
-    // Redirect to quiz page
-    router.push(`/student/quizzes`);
-  };
-
-  // Get top 3 students from leaderboard
-  const getTopLeaderboard = () => {
-    return mockLeaderboard.slice(0, 3);
-  };
-
-  // Handle View Full Leaderboard
-  const handleViewLeaderboard = () => {
-    router.push('/student/leaderboard');
-  };
-
-  // Format XP for display (e.g., 15420 -> 15.4K)
-  const formatXP = (xp) => {
-    if (xp >= 1000) {
-      return `${(xp / 1000).toFixed(1)}K`;
-    }
-    return xp.toString();
-  };
-
-  // Get most recent study progress
-  const getRecentStudyProgress = () => {
-    // Sort by lastStudied date and return the most recent
-    const sortedProgress = [...mockStudyProgress].sort((a, b) => 
-      new Date(b.lastStudied + ' ' + b.lastStudiedTime) - new Date(a.lastStudied + ' ' + a.lastStudiedTime)
-    );
-    return sortedProgress[0];
-  };
-
-  // Handle Jump Back In click
-  const handleJumpBackIn = () => {
-    router.push('/student/reviewers');
-  };
 
   useEffect(() => {
     // Set initial time on mount
@@ -255,6 +70,46 @@ export default function StudentDashboard() {
     const currentStreak = calculateStreak();
     setStreakData(currentStreak);
 
+    // Fetch student profile from database
+    const fetchStudentProfile = async () => {
+      try {
+        const response = await fetch('/api/students/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setStudentProfile(data.profile);
+          
+          // Set XP and calculate rank
+          const studentXP = data.profile.xp || 0;
+          const rank = calculateRank(studentXP);
+          setCurrentRank(rank);
+        } else {
+          console.error('Failed to fetch student profile');
+        }
+      } catch (error) {
+        console.error('Error fetching student profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch leaderboard from database
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch('/api/students/leaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboard(data.leaderboard);
+        } else {
+          console.error('Failed to fetch leaderboard');
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    };
+
+    fetchStudentProfile();
+    fetchLeaderboard();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -266,39 +121,40 @@ export default function StudentDashboard() {
    * Examples:
    * 
    * 1. Quiz Completion:
-   *    trackActivity('quiz_completed');
+   *    trackActivity('quiz_completed', setStreakData);
    * 
    * 2. Reviewer Viewed:
-   *    trackActivity('reviewer_viewed');
+   *    trackActivity('reviewer_viewed', setStreakData);
    * 
    * 3. Flashcard Session:
-   *    trackActivity('flashcard_session');
+   *    trackActivity('flashcard_session', setStreakData);
    * 
    * 4. MCQ Practice:
-   *    trackActivity('mcq_practice');
+   *    trackActivity('mcq_practice', setStreakData);
    * 
    * The streak will only increment after at least 1 activity is tracked per day.
    * ============================================ */
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const handleToggleSidebar = () => utilToggleSidebar(sidebarOpen, setSidebarOpen);
+  const handleToggleDarkMode = () => utilToggleDarkMode(darkMode, setDarkMode);
+  const handleNav = (path) => utilHandleNavigation(path, router, sidebarOpen, setSidebarOpen);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
-      document.documentElement.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear the auth cookie
+      await fetch("/api/auth/logout", { method: "POST" });
+      
+      // Clear any client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Redirect to login
+      window.location.href = "/auth/student/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Redirect anyway
+      window.location.href = "/auth/student/login";
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.clear();
-    router.push("/login");
   };
 
   // Don't render clock until mounted to avoid hydration mismatch
@@ -370,130 +226,24 @@ export default function StudentDashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Mobile Menu Toggle Button */}
-      <button className="mobile-menu-toggle" onClick={toggleSidebar}>
-        {sidebarOpen ? <FaTimes /> : <FaBars />}
-      </button>
-
-      {/* Sidebar Overlay for Mobile */}
-      {sidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="logo-section">
-          <div className="logo-content">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="nav-menu">
-          <div className="nav-item active" onClick={() => router.push('/student/dashboard')}>
-            <FaHome className="nav-icon" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push('/student/reviewers')}>
-            <FaBook className="nav-icon" />
-            <span>Reviewers</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push('/student/quizzes')}>
-            <FaGamepad className="nav-icon" />
-            <span>Quizzes</span>
-          </div>
-          <div className="nav-item" onClick={() => router.push('/student/leaderboard')}>
-            <FaTrophy className="nav-icon" />
-            <span>Leaderboard</span>
-          </div>
-        </nav>
-
-        <div className="clock-widget">
-          <svg className="clock-svg" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-            />
-            {/* Hour markers */}
-            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(
-              (angle) => (
-                <line
-                  key={angle}
-                  x1="50"
-                  y1="10"
-                  x2="50"
-                  y2="15"
-                  stroke="white"
-                  strokeWidth="2"
-                  transform={`rotate(${angle} 50 50)`}
-                />
-              )
-            )}
-            {/* Hour hand */}
-            <line
-              className="hour-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="30"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              transform={`rotate(${hourAngle} 50 50)`}
-            />
-            {/* Minute hand */}
-            <line
-              className="minute-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="20"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              transform={`rotate(${minuteAngle} 50 50)`}
-            />
-            {/* Second hand */}
-            <line
-              className="second-hand"
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="15"
-              stroke="var(--accent-primary)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              transform={`rotate(${secondAngle} 50 50)`}
-            />
-            {/* Center dot */}
-            <circle cx="50" cy="50" r="3" fill="white" />
-          </svg>
-          <div className="clock-time">{timeString}</div>
-          <div className="clock-date">{dateString}</div>
-        </div>
-      </aside>
+      <StudentSidebar 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        currentTime={currentTime}
+        hourAngle={hourAngle}
+        minuteAngle={minuteAngle}
+        secondAngle={secondAngle}
+        timeString={timeString}
+        dateString={dateString}
+      />
 
       {/* Main Content */}
       <main className="main-content flex flex-col justify-between min-h-screen">
-        {/* Header */}
-        <header className="dashboard-header">
-          <SearchBar />
-          <div className="header-actions">
-            {/* Theme Toggle Button */}
-            <button className="theme-toggle-btn" onClick={toggleDarkMode} title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-              {darkMode ? <FaSun /> : <FaMoon />}
-            </button>
-            
-            <NotificationMenu />
-            
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
-          </div>
-        </header>
+        <StudentHeader 
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          studentProfile={studentProfile}
+        />
         
         {/* Grid Contents */}
         <div className="dashboard-grid">
@@ -501,10 +251,10 @@ export default function StudentDashboard() {
             <div className="welcome-banner md:col-span-2 lg:col-span-8">
               <div className="grid grid-cols-2 grid-rows-2">
                 <div className="col-start-1 row-start-1 items-start flex justify-center flex-col">
-                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">{getGreeting()}, {mockUserProfile.username}!</span>
+                  <span className="font-bold text-xl md:text-2xl lg:text-3xl">{getGreeting(currentTime)}, {studentProfile?.username || 'Student'}!</span>
                 </div>
                 <div className="col-start-1 row-start-2 items-start flex justify-center flex-col">
-                  <span className="font-normal text-xs md:text-sm opacity-90">{getDailyMessage()}</span>
+                  <span className="font-normal text-xs md:text-sm opacity-90">{getDailyMessage(currentTime, mockDailyMessages)}</span>
                 </div>
                 <div className="welcome-mascot col-start-2 row-span-2 flex items-center justify-center">
                   😻{/* <img src="/img/fLexiScribe-mascot.png" alt="Mascot" className="h-auto w-full max-w-[100px] md:max-w-[150px]" /> */}
@@ -516,15 +266,15 @@ export default function StudentDashboard() {
             <div className="card rank-card lg:col-span-4" onClick={() => router.push("/student/rank")} style={{ cursor: 'pointer' }}>
               <div className="rank-card-content">
                 <div className="rank-badge-container">
-                  <img src="/img/ascendant.png" alt="Badge" className="rank-badge-img" />
+                  <img src={currentRank.icon} alt="Badge" className="rank-badge-img" />
                 </div>
                 <div className="rank-info">
-                  <div className="rank-name">{mockRankSystem.currentRank.name}</div>
-                  <div className="rank-tier">Tier {mockRankSystem.currentRank.tier}</div>
+                  <div className="rank-name">{currentRank.name}</div>
+                  <div className="rank-tier">Tier {currentRank.tier}</div>
                   <div className="xp-bar">
                     <div className="xp-fill" style={{width: `${Math.min(xpProgress, 100)}%`}}></div>
                   </div>
-                  <div className="rank-xp">{mockRankSystem.currentRank.xp.toLocaleString()} XP</div>
+                  <div className="rank-xp">{currentRank.xp.toLocaleString()} XP</div>
                 </div>
               </div>
             </div>
@@ -555,71 +305,319 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Jump Back In */}
-            <div className="card jump-back lg:col-span-4" onClick={handleJumpBackIn} style={{ cursor: 'pointer' }}>
+            {/* Jump Back In - Placeholder for future implementation */}
+            <div className="card jump-back lg:col-span-4">
                 <div className="card-header-compact">
                   <h3>Jump Back In</h3>
                 </div>
                 <div className="jump-back-content">
-                  <div className="progress-circle">
-                    <CircularProgressbar
-                      value={getRecentStudyProgress().progress}
-                      text={`${getRecentStudyProgress().progress}%`}
-                      strokeWidth={10}
-                      styles={buildStyles({
-                        textColor: 'var(--accent-secondary)',
-                        pathColor: 'var(--accent-primary)',
-                        trailColor: 'var(--brand-tertiary)',
-                        textSize: '22px',
-                        pathTransitionDuration: 0.5,
-                      })}
-                    />
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    padding: '2rem',
+                    gap: '1rem',
+                    minHeight: '180px'
+                  }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2.5rem',
+                    }}>
+                      📚
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        marginBottom: '0.5rem',
+                      }}>No Recent Activity</p>
+                      <p style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                      }}>Start reviewing to track your progress</p>
+                    </div>
                   </div>
-                  <div className="progress-label">{getRecentStudyProgress().reviewerTitle}</div>
-                  <div className="progress-section">{getRecentStudyProgress().currentSection}</div>
                 </div>
             </div>
 
-            {/* Recently Added */}
+            {/* Recently Added - Placeholder for future implementation */}
             <div className="card recently-added lg:col-span-4">
                 <div className="card-header-compact">
                   <h3>Recently Added</h3>
                 </div>
                 <div className="recently-added-content">
-                  <div className="document-preview">
-                    <div className="doc-icon">📄</div>
-                    <div className="doc-info">
-                      <div className="doc-title">{getRecentReviewer().title}</div>
-                      <div className="doc-subject">{getRecentReviewer().subject}</div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    padding: '2rem',
+                    gap: '1rem',
+                    minHeight: '180px'
+                  }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2.5rem',
+                    }}>
+                      📄
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        marginBottom: '0.5rem',
+                      }}>No Content Available</p>
+                      <p style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                      }}>New reviewers will appear here</p>
                     </div>
                   </div>
-                  <button className="generate-quiz" onClick={handleGenerateQuiz}>Generate Quiz</button>
                 </div>
             </div>
 
             {/* Leaderboard */}
             <div className="md:col-span-2 lg:col-span-8">
               <div className="card leaderboard-card">
-                <h3>Leaderboard</h3>
-                <div className="leaderboard-list">
-                  {getTopLeaderboard().map((player, index) => {
-                    const medalClass = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
-                    const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-                    
-                    return (
-                      <div key={player.studentId} className={`leaderboard-item ${medalClass}`}>
-                        <div className="rank-circle">{medalEmoji}</div>
-                        <div className="player-info">
-                          <div className="player-name">{player.username}</div>
-                          <div className="player-xp">{formatXP(player.xp)} XP</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div style={{ display: 'flex', justifyContent: 'center'}}>
+                  <h3>Leaderboard</h3>
                 </div>
-                <button className="leaderboard-more" onClick={handleViewLeaderboard}>
-                  See More
-                </button>
+                
+                {leaderboard.length === 0 ? (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    padding: '3rem 2rem',
+                    gap: '1.5rem'
+                  }}>
+                    <div style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '3rem',
+                      boxShadow: '0 4px 20px rgba(255, 215, 0, 0.2)'
+                    }}>
+                      🏆
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ 
+                        fontSize: '1.1rem', 
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        marginBottom: '0.5rem',
+                      }}>No Leaderboard Data</p>
+                      <p style={{ 
+                        fontSize: '0.9rem', 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        maxWidth: '400px'
+                      }}>Start earning XP to appear on the leaderboard</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Top 3 Podium Mini Version */}
+                    {leaderboard.length >= 3 && (
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'flex-end', 
+                        gap: '1rem',
+                        marginBottom: '2rem',
+                        padding: '1rem'
+                      }}>
+                        {[
+                          { medal: '🥈', gradient: 'linear-gradient(135deg, #C0C0C0 0%, #808080 100%)', size: 50, border: '#C0C0C0', fontSize: '1.5rem' }, // 2nd
+                          { medal: '👑', gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', size: 60, border: '#FFD700', fontSize: '2rem', translateY: -10, usernameColor: '#FFD700', xpColor: 'rgba(255, 255, 255, 0.8)', fontWeight: '700' }, // 1st
+                          { medal: '🥉', gradient: 'linear-gradient(135deg, #CD7F32 0%, #8B4513 100%)', size: 50, border: '#CD7F32', fontSize: '1.5rem' }, // 3rd
+                        ].map((podium, idx) => {
+                          const user = leaderboard[idx];
+                          return (
+                            <div key={idx} style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'center',
+                              flex: 1,
+                              maxWidth: '120px',
+                              transform: podium.translateY ? `translateY(${podium.translateY}px)` : 'none'
+                            }}>
+                              <div style={{
+                                width: podium.size,
+                                height: podium.size,
+                                borderRadius: '50%',
+                                background: podium.gradient,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: podium.fontSize,
+                                marginBottom: '0.5rem',
+                                border: `3px solid ${podium.border}`,
+                                boxShadow: podium.boxShadow || 'none'
+                              }}>
+                                {podium.medal}
+                              </div>
+                              <div style={{ 
+                                fontSize: podium.fontSize === '2rem' ? '0.85rem' : '0.75rem', 
+                                fontWeight: podium.fontWeight || '600',
+                                color: podium.usernameColor || 'var(--text-primary)',
+                                textAlign: 'center',
+                                marginBottom: '0.25rem',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                width: '100%'
+                              }}>
+                                {user?.username}
+                              </div>
+                              <div style={{ 
+                                fontSize: podium.fontSize === '2rem' ? '0.75rem' : '0.7rem', 
+                                color: podium.xpColor || 'rgba(255, 255, 255, 0.7)',
+                                fontWeight: podium.fontWeight ? '600' : 'normal'
+                              }}>
+                                {user?.xp?.toLocaleString()} XP
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Leaderboard List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {leaderboard.slice(0, 3).map((user, index) => {
+                        const isCurrentUser = user.username === studentProfile?.username;
+                        const getRankColor = (rank) => {
+                          if (rank === 1) return "#FFD700";
+                          if (rank === 2) return "#C0C0C0";
+                          if (rank === 3) return "#CD7F32";
+                          return "var(--brand-primary)";
+                        };
+
+                        return (
+                          <div 
+                            key={user.id || index}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '8px',
+                              background: isCurrentUser ? 'rgba(41, 182, 246, 0.15)' : 'pink',
+                              border: isCurrentUser ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                            onMouseLeave={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'var(--brand-tertiary)'; }}
+                          >
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              background: getRankColor(index + 1),
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.85rem',
+                              fontWeight: '700',
+                              color: index < 3 ? '#000' : '#fff',
+                              marginRight: '1rem',
+                              flexShrink: 0
+                            }}>{index + 1}</div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                color: 'var(--text-primary)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {user.username} {isCurrentUser && '(You)'}
+                              </div>
+                              <div style={{
+                                fontSize: '0.75rem',
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                marginTop: '0.125rem'
+                              }}>
+                                {user.level || 'Learner'}
+                              </div>
+                            </div>
+
+                            <div style={{
+                              fontSize: '0.85rem',
+                              fontWeight: '700',
+                              color: '#FFD700',
+                              marginLeft: '1rem',
+                              flexShrink: 0
+                            }}>
+                              {user.xp?.toLocaleString()} XP
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button 
+                      onClick={() => router.push('/student/leaderboard')}
+                      className="leaderboard-more"
+                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    >
+                      See More
+                    </button>
+
+                    {/* View All Button at bottom for mobile */}
+                    {leaderboard.length > 5 && (
+                      <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                        <button 
+                          onClick={() => router.push('/student/leaderboard')}
+                          style={{
+                            padding: '0.75rem 2rem',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
+                            border: 'none',
+                            color: 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            width: '100%'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'scale(1.02)';
+                            e.target.style.boxShadow = '0 4px 15px rgba(41, 182, 246, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'scale(1)';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        >
+                          View Full Leaderboard
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -628,11 +626,11 @@ export default function StudentDashboard() {
               <div className="card quote-card">
                 <div className="quote-content">
                   <h3>Quote of the Day</h3>
-                  <div className="quote-mascot">{getDailyQuote().emoji}</div>
+                  <div className="quote-mascot">{getDailyQuote(currentTime, mockQuotes).emoji}</div>
                   <p className="quote-text">
-                    "{getDailyQuote().text}"
+                    "{getDailyQuote(currentTime, mockQuotes).text}"
                   </p>
-                  <p className="quote-author">— {getDailyQuote().author}</p>
+                  <p className="quote-author">— {getDailyQuote(currentTime, mockQuotes).author}</p>
                 </div>
               </div>
             </div>

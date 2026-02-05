@@ -1,6 +1,9 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this-in-production";
 
 export async function POST(request: Request) {
   try {
@@ -116,6 +119,26 @@ export async function POST(request: Request) {
       return { user, educator };
     });
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: result.user.id, email: result.user.email, role: result.user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Calculate token expiry (7 days from now)
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+
+    // Update user with token
+    await prisma.user.update({
+      where: { id: result.user.id },
+      data: {
+        token,
+        tokenExpiry,
+      },
+    });
+
     return NextResponse.json(
       {
         message: "Educator registered successfully",
@@ -125,6 +148,7 @@ export async function POST(request: Request) {
           fullName: result.educator.fullName,
           email: result.user.email,
         },
+        token,
       },
       { status: 201 }
     );
