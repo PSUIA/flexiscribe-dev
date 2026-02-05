@@ -1,9 +1,26 @@
 "use client";
 
-import { classes } from "@/lib/mock/classes";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function ClassesPage() {
+  const [classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const res = await fetch("/api/educator/classes");
+        if (res.ok) {
+          const data = await res.json();
+          setClasses(data.classes);
+        }
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+      }
+    }
+    fetchClasses();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
 
@@ -48,7 +65,7 @@ export default function ClassesPage() {
               </h2>
 
               <p className="mt-1 text-sm sm:text-base text-gray-600">
-                {cls.day} • {cls.start}
+                {cls.day} • {cls.startTime}
               </p>
 
               <p className="text-sm sm:text-base text-gray-600">

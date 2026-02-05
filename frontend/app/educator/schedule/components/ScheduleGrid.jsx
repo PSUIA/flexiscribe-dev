@@ -1,69 +1,9 @@
 "use client";
 
-import { Calendar, Bell, X } from "lucide-react";
-import { useState } from "react";
+import { Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
 import ClassBlock from "./ClassBlock";
-
-/* ================= NOTIFICATION UI ================= */
-
-function NotifDropdown({ notifications }) {
-  return (
-    <div className="absolute right-0 top-12 w-[300px] md:w-[360px] bg-white text-gray-800 rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
-
-      {/* HEADER */}
-      <div className="px-4 py-3 flex items-center justify-between border-b">
-        <h3 className="text-sm font-semibold">Notifications</h3>
-        <button className="text-xs text-[#9d8adb] hover:underline">
-          Mark all as read
-        </button>
-      </div>
-
-      {/* LIST */}
-      <div className="max-h-[300px] overflow-y-auto">
-        {notifications.map((item) => (
-          <NotifItem key={item.id} {...item} />
-        ))}
-      </div>
-
-      {/* FOOTER */}
-      <div className="px-4 py-2 text-center border-t">
-        <button className="text-xs text-gray-500 hover:text-gray-700">
-          View all notifications
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function NotifItem({ name, message, time, unread }) {
-  return (
-    <div
-      className={`flex items-start gap-3 px-4 py-3 cursor-pointer
-      hover:bg-gray-50 transition
-      ${unread ? "bg-[#f7f5ff]" : "bg-white"}`}
-    >
-
-      <div className="w-9 h-9 rounded-full bg-[#9d8adb]/20 text-[#6b5cbf] flex items-center justify-center text-xs font-semibold shrink-0">
-        {name[0]}
-      </div>
-
-      <div className="flex-1">
-        <p className="text-sm leading-snug">
-          <span className="font-medium">{name}</span>{" "}
-          <span className="text-gray-600">{message}</span>
-        </p>
-
-        <p className="text-xs text-gray-400 mt-1">
-          {time}
-        </p>
-      </div>
-
-      {unread && (
-        <span className="w-2 h-2 bg-[#9d8adb] rounded-full mt-2" />
-      )}
-    </div>
-  );
-}
+import EducatorHeader from "@/components/educator/layout/EducatorHeader";
 
 /* ================= MAIN COMPONENT ================= */
 
@@ -76,14 +16,26 @@ export default function ScheduleGrid({
   timeSlots,
 }) {
   const [activeClass, setActiveClass] = useState(null);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [userName, setUserName] = useState("Educator");
 
-  const userName = "Uia.";
-  const userInitial = userName[0];
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/educator/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setUserName(data.educator.fullName.split(" ")[0] || "Educator");
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
 
   const schedule = classes.map((cls) => {
     const startIndex = timeSlots.findIndex((t) =>
-      t.startsWith(cls.start)
+      t.startsWith(cls.startTime)
     );
 
     const endTime =
@@ -93,9 +45,10 @@ export default function ScheduleGrid({
 
     return {
       ...cls,
+      start: cls.startTime, // Add for compatibility
       startIndex,
       durationSlots: 3,
-      startTime: `${cls.start} – ${endTime}`,
+      startTime: `${cls.startTime} – ${endTime}`,
     };
   });
 
@@ -114,37 +67,7 @@ export default function ScheduleGrid({
           </h1>
         </div>
 
-        <div className="flex items-center gap-3 relative">
-
-          {/* NOTIF BTN */}
-          <button
-            onClick={() => setNotifOpen((p) => !p)}
-            className="w-10 h-10 rounded-full bg-[#f1effb] flex items-center justify-center hover:bg-[#e5e1fa]"
-          >
-            <Bell size={18} className="text-[#6b5fcf]" />
-          </button>
-
-          {notifOpen && (
-            <NotifDropdown notifications={notifications} />
-          )}
-
-          {/* PROFILE */}
-          <div className="flex items-center gap-2">
-            <div className="text-right hidden md:block">
-              <div className="text-sm font-semibold text-[#6b5fcf]">
-                {userName}
-              </div>
-              <div className="text-xs text-gray-500">
-                Instructor
-              </div>
-            </div>
-
-            <div className="w-10 h-10 rounded-full bg-[#9b8ae0] flex items-center justify-center text-white font-bold">
-              {userInitial}
-            </div>
-          </div>
-
-        </div>
+        <EducatorHeader userName={userName} />
       </div>
 
       {/* GRID WRAPPER (scroll on mobile) */}

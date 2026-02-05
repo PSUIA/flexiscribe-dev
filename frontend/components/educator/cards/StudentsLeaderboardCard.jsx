@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { leaderboardColumns } from "@/lib/mock/educatorLeaderboard";
+import { useState, useEffect } from "react";
 
 /* ================= STUDENT ================= */
 
@@ -83,9 +82,27 @@ function LeaderboardColumn({ data, startRank }) {
 /* ================= MAIN ================= */
 
 export default function StudentsLeaderboardCard() {
-  const [columns] = useState(leaderboardColumns);
+  const [students, setStudents] = useState([]);
 
-  const { col1, col2, col3 } = columns;
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const res = await fetch("/api/educator/leaderboard?limit=15");
+        if (res.ok) {
+          const data = await res.json();
+          setStudents(data.students);
+        }
+      } catch (error) {
+        console.error("Failed to fetch leaderboard:", error);
+      }
+    }
+    fetchLeaderboard();
+  }, []);
+
+  // Split into 3 columns of 5 students each
+  const col1 = students.slice(0, 5).map((s) => ({ name: s.fullName, exp: `${s.xp} XP` }));
+  const col2 = students.slice(5, 10).map((s) => ({ name: s.fullName, exp: `${s.xp} XP` }));
+  const col3 = students.slice(10, 15).map((s) => ({ name: s.fullName, exp: `${s.xp} XP` }));
 
   return (
     <div

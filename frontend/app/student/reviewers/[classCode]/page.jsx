@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaDownload, FaEye, FaFilePdf } from "react-icons/fa";
-import UserMenu from "@/components/student/UserMenu";
-import NotificationMenu from "@/components/student/NotificationMenu";
-import SearchBar from "@/components/student/SearchBar";
+import UserMenu from "@/components/student/ui/UserMenu";
+import NotificationMenu from "@/components/student/ui/NotificationMenu";
+import SearchBar from "@/components/student/ui/SearchBar";
 import { mockReviewersByClass } from "../../dashboard/mockData";
 import "../../dashboard/styles.css";
 import "./styles.css";

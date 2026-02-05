@@ -10,33 +10,67 @@ import {
   X,
   Menu,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProfileModal from "../modals/ProfileModal";
-
-/* MOCK */
-const notifications = [
-  {
-    title: "New student registered",
-    desc: "A new user joined the system",
-    time: "2 minutes ago",
-  },
-  {
-    title: "Audit log updated",
-    desc: "Security activity recorded",
-    time: "1 hour ago",
-  },
-];
 
 export default function TopBar({ onMenuClick }) {
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileTab, setProfileTab] = useState("profile");
-
   const [viewAllOpen, setViewAllOpen] = useState(false);
+
+  const [notifications, setNotifications] = useState([]);
+  const [adminProfile, setAdminProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications and profile
+  useEffect(() => {
+    fetchNotifications();
+    fetchProfile();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/admin/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/admin/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setAdminProfile(data.admin);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  const markAsRead = async (notificationIds) => {
+    try {
+      await fetch("/api/admin/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationIds }),
+      });
+      // Refresh notifications
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
 
   const closeAll = () => {
     setNotifOpen(false);
@@ -46,20 +80,41 @@ export default function TopBar({ onMenuClick }) {
   const handleSignOut = async () => {
     closeAll();
     try {
-      // Call logout API to clear the auth cookie
       await fetch("/api/auth/logout", { method: "POST" });
-      
-      // Clear any client-side storage
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Redirect to login
       window.location.href = "/auth/admin/login";
     } catch (error) {
       console.error("Logout error:", error);
-      // Redirect anyway
       window.location.href = "/auth/admin/login";
     }
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const recentNotifications = notifications.slice(0, 3);
+
+  const getInitials = (name) => {
+    if (!name) return "A";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now - past;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   };
 
   return (
@@ -121,47 +176,64 @@ export default function TopBar({ onMenuClick }) {
                 className="w-9 h-9 flex items-center justify-center rounded-md hover:bg-white"
               >
                 <Bell size={18} className="text-[#6f63a6]" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                )}
               </button>
 
               {notifOpen && (
                 <div className="absolute right-0 top-12 w-[320px] sm:w-[360px] rounded-xl bg-white border shadow-lg">
                   <div className="px-4 py-3 border-b">
                     <p className="text-sm font-semibold text-[#4c4172]">
-                      Notifications
+                      Notifications {unreadCount > 0 && `(${unreadCount} unread)`}
                     </p>
                   </div>
 
-                  <div className="divide-y">
-                    {notifications.map((n, i) => (
-                      <div
-                        key={i}
-                        className="px-4 py-3 hover:bg-[#f7f6fc]"
-                      >
-                        <p className="text-sm font-medium text-[#4c4172]">
-                          {n.title}
-                        </p>
-                        <p className="text-xs text-[#6f63a6]">
-                          {n.desc}
-                        </p>
-                        <p className="text-xs text-[#9d8adb] mt-1">
-                          {n.time}
-                        </p>
+                  <div className="divide-y max-h-[300px] overflow-y-auto">
+                    {recentNotifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-[#9d8adb]">
+                        No notifications
                       </div>
-                    ))}
+                    ) : (
+                      recentNotifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`px-4 py-3 hover:bg-[#f7f6fc] cursor-pointer ${
+                            !n.read ? "bg-blue-50/30" : ""
+                          }`}
+                          onClick={() => {
+                            if (!n.read) {
+                              markAsRead([n.id]);
+                            }
+                          }}
+                        >
+                          <p className="text-sm font-medium text-[#4c4172]">
+                            {n.title}
+                          </p>
+                          <p className="text-xs text-[#6f63a6]">
+                            {n.message}
+                          </p>
+                          <p className="text-xs text-[#9d8adb] mt-1">
+                            {formatTimeAgo(n.createdAt)}
+                          </p>
+                        </div>
+                      ))
+                    )}
                   </div>
 
-                  <div className="px-4 py-3 border-t text-center">
-                    <button
-                      onClick={() => {
-                        setNotifOpen(false);
-                        setViewAllOpen(true);
-                      }}
-                      className="text-sm text-[#6f63a6] hover:underline"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
+                  {notifications.length > 0 && (
+                    <div className="px-4 py-3 border-t text-center">
+                      <button
+                        onClick={() => {
+                          setNotifOpen(false);
+                          setViewAllOpen(true);
+                        }}
+                        className="text-sm text-[#6f63a6] hover:underline"
+                      >
+                        View all notifications
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -176,11 +248,11 @@ export default function TopBar({ onMenuClick }) {
                 className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white"
               >
                 <div className="w-8 h-8 rounded-full bg-[#9d8adb] flex items-center justify-center text-white text-sm font-semibold">
-                  S
+                  {getInitials(adminProfile?.fullName || "Admin")}
                 </div>
 
                 <span className="hidden sm:block text-sm font-medium text-[#4c4172]">
-                  Sky
+                  {adminProfile?.fullName || "Admin"}
                 </span>
 
                 <ChevronDown size={14} className="text-[#6f63a6]" />
@@ -228,24 +300,49 @@ export default function TopBar({ onMenuClick }) {
 
       {/* MODALS */}
       {viewAllOpen && (
-        <Modal title="All Notifications" onClose={() => setViewAllOpen(false)}>
-          {notifications.map((n, i) => (
-            <div key={i} className="px-6 py-4 hover:bg-[#f7f6fc]">
-              <p className="text-sm font-medium text-[#4c4172]">
-                {n.title}
-              </p>
-              <p className="text-xs text-[#6f63a6]">
-                {n.desc}
-              </p>
+        <Modal
+          title="All Notifications"
+          onClose={() => setViewAllOpen(false)}
+        >
+          {notifications.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-[#9d8adb]">
+              No notifications
             </div>
-          ))}
+          ) : (
+            notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`px-6 py-4 hover:bg-[#f7f6fc] cursor-pointer ${
+                  !n.read ? "bg-blue-50/30" : ""
+                }`}
+                onClick={() => {
+                  if (!n.read) {
+                    markAsRead([n.id]);
+                  }
+                }}
+              >
+                <p className="text-sm font-medium text-[#4c4172]">
+                  {n.title}
+                </p>
+                <p className="text-xs text-[#6f63a6] mt-1">
+                  {n.message}
+                </p>
+                <p className="text-xs text-[#9d8adb] mt-1">
+                  {formatTimeAgo(n.createdAt)}
+                </p>
+              </div>
+            ))
+          )}
         </Modal>
       )}
 
       <ProfileModal
         open={profileOpen}
         defaultTab={profileTab}
-        onClose={() => setProfileOpen(false)}
+        onClose={() => {
+          setProfileOpen(false);
+          fetchProfile(); // Refresh profile after closing modal
+        }}
       />
     </>
   );
@@ -271,14 +368,21 @@ function MenuItem({ icon, label, onClick, danger }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl">
+    <div
+      className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-white rounded-2xl shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <p className="text-lg font-semibold text-[#4c4172]">
-            {title}
-          </p>
-          <button onClick={onClose}>
-            <X />
+          <p className="text-lg font-semibold text-[#4c4172]">{title}</p>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full"
+          >
+            <X size={20} className="text-[#6f63a6]" />
           </button>
         </div>
 

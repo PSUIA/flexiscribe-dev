@@ -11,7 +11,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { classes } from "@/lib/mock/classes"; // ✅ CORRECT PATH
 
 /* ---------------- CLOCK ---------------- */
 
@@ -86,6 +85,7 @@ export default function Sidebar() {
   const [openClasses, setOpenClasses] = useState(false);
   const [time, setTime] = useState("");
   const [day, setDay] = useState("");
+  const [courses, setCourses] = useState([]);
 
   useEffect(() => {
     const update = () => {
@@ -100,10 +100,24 @@ export default function Sidebar() {
     return () => clearInterval(i);
   }, []);
 
-  /* UNIQUE COURSES */
-  const courses = Array.from(
-    new Set(classes.map((c) => c.subject))
-  );
+  // Fetch classes and extract unique courses
+  useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const res = await fetch("/api/educator/classes");
+        if (res.ok) {
+          const data = await res.json();
+          const uniqueCourses = Array.from(
+            new Set(data.classes.map((c) => c.subject))
+          );
+          setCourses(uniqueCourses);
+        }
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+      }
+    }
+    fetchClasses();
+  }, []);
 
   return (
     <aside className="h-screen w-[360px] bg-gradient-to-b from-[#9d8adb] to-[#4c4172] text-white flex flex-col px-10 overflow-y-auto">

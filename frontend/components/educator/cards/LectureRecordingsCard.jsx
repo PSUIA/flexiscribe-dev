@@ -3,14 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { lectureRecordings as mockData } from "@/lib/mock/educatorLectureRecordings";
 
 export default function LectureRecordingsCard() {
   const [lectures, setLectures] = useState([]);
 
   useEffect(() => {
-    const latestThree = mockData.slice(-3);
-    setLectures(latestThree);
+    async function fetchTranscriptions() {
+      try {
+        const res = await fetch("/api/educator/transcriptions");
+        if (res.ok) {
+          const data = await res.json();
+          const latestThree = data.transcriptions.slice(0, 3);
+          setLectures(latestThree);
+        }
+      } catch (error) {
+        console.error("Failed to fetch transcriptions:", error);
+      }
+    }
+    fetchTranscriptions();
   }, []);
 
   return (
