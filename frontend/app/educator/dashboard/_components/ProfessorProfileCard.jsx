@@ -5,33 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Sun, Moon, X } from "lucide-react";
 
-/* ================= FALLBACK MOCK DATA ================= */
-// NOTE: Local mock used to avoid build errors when alias imports
-// (e.g. @/lib/...) are unavailable in this environment.
-const notifications = [
-  {
-    id: 1,
-    name: "Registrar",
-    message: "approved your schedule request",
-    time: "2 mins ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    name: "Dean",
-    message: "sent a meeting invite",
-    time: "1 hour ago",
-    unread: false,
-  },
-  {
-    id: 3,
-    name: "System",
-    message: "updated grading module",
-    time: "Yesterday",
-    unread: false,
-  },
-];
-
 /* ================= MAIN ================= */
 
 export default function ProfessorProfileCard() {
@@ -41,7 +14,9 @@ export default function ProfessorProfileCard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
 
-  const [name, setName] = useState("Uia");
+  const [name, setName] = useState("Professor");
+  const [educator, setEducator] = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
   /* THEME INIT */
   useEffect(() => {
@@ -50,6 +25,39 @@ export default function ProfessorProfileCard() {
 
     setDark(isDark);
     document.documentElement.classList.toggle("dark", isDark);
+  }, []);
+
+  /* FETCH EDUCATOR PROFILE */
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/educator/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setEducator(data.educator);
+          setName(data.educator.fullName.split(" ")[0] || "Professor");
+        }
+      } catch (error) {
+        console.error("Failed to fetch educator profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  /* FETCH NOTIFICATIONS */
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const res = await fetch("/api/educator/notifications?limit=10");
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data.notifications);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    }
+    fetchNotifications();
   }, []);
 
   function toggleDarkMode() {
@@ -78,6 +86,27 @@ export default function ProfessorProfileCard() {
     }
   }
 
+  async function handleMarkAllRead() {
+    try {
+      await fetch("/api/educator/notifications/mark-all-read", {
+        method: "POST",
+      });
+      // Refresh notifications
+      const res = await fetch("/api/educator/notifications?limit=10");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications);
+      }
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  }
+
+  function handleViewAllNotifications() {
+    // You can create a dedicated notifications page
+    router.push("/educator/notifications");
+  }
+
   const initial = name?.charAt(0)?.toUpperCase() || "?";
 
   return (
@@ -102,6 +131,9 @@ export default function ProfessorProfileCard() {
           setOpenNotif={setOpenNotif}
           setEditOpen={setEditOpen}
           handleSignOut={handleSignOut}
+          notifications={notifications}
+          handleMarkAllRead={handleMarkAllRead}
+          handleViewAllNotifications={handleViewAllNotifications}
         />
       </div>
 
@@ -120,6 +152,9 @@ export default function ProfessorProfileCard() {
               setEditOpen(v);
             }}
             handleSignOut={handleSignOut}
+            notifications={notifications}
+            handleMarkAllRead={handleMarkAllRead}
+            handleViewAllNotifications={handleViewAllNotifications}
           />
         </Modal>
       )}
@@ -128,7 +163,8 @@ export default function ProfessorProfileCard() {
       {editOpen && (
         <Modal onClose={() => setEditOpen(false)}>
           <EditProfile
-            name={name}
+            educator={educator}
+            setEducator={setEducator}
             setName={setName}
             setEditOpen={setEditOpen}
           />
@@ -148,6 +184,9 @@ function ProfileCard({
   setOpenNotif,
   setEditOpen,
   handleSignOut,
+  notifications,
+  handleMarkAllRead,
+  handleViewAllNotifications,
   mobile = false,
 }) {
   return (
@@ -170,7 +209,13 @@ function ProfileCard({
           <Bell size={22} />
         </button>
 
-        {openNotif && <NotifDropdown />}
+        {openNotif && (
+          <NotifDropdown
+            notifications={notifications}
+            onMarkAllRead={handleMarkAllRead}
+            onViewAll={handleViewAllNotifications}
+          />
+        )}
       </div>
 
       {/* USER INFO */}
@@ -213,25 +258,55 @@ function ProfileCard({
 
 /* ================= NOTIFICATIONS ================= */
 
-function NotifDropdown() {
+function NotifDropdown({ notifications = [], onMarkAllRead, onViewAll }) {
+  function formatTime(createdAt) {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return created.toLocaleDateString();
+  }
+
   return (
     <div className="absolute right-0 mt-3 w-[280px] sm:w-[360px] bg-white text-gray-800 rounded-xl border shadow-lg z-50 overflow-hidden">
       <div className="px-4 py-3 flex justify-between border-b">
         <h3 className="text-sm font-semibold">Notifications</h3>
 
-        <button className="text-xs text-[#9d8adb] hover:underline">
+        <button
+          onClick={onMarkAllRead}
+          className="text-xs text-[#9d8adb] hover:underline"
+        >
           Mark all as read
         </button>
       </div>
 
       <div className="max-h-[300px] overflow-y-auto">
-        {notifications.map((item) => (
-          <NotifItem key={item.id} {...item} />
-        ))}
+        {notifications.length === 0 ? (
+          <div className="px-4 py-8 text-center text-gray-500 text-sm">
+            No notifications
+          </div>
+        ) : (
+          notifications.map((item) => (
+            <NotifItem
+              key={item.id}
+              title={item.title}
+              message={item.message}
+              time={formatTime(item.createdAt)}
+              unread={!item.read}
+            />
+          ))
+        )}
       </div>
 
       <div className="px-4 py-2 text-center border-t">
-        <button className="text-xs text-gray-500 hover:text-gray-700">
+        <button
+          onClick={onViewAll}
+          className="text-xs text-gray-500 hover:text-gray-700"
+        >
           View all notifications
         </button>
       </div>
@@ -239,7 +314,9 @@ function NotifDropdown() {
   );
 }
 
-function NotifItem({ name, message, time, unread }) {
+function NotifItem({ title, message, time, unread }) {
+  const initial = title?.charAt(0)?.toUpperCase() || "N";
+  
   return (
     <div
       className={`
@@ -248,12 +325,12 @@ function NotifItem({ name, message, time, unread }) {
       `}
     >
       <div className="w-9 h-9 rounded-full bg-[#9d8adb]/20 text-[#6b5cbf] flex items-center justify-center text-xs font-semibold">
-        {name?.charAt(0)}
+        {initial}
       </div>
 
       <div className="flex-1">
         <p className="text-sm">
-          <span className="font-medium">{name}</span>{" "}
+          <span className="font-medium">{title}</span>{" "}
           <span className="text-gray-600">{message}</span>
         </p>
 
@@ -269,11 +346,51 @@ function NotifItem({ name, message, time, unread }) {
 
 /* ================= EDIT PROFILE ================= */
 
-function EditProfile({ setEditOpen, name, setName }) {
-  const [email, setEmail] = useState("uia@university.edu");
-  const [phone, setPhone] = useState("");
-  const [department, setDepartment] = useState("");
-  const [subjects, setSubjects] = useState("");
+function EditProfile({ setEditOpen, educator, setEducator, setName }) {
+  const [formData, setFormData] = useState({
+    fullName: "",
+    username: "",
+    gender: "",
+    birthDate: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (educator) {
+      setFormData({
+        fullName: educator.fullName || "",
+        username: educator.username || "",
+        gender: educator.gender || "",
+        birthDate: educator.birthDate ? educator.birthDate.split("T")[0] : "",
+      });
+    }
+  }, [educator]);
+
+  async function handleSave() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/educator/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEducator(data.educator);
+        setName(data.educator.fullName.split(" ")[0] || "Professor");
+        setEditOpen(false);
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+      alert("An error occurred while saving");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="bg-white w-full rounded-[28px] p-6 text-gray-700">
@@ -285,59 +402,76 @@ function EditProfile({ setEditOpen, name, setName }) {
       <div className="space-y-4 text-sm">
         <Input
           label="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={formData.fullName}
+          onChange={(e) =>
+            setFormData({ ...formData, fullName: e.target.value })
+          }
+        />
+
+        <Input
+          label="Username"
+          value={formData.username}
+          onChange={(e) =>
+            setFormData({ ...formData, username: e.target.value })
+          }
+        />
+
+        <div>
+          <label className="block mb-1 font-medium">Gender</label>
+          <select
+            value={formData.gender}
+            onChange={(e) =>
+              setFormData({ ...formData, gender: e.target.value })
+            }
+            className="w-full px-4 py-2 rounded-lg border outline-none"
+          >
+            <option value="">Select Gender</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
+            <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+          </select>
+        </div>
+
+        <Input
+          label="Birth Date"
+          type="date"
+          value={formData.birthDate}
+          onChange={(e) =>
+            setFormData({ ...formData, birthDate: e.target.value })
+          }
         />
 
         <Input
           label="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <Input
-          label="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+63 9xx xxx xxxx"
+          value={educator?.user?.email || ""}
+          disabled
         />
 
         <Input
           label="Department"
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
+          value={educator?.department?.name || ""}
+          disabled
         />
-
-        <Input
-          label="Subjects Handled"
-          value={subjects}
-          onChange={(e) => setSubjects(e.target.value)}
-        />
-
-        <Input label="Position" value="Instructor" disabled />
       </div>
 
       {/* ACTIONS */}
-      <div className="flex justify-between mt-6">
-        <button className="text-sm text-red-500 hover:underline">
-          Change Password
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setEditOpen(false)}
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700"
+          disabled={loading}
+        >
+          Cancel
         </button>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => setEditOpen(false)}
-            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={() => setEditOpen(false)}
-            className="px-4 py-2 rounded-lg bg-[#9d8adb] text-white"
-          >
-            Save Changes
-          </button>
-        </div>
+        <button
+          onClick={handleSave}
+          className="px-4 py-2 rounded-lg bg-[#9d8adb] text-white disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save Changes"}
+        </button>
       </div>
     </div>
   );

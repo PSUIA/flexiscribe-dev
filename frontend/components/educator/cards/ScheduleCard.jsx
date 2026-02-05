@@ -3,22 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { scheduleData } from "@/lib/mock/educatorSchedule";
 
 export default function ScheduleCard() {
   const [schedules, setSchedules] = useState([]);
 
   useEffect(() => {
-    const today = new Date().toLocaleString("en-US", {
-      weekday: "long",
-    });
-
-    // Show ONLY today's schedules
-    const todaysSchedule = scheduleData.filter((item) =>
-      item.time.startsWith(today)
-    );
-
-    setSchedules(todaysSchedule);
+    async function fetchSchedule() {
+      try {
+        const res = await fetch("/api/educator/schedule");
+        if (res.ok) {
+          const data = await res.json();
+          const today = new Date().toLocaleString("en-US", {
+            weekday: "long",
+          });
+          
+          // Filter for today's classes
+          const todaysSchedule = data.schedule.filter(
+            (item) => item.day === today
+          );
+          
+          setSchedules(todaysSchedule);
+        }
+      } catch (error) {
+        console.error("Failed to fetch schedule:", error);
+      }
+    }
+    fetchSchedule();
   }, []);
 
   return (
@@ -76,7 +86,7 @@ export default function ScheduleCard() {
 
 /* ================= ITEM ================= */
 
-function ScheduleItem({ title, code, time }) {
+function ScheduleItem({ subject, section, startTime, room }) {
   return (
     <div
       className="
@@ -104,9 +114,12 @@ function ScheduleItem({ title, code, time }) {
       />
 
       <div>
-        <p className="text-lg font-semibold">{title}</p>
-        <p className="text-sm text-white/85">{code}</p>
-        <p className="text-sm text-white/75">{time}</p>
+        <p className="text-lg font-semibold">
+          {subject} - Section {section}
+        </p>
+        <p className="text-sm text-white/75">
+          {startTime} • Room {room}
+        </p>
       </div>
     </div>
   );

@@ -3,18 +3,123 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export default function ProfileModal({
-  open,
-  defaultTab,
-  onClose,
-}) {
+export default function ProfileModal({ open, defaultTab, onClose }) {
   const [tab, setTab] = useState(defaultTab);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Profile form
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  // Security form
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (open) {
       setTab(defaultTab);
+      fetchProfile();
     }
   }, [defaultTab, open]);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.admin);
+        setFullName(data.admin.fullName || "");
+        setUsername(data.admin.username || "");
+        setPhoneNumber(data.admin.phoneNumber || "");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch("/api/admin/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          username,
+          phoneNumber,
+        }),
+      });
+
+      if (res.ok) {
+        alert("Profile updated successfully!");
+        fetchProfile();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("An error occurred while saving profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      alert("Password must be at least 8 characters");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch("/api/admin/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        alert("Password updated successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to update password");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      alert("An error occurred while updating password");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "A";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   if (!open) return null;
 
@@ -44,16 +149,14 @@ export default function ProfileModal({
         {/* PROFILE HEADER */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-full bg-[#9d8adb] flex items-center justify-center text-white text-xl font-semibold">
-            S
+            {getInitials(profile?.fullName || "Admin")}
           </div>
 
           <div>
             <p className="font-semibold text-gray-900">
-              Sky.
+              {profile?.fullName || "Admin"}
             </p>
-            <p className="text-sm text-gray-500">
-              Administrator
-            </p>
+            <p className="text-sm text-gray-500">Administrator</p>
           </div>
         </div>
 
@@ -85,55 +188,81 @@ export default function ProfileModal({
                 Personal Information
               </h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label>Full Name</label>
-                  <input
-                    className="w-full mt-1 rounded-lg border px-3 py-2"
-                    defaultValue="Sky."
-                  />
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading...
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Full Name
+                      </label>
+                      <input
+                        className="w-full mt-1 rounded-lg border px-3 py-2"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
+                    </div>
 
-                <div>
-                  <label>Username</label>
-                  <input
-                    className="w-full mt-1 rounded-lg border px-3 py-2"
-                    defaultValue="sky_admin"
-                  />
-                </div>
-              </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Username
+                      </label>
+                      <input
+                        className="w-full mt-1 rounded-lg border px-3 py-2"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label>Email</label>
-                <input
-                  className="w-full mt-1 rounded-lg border px-3 py-2 bg-gray-100"
-                  disabled
-                  defaultValue="admin@flexiscribe.edu"
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <input
+                      className="w-full mt-1 rounded-lg border px-3 py-2 bg-gray-100"
+                      disabled
+                      value={profile?.email || ""}
+                    />
+                  </div>
 
-              <div>
-                <label>Role</label>
-                <input
-                  className="w-full mt-1 rounded-lg border px-3 py-2 bg-gray-100"
-                  disabled
-                  defaultValue="Administrator"
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Role
+                    </label>
+                    <input
+                      className="w-full mt-1 rounded-lg border px-3 py-2 bg-gray-100"
+                      disabled
+                      value="Administrator"
+                    />
+                  </div>
 
-              <div>
-                <label>Phone Number</label>
-                <input
-                  className="w-full mt-1 rounded-lg border px-3 py-2"
-                  placeholder="+63 9XX XXX XXXX"
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <input
+                      className="w-full mt-1 rounded-lg border px-3 py-2"
+                      placeholder="+63 9XX XXX XXXX"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                  </div>
 
-              <div className="flex justify-end">
-                <button className="bg-[#9d8adb] text-white px-6 py-2 rounded-full hover:bg-[#8b78d1]">
-                  Save Changes
-                </button>
-              </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="bg-[#9d8adb] text-white px-6 py-2 rounded-full hover:bg-[#8b78d1] disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -145,27 +274,39 @@ export default function ProfileModal({
               </h3>
 
               <div>
-                <label>Current Password</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Current Password
+                </label>
                 <input
                   type="password"
                   className="w-full mt-1 rounded-lg border px-3 py-2"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label>New Password</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    New Password
+                  </label>
                   <input
                     type="password"
                     className="w-full mt-1 rounded-lg border px-3 py-2"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label>Confirm Password</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Confirm Password
+                  </label>
                   <input
                     type="password"
                     className="w-full mt-1 rounded-lg border px-3 py-2"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                 </div>
               </div>
@@ -174,13 +315,13 @@ export default function ProfileModal({
                 Password must be at least 8 characters.
               </div>
 
-              <div className="flex justify-between items-center pt-3">
-                <button className="text-red-600 hover:underline">
-                  Log out of all devices
-                </button>
-
-                <button className="bg-[#9d8adb] text-white px-6 py-2 rounded-full hover:bg-[#8b78d1]">
-                  Update Password
+              <div className="flex justify-end pt-3">
+                <button
+                  onClick={handleUpdatePassword}
+                  disabled={saving}
+                  className="bg-[#9d8adb] text-white px-6 py-2 rounded-full hover:bg-[#8b78d1] disabled:opacity-50"
+                >
+                  {saving ? "Updating..." : "Update Password"}
                 </button>
               </div>
             </>

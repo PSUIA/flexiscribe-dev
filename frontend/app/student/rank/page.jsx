@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaMedal, FaStar, FaCrown } from "react-icons/fa";
-import StudentSidebar from "../../../components/student/StudentSidebar";
-import StudentHeader from "../../../components/student/StudentHeader";
+import StudentSidebar from "@/components/student/layout/StudentSidebar";
+import StudentHeader from "@/components/student/layout/StudentHeader";
 import { calculateRank, ALL_RANKS, toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode } from "../../../utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";

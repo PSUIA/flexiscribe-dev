@@ -3,33 +3,59 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import TranscriptionHeader from "./_components/TranscriptionHeader";
-import CourseTabs from "./_components/CourseTabs";
-import TranscriptCard from "./_components/TranscriptCard";
-import PreviewPanel from "./_components/PreviewPanel";
-
-import { transcripts, courses } from "@/lib/mock/transcripts";
+import TranscriptionHeader from "./components/TranscriptionHeader";
+import CourseTabs from "./components/CourseTabs";
+import TranscriptCard from "./components/TranscriptCard";
+import PreviewPanel from "./components/PreviewPanel";
 
 export default function TranscriptionsPage() {
   const searchParams = useSearchParams();
 
-  const [activeCourse, setActiveCourse] = useState("CPP117");
+  const [transcripts, setTranscripts] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [activeCourse, setActiveCourse] = useState("");
   const [selected, setSelected] = useState(null);
+
+  // Fetch all transcriptions
+  useEffect(() => {
+    async function fetchTranscriptions() {
+      try {
+        const res = await fetch("/api/educator/transcriptions");
+        if (res.ok) {
+          const data = await res.json();
+          setTranscripts(data.transcriptions);
+          
+          // Extract unique courses
+          const uniqueCourses = [...new Set(data.transcriptions.map(t => t.course))];
+          setCourses(uniqueCourses);
+          
+          if (uniqueCourses.length > 0 && !activeCourse) {
+            setActiveCourse(uniqueCourses[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch transcriptions:", error);
+      }
+    }
+    fetchTranscriptions();
+  }, []);
 
   /* Sync from URL */
   useEffect(() => {
     const course = searchParams.get("course");
     const id = searchParams.get("id");
 
-    if (course) setActiveCourse(course);
+    if (course && courses.includes(course)) {
+      setActiveCourse(course);
+    }
 
     if (id) {
       const found = transcripts.find(
-        (t) => t.id === Number(id)
+        (t) => t.id === id
       );
       setSelected(found || null);
     }
-  }, [searchParams]);
+  }, [searchParams, courses, transcripts]);
 
   const filtered = transcripts.filter(
     (t) => t.course === activeCourse

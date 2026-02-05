@@ -1,9 +1,28 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function WelcomeCard({
-  name = "Prof. Uia",
   subtitle = "Ready to manage your classes today?",
 }) {
+  const [name, setName] = useState("Professor");
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/educator/profile");
+        if (res.ok) {
+          const data = await res.json();
+          const parts = data.educator.fullName?.trim().split(/\s+/) || [];
+          setName(parts[0] || "Professor");
+        }
+      } catch (error) {
+        console.error("Failed to fetch educator profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
   return (
     <div
       className="

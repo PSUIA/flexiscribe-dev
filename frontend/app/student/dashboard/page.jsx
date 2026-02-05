@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import StudentSidebar from "../../../components/student/StudentSidebar";
-import StudentHeader from "../../../components/student/StudentHeader";
+import StudentSidebar from "@/components/student/layout/StudentSidebar";
+import StudentHeader from "@/components/student/layout/StudentHeader";
 import { mockDailyMessages, mockQuotes } from "./mockData";
 import { 
   getGreeting, 

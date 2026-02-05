@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import SearchBar from "@/app/educator/dashboard/_components/SearchBar";
-import ProfessorProfileCard from "@/app/educator/dashboard/_components/ProfessorProfileCard";
-import ScheduleCard from "@/app/educator/dashboard/_components/ScheduleCard";
+import SearchBar from "@/components/educator/layout/SearchBar";
+import ProfessorProfileCard from "@/components/educator/cards/ProfessorProfileCard";
+import ScheduleCard from "@/components/educator/cards/ScheduleCard";
 import WelcomeCard from "@/components/educator/cards/WelcomeCard";
 import LectureRecordingsCard from "@/components/educator/cards/LectureRecordingsCard";
 import CalendarCard from "@/components/educator/cards/CalendarCard";

@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
 import { FaMoon, FaSun } from "react-icons/fa";
-import UserMenu from "./UserMenu";
-import NotificationMenu from "./NotificationMenu";
-import SearchBar from "./SearchBar";
+import UserMenu from "../ui/UserMenu";
+import NotificationMenu from "../ui/NotificationMenu";
+import SearchBar from "../ui/SearchBar";
 
 export default function StudentHeader({ 
   darkMode, 

@@ -113,3 +113,25 @@ export async function requireRole(request: NextRequest, allowedRoles: Array<"ADM
 
   return user;
 }
+
+// Verify authentication from request (for API routes)
+export async function verifyAuth(request: Request): Promise<JWTPayload | null> {
+  try {
+    // Extract token from cookies
+    const cookieHeader = request.headers.get("cookie");
+    if (!cookieHeader) return null;
+
+    const cookies = cookieHeader.split(";").map((c) => c.trim());
+    const authCookie = cookies.find((c) => c.startsWith("auth-token="));
+    
+    if (!authCookie) return null;
+
+    const token = authCookie.split("=")[1];
+    if (!token) return null;
+
+    return await verifyToken(token);
+  } catch (error) {
+    console.error("Auth verification error:", error);
+    return null;
+  }
+}
