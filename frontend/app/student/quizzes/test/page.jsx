@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useReducer } from "react";
+import { useRouter } from "next/navigation";
 import { FaChevronDown, FaSpinner } from "react-icons/fa";
 import "./styles.css";
 import "../../dashboard/styles.css";
@@ -54,6 +55,7 @@ const initialQuizState = {
 };
 
 export default function QuizTestPage() {
+  const router = useRouter();
   const [content, setContent] = useState("");
   const [selectedQuizType, setSelectedQuizType] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
@@ -189,6 +191,17 @@ export default function QuizTestPage() {
     }
   };
 
+  const handleViewAsQuiz = () => {
+    const { quiz } = quizState;
+    if (!quiz) return;
+    
+    // Save quiz to localStorage for test-view page
+    localStorage.setItem('generated-test-quiz', JSON.stringify(quiz));
+    
+    // Navigate to test-view page
+    router.push('/student/quizzes/test-view');
+  };
+  
   const renderQuizPreview = () => {
     const { quiz } = quizState;
     if (!quiz) return null;
@@ -198,9 +211,36 @@ export default function QuizTestPage() {
 
     return (
       <div className="quiz-preview-container">
-        <h3 className="quiz-preview-title">
-          Generated {quiz.type} Quiz ({quiz.difficulty})
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 className="quiz-preview-title" style={{ margin: 0 }}>
+            Generated {quiz.type} Quiz ({quiz.difficulty})
+          </h3>
+          <button 
+            onClick={handleViewAsQuiz}
+            style={{
+              background: 'linear-gradient(135deg, #9D8ADB 0%, #C5A6F9 100%)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 12px rgba(157, 138, 219, 0.3)'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(157, 138, 219, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(157, 138, 219, 0.3)';
+            }}
+          >
+            🎯 View as Interactive Quiz
+          </button>
+        </div>
         
         {quiz.stats && (
           <div className="quiz-stats">
