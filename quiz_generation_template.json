@@ -1,0 +1,236 @@
+{
+  "metadata": {
+    "template_version": "2.0",
+    "description": "Comprehensive template for quiz generation from lecture transcription summaries",
+    "created_date": "[YYYY-MM-DD: Date when transcription was processed]",
+    "source_type": "transcription_summary",
+    "lecture_info": {
+      "title": "[LECTURE_TITLE: Topic or title of the lecture]",
+      "subject": "[SUBJECT: Main subject area, e.g., Computer Science, Biology, Mathematics]",
+      "difficulty_level": "[LEVEL: beginner|intermediate|advanced]",
+      "duration_minutes": "[NUMBER: Total duration of lecture in minutes]",
+      "instructor": "[INSTRUCTOR_NAME: Optional - name of lecturer]",
+      "date_recorded": "[YYYY-MM-DD: Optional - when lecture was recorded]"
+    },
+    "content_analysis": {
+      "total_key_concepts": "[NUMBER: Count of major concepts covered]",
+      "primary_topics": [
+        "[TOPIC_1: Main topic covered in lecture]",
+        "[TOPIC_2: Second main topic]",
+        "[TOPIC_N: Additional main topics]"
+      ],
+      "prerequisite_knowledge": [
+        "[PREREQUISITE_1: Knowledge assumed before this lecture]",
+        "[PREREQUISITE_N: Additional prerequisites]"
+      ],
+      "learning_objectives": [
+        "[OBJECTIVE_1: What students should be able to do after this lecture]",
+        "[OBJECTIVE_N: Additional learning objectives]"
+      ]
+    }
+  },
+  "final_summary": {
+    "response": {
+      "summary": "[COMPREHENSIVE_SUMMARY: A complete overview of the entire lecture content, synthesizing all key concepts, main ideas, and important details covered throughout the session. This should be 3-5 sentences that capture the essence of the lecture.]",
+      "main_arguments": [
+        "[ARGUMENT_1: Primary thesis or main point of the lecture]",
+        "[ARGUMENT_N: Additional main arguments or themes]"
+      ],
+      "key_takeaways": [
+        "[TAKEAWAY_1: Most important thing students should remember]",
+        "[TAKEAWAY_2: Second most important point]",
+        "[TAKEAWAY_N: Additional critical takeaways - aim for 3-5 total]"
+      ],
+      "overall_difficulty": "[easy|medium|hard: Overall complexity of lecture content]"
+    }
+  },
+  "concept_map": {
+    "core_concepts": [
+      {
+        "concept_id": "C001",
+        "name": "[CONCEPT_NAME: e.g., 'Neural Networks']",
+        "definition": "[DEFINITION: Clear, concise definition of the concept]",
+        "category": "[CATEGORY: e.g., fundamental|intermediate|advanced|application]",
+        "introduced_at_minute": "[NUMBER: Minute when first introduced]",
+        "related_concepts": ["[CONCEPT_ID_1]", "[CONCEPT_ID_N]"],
+        "examples": [
+          "[EXAMPLE_1: Real-world or theoretical example]",
+          "[EXAMPLE_N: Additional examples]"
+        ],
+        "common_misconceptions": [
+          "[MISCONCEPTION_1: Common student misunderstanding]"
+        ]
+      }
+    ],
+    "terminology": [
+      {
+        "term": "[TERM: Technical term or vocabulary]",
+        "definition": "[DEFINITION: Explanation of the term]",
+        "context": "[CONTEXT: How it's used in the lecture]",
+        "minute_introduced": "[NUMBER: When first mentioned]"
+      }
+    ],
+    "formulas_and_equations": [
+      {
+        "formula": "[FORMULA: Mathematical or scientific formula]",
+        "description": "[DESCRIPTION: What the formula represents]",
+        "variables": {
+          "var1": "[DESCRIPTION: What each variable means]"
+        },
+        "minute_introduced": "[NUMBER: When presented]"
+      }
+    ],
+    "processes_and_procedures": [
+      {
+        "name": "[PROCESS_NAME: e.g., 'Backpropagation']",
+        "steps": [
+          "[STEP_1: First step in the process]",
+          "[STEP_N: Additional steps]"
+        ],
+        "purpose": "[PURPOSE: Why this process is important]",
+        "minute_introduced": "[NUMBER: When explained]"
+      }
+    ]
+  },
+  "minute_summaries": [
+    {
+      "minute": 1,
+      "summary": "[MINUTE_SUMMARY: A concise summary of what was covered in this specific minute of the lecture. Should be 1-3 sentences capturing the main point discussed during this time segment.]",
+      "key_points": [
+        {
+          "point": "[KEY_POINT: Important concept or fact discussed]",
+          "type": "[TYPE: definition|fact|example|explanation|comparison|process]",
+          "difficulty": "[DIFFICULTY: easy|medium|hard]",
+          "concept_id": "[CONCEPT_ID: Reference to concept_map if applicable]",
+          "quiz_potential": {
+            "multiple_choice": "[true|false: Good for MC questions]",
+            "true_false": "[true|false: Good for T/F questions]",
+            "short_answer": "[true|false: Good for short answer]",
+            "fill_blank": "[true|false: Good for fill-in-the-blank]"
+          }
+        }
+      ],
+      "topics_covered": [
+        "[TOPIC_1: Specific topic discussed in this minute]"
+      ],
+      "content_type": "[TYPE: introduction|definition|explanation|example|comparison|summary|transition]",
+      "importance_level": "[LEVEL: high|medium|low - relevance to overall lecture]",
+      "visual_aids_mentioned": [
+        "[VISUAL_1: Any diagrams, charts, or visuals referenced]"
+      ],
+      "questions_raised": [
+        "[QUESTION_1: Any questions posed to students or rhetorical questions]"
+      ]
+    },
+    {
+      "minute": 2,
+      "summary": "[MINUTE_SUMMARY: Summary for minute 2]",
+      "key_points": [
+        {
+          "point": "[KEY_POINT]",
+          "type": "[TYPE]",
+          "difficulty": "[DIFFICULTY]",
+          "concept_id": "[CONCEPT_ID]",
+          "quiz_potential": {
+            "multiple_choice": "[true|false]",
+            "true_false": "[true|false]",
+            "short_answer": "[true|false]",
+            "fill_blank": "[true|false]"
+          }
+        }
+      ],
+      "topics_covered": ["[TOPIC]"],
+      "content_type": "[TYPE]",
+      "importance_level": "[LEVEL]"
+    }
+  ],
+  "relationships_and_connections": {
+    "cause_effect": [
+      {
+        "cause": "[CAUSE: What causes something]",
+        "effect": "[EFFECT: The result or consequence]",
+        "minute": "[NUMBER: Where this relationship is explained]"
+      }
+    ],
+    "comparisons": [
+      {
+        "item_a": "[ITEM_A: First thing being compared]",
+        "item_b": "[ITEM_B: Second thing being compared]",
+        "similarities": ["[SIMILARITY_1]"],
+        "differences": ["[DIFFERENCE_1]"],
+        "minute": "[NUMBER: Where comparison is made]"
+      }
+    ],
+    "hierarchies": [
+      {
+        "parent": "[PARENT_CONCEPT: Broader category]",
+        "children": ["[CHILD_1: Subset or component]"],
+        "relationship_type": "[TYPE: is-a|part-of|example-of]",
+        "minute": "[NUMBER: Where hierarchy is explained]"
+      }
+    ]
+  },
+  "quiz_generation_metadata": {
+    "recommended_question_count": {
+      "minimum": "[NUMBER: Suggested minimum questions]",
+      "maximum": "[NUMBER: Suggested maximum questions]",
+      "optimal": "[NUMBER: Ideal number of questions]"
+    },
+    "difficulty_distribution": {
+      "easy": "[PERCENTAGE: e.g., 40]",
+      "medium": "[PERCENTAGE: e.g., 40]",
+      "hard": "[PERCENTAGE: e.g., 20]"
+    },
+    "question_type_suggestions": {
+      "multiple_choice": "[PERCENTAGE: e.g., 50]",
+      "true_false": "[PERCENTAGE: e.g., 20]",
+      "short_answer": "[PERCENTAGE: e.g., 15]",
+      "fill_blank": "[PERCENTAGE: e.g., 10]",
+      "matching": "[PERCENTAGE: e.g., 5]"
+    },
+    "focus_areas": [
+      {
+        "topic": "[TOPIC: Area to emphasize in quiz]",
+        "weight": "[PERCENTAGE: How much to focus on this]",
+        "reason": "[REASON: Why this is important]"
+      }
+    ],
+    "bloom_taxonomy_distribution": {
+      "remember": "[PERCENTAGE: Recall facts - Bloom's level 1]",
+      "understand": "[PERCENTAGE: Explain concepts - Bloom's level 2]",
+      "apply": "[PERCENTAGE: Use knowledge - Bloom's level 3]",
+      "analyze": "[PERCENTAGE: Break down information - Bloom's level 4]",
+      "evaluate": "[PERCENTAGE: Make judgments - Bloom's level 5]",
+      "create": "[PERCENTAGE: Produce new work - Bloom's level 6]"
+    }
+  },
+  "quiz_generation_guidelines": {
+    "source_priority": [
+      "Use key_points with high quiz_potential for specific question types",
+      "Use concept_map.core_concepts for definition and comprehension questions",
+      "Use terminology for vocabulary and fill-in-the-blank questions",
+      "Use processes_and_procedures for sequencing and explanation questions",
+      "Use relationships_and_connections for comparison and analysis questions",
+      "Use minute summaries for contextual comprehension questions",
+      "Use final_summary for synthesis and big-picture questions"
+    ],
+    "question_distribution": {
+      "from_key_points": "40-50% of questions",
+      "from_concept_map": "25-35% of questions",
+      "from_relationships": "10-15% of questions",
+      "from_minute_summaries": "10-15% of questions",
+      "from_final_summary": "5-10% of questions"
+    },
+    "quality_criteria": {
+      "clarity": "Questions must be unambiguous and clearly worded",
+      "accuracy": "Correct answers must be verifiable from source material",
+      "relevance": "Focus on important concepts, not trivial details",
+      "difficulty_balance": "Mix of easy recall, moderate comprehension, and challenging application",
+      "distractor_quality": "Wrong answers should be plausible but clearly incorrect"
+    },
+    "time_mapping": {
+      "minute": "Maps to the specific minute timestamp in the original lecture",
+      "use_case": "Can be used to reference back to original content or create time-based questions"
+    }
+  }
+}

@@ -520,22 +520,33 @@ export async function getBestAvailableModel(): Promise<string> {
   
   // Priority order: prefer smaller, faster models
   const preferredModels = [
+    'gemma3:4b',
     'gemma3:1b',
     'gemma2:2b',
     'gemma:2b', 
     'phi3:mini',
+    'phi3',
     'tinyllama',
     'llama3.2:1b',
     'qwen2.5:0.5b',
   ];
   
+  // First, try exact match
   for (const preferred of preferredModels) {
-    const found = models.find(m => m.startsWith(preferred.split(':')[0]));
+    if (models.includes(preferred)) {
+      return preferred;
+    }
+  }
+  
+  // Then try prefix match
+  for (const preferred of preferredModels) {
+    const prefix = preferred.split(':')[0];
+    const found = models.find(m => m.startsWith(prefix));
     if (found) return found;
   }
   
-  // Fallback to any available model
-  return models[0] || 'gemma3:1b';
+  // Last resort: any model
+  return models[0] || 'gemma3:4b';
 }
 
 /**
