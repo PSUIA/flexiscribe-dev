@@ -5,7 +5,6 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
-import { mockCompletedQuizzes, mockAvailableLessons } from "../dashboard/mockData";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -16,6 +15,7 @@ export default function QuizzesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [sortedQuizzes, setSortedQuizzes] = useState([]);
+  const [quizzesLoading, setQuizzesLoading] = useState(true);
   const [studentProfile, setStudentProfile] = useState(null);
   
   // Quiz generation states
@@ -60,6 +60,10 @@ export default function QuizzesPage() {
     async function fetchLessons() {
       try {
         const response = await fetch('/api/quizzes/generate');
+        if (!response.ok) {
+          console.error('Lessons fetch failed with status:', response.status);
+          return;
+        }
         const data = await response.json();
         if (data.success) {
           setLessons(data.lessons);
@@ -69,6 +73,41 @@ export default function QuizzesPage() {
       }
     }
     fetchLessons();
+  }, []);
+
+  // Fetch real quizzes from API
+  useEffect(() => {
+    async function fetchQuizzes() {
+      try {
+        setQuizzesLoading(true);
+        const response = await fetch('/api/students/quizzes');
+        if (!response.ok) {
+          console.error('Quizzes fetch failed with status:', response.status);
+          setQuizzesLoading(false);
+          return;
+        }
+        const data = await response.json();
+        if (data.success) {
+          // Merge with localStorage access times and sort
+          const savedAccessTimes = JSON.parse(localStorage.getItem('quizAccessTimes') || '{}');
+          const quizzesWithTimes = data.quizzes.map(quiz => ({
+            ...quiz,
+            lastAccessedDate: savedAccessTimes[quiz.id] || quiz.lastAccessedDate
+          }));
+          const sorted = [...quizzesWithTimes].sort((a, b) => {
+            const dateA = new Date(a.lastAccessedDate);
+            const dateB = new Date(b.lastAccessedDate);
+            return dateB - dateA;
+          });
+          setSortedQuizzes(sorted);
+        }
+      } catch (error) {
+        console.error('Error fetching quizzes:', error);
+      } finally {
+        setQuizzesLoading(false);
+      }
+    }
+    fetchQuizzes();
   }, []);
 
   useEffect(() => {
@@ -121,22 +160,6 @@ export default function QuizzesPage() {
     };
 
     fetchStudentProfile();
-
-    // Load quiz access times from localStorage and sort quizzes
-    const savedAccessTimes = JSON.parse(localStorage.getItem('quizAccessTimes') || '{}');
-    const quizzesWithUpdatedTimes = mockCompletedQuizzes.map(quiz => ({
-      ...quiz,
-      lastAccessedDate: savedAccessTimes[quiz.id] || quiz.lastAccessedDate
-    }));
-    
-    // Sort by most recently accessed
-    const sorted = [...quizzesWithUpdatedTimes].sort((a, b) => {
-      const dateA = new Date(a.lastAccessedDate);
-      const dateB = new Date(b.lastAccessedDate);
-      return dateB - dateA; // Most recent first
-    });
-    
-    setSortedQuizzes(sorted);
 
     return () => clearInterval(timer);
   }, []);
@@ -624,35 +647,41 @@ export default function QuizzesPage() {
           {/* Recent Quizzes Section */}
           <div className="section-container">
             <h2 className="section-title">Recent</h2>
-            <div className="quizzes-grid">
-              {sortedQuizzes.map((quiz) => (
-                <div
-                  key={quiz.id}
-                  className="quiz-card"
-                  onClick={() => handleQuizClick(quiz)}
-                >
-                  <div className="quiz-meta-badges">
-                    <div className="quiz-questions-badge">
-                      {quiz.numQuestions} Qs
+            {quizzesLoading ? (
+              <div className="quizzes-loading">Loading quizzes...</div>
+            ) : sortedQuizzes.length === 0 ? (
+              <div className="quizzes-empty">No quizzes yet. Generate one from a lesson above!</div>
+            ) : (
+              <div className="quizzes-grid">
+                {sortedQuizzes.map((quiz) => (
+                  <div
+                    key={quiz.id}
+                    className="quiz-card"
+                    onClick={() => handleQuizClick(quiz)}
+                  >
+                    <div className="quiz-meta-badges">
+                      <div className="quiz-questions-badge">
+                        {quiz.numQuestions} Qs
+                      </div>
+                      <div className={`quiz-type-badge type-${quiz.quizType.toLowerCase()}`}>
+                        {quiz.quizType}
+                      </div>
                     </div>
-                    <div className={`quiz-type-badge type-${quiz.quizType.toLowerCase()}`}>
-                      {quiz.quizType}
+                    <h3 className="quiz-card-title">{quiz.lesson}</h3>
+                    <div className="quiz-card-footer">
+                      <div className="quiz-accuracy-label">Accuracy</div>
+                      <div className="quiz-accuracy-bar-container">
+                        <div 
+                          className="quiz-accuracy-bar"
+                          style={{ width: `${quiz.accuracy}%` }}
+                        ></div>
+                      </div>
+                      <div className="quiz-accuracy-percentage">{quiz.accuracy}%</div>
                     </div>
                   </div>
-                  <h3 className="quiz-card-title">{quiz.lesson}</h3>
-                  <div className="quiz-card-footer">
-                    <div className="quiz-accuracy-label">Accuracy</div>
-                    <div className="quiz-accuracy-bar-container">
-                      <div 
-                        className="quiz-accuracy-bar"
-                        style={{ width: `${quiz.accuracy}%` }}
-                      ></div>
-                    </div>
-                    <div className="quiz-accuracy-percentage">{quiz.accuracy}%</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Find user by reset token
     const user = await prisma.user.findUnique({
-      where: { resetToken: token },
+      where: { token: token },
     });
 
     if (!user) {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if token is expired
-    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+    if (!user.tokenExpiry || user.tokenExpiry < new Date()) {
       return NextResponse.json(
         { error: "Reset token has expired" },
         { status: 400 }
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        resetToken: null,
-        resetTokenExpiry: null,
+        token: null,
+        tokenExpiry: null,
       },
     });
 

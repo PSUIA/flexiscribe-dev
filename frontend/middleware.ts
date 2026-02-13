@@ -69,17 +69,32 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Role-based route protection
+  // Role-based route protection - redirect to appropriate dashboard if accessing wrong portal
   if (pathname.startsWith("/admin") && user.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/auth/admin/login", request.url));
+    if (user.role === "EDUCATOR") {
+      return NextResponse.redirect(new URL("/educator/dashboard", request.url));
+    } else if (user.role === "STUDENT") {
+      return NextResponse.redirect(new URL("/student/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/auth/role-selection", request.url));
   }
 
   if (pathname.startsWith("/educator") && user.role !== "EDUCATOR") {
-    return NextResponse.redirect(new URL("/auth/educator/login", request.url));
+    if (user.role === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    } else if (user.role === "STUDENT") {
+      return NextResponse.redirect(new URL("/student/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/auth/role-selection", request.url));
   }
 
   if (pathname.startsWith("/student") && user.role !== "STUDENT") {
-    return NextResponse.redirect(new URL("/auth/student/login", request.url));
+    if (user.role === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    } else if (user.role === "EDUCATOR") {
+      return NextResponse.redirect(new URL("/educator/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/auth/role-selection", request.url));
   }
 
   return NextResponse.next();

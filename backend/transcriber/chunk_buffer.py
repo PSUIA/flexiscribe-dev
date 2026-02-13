@@ -1,6 +1,9 @@
 import time
 
+
 class MinuteBuffer:
+    """Buffers transcribed text and flushes at configurable intervals."""
+
     def __init__(self, interval=60):
         self.interval = interval
         self.start_time = time.time()
@@ -17,3 +20,6 @@ class MinuteBuffer:
         self.buffer.clear()
         self.start_time = time.time()
         return text
+
+    def has_content(self) -> bool:
+        return len(self.buffer) > 0

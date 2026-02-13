@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
         ...(course && { course }),
       },
       orderBy: { createdAt: "desc" },
+      include: {
+        class: {
+          select: { id: true, subject: true, section: true },
+        },
+      },
     });
 
     return NextResponse.json({ transcriptions }, { status: 200 });
@@ -87,8 +92,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, course, date, duration, content, rawText } =
-      await request.json();
+    const {
+      title,
+      course,
+      date,
+      duration,
+      content,
+      rawText,
+      transcriptJson,
+      summaryJson,
+      status,
+      sessionId,
+      classId,
+    } = await request.json();
 
     const transcription = await prisma.transcription.create({
       data: {
@@ -98,6 +114,11 @@ export async function POST(request: NextRequest) {
         duration,
         content,
         rawText,
+        transcriptJson: transcriptJson || undefined,
+        summaryJson: summaryJson || undefined,
+        status: status || "COMPLETED",
+        sessionId: sessionId || undefined,
+        classId: classId || undefined,
         educatorId: educator.id,
       },
     });

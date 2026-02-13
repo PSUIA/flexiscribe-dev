@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Trash2, Download } from "lucide-react";
+import { Pencil, Trash2, Upload } from "lucide-react";
 import EditUserModal from "./EditUserModal";
 
 /* STATUS BADGE STYLES */
@@ -127,7 +127,7 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
           onClick={handleExport}
           className="flex items-center gap-2 px-4 py-2 bg-[#9d8adb] text-white rounded-lg hover:bg-[#8b78d1] transition"
         >
-          <Download size={16} />
+          <Upload size={16} />
           Export Users
         </button>
       </div>

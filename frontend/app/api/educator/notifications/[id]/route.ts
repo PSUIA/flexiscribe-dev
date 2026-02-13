@@ -7,7 +7,7 @@ import prisma from "@/lib/db";
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -26,6 +26,8 @@ export async function PATCH(
       );
     }
 
+    const { id: notificationId } = await params;
+
     const educator = await prisma.educator.findUnique({
       where: { userId: user.userId },
     });
@@ -39,7 +41,7 @@ export async function PATCH(
 
     const notification = await prisma.notification.update({
       where: {
-        id: params.id,
+        id: notificationId,
         educatorId: educator.id,
       },
       data: {

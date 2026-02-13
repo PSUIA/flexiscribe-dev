@@ -139,13 +139,7 @@ export default function UsersFilterBar({
 
       {/* RIGHT - ACTIONS */}
       <div className="flex flex-col sm:flex-row gap-3">
-
-        {/* EXPORT */}
-        <button className={pill}>
-          <Upload size={16} />
-          Export Users
-        </button>
-
+        
         {/* ADD */}
         <button
           onClick={onAddUser}

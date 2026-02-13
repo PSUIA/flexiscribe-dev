@@ -173,6 +173,14 @@ export default function ScheduleGrid({
               <div><strong>Time:</strong> {activeClass.startTime}</div>
               <div><strong>Section:</strong> {activeClass.section}</div>
               <div><strong>Room:</strong> {activeClass.room}</div>
+              {activeClass.classCode && (
+                <div className="mt-3 p-3 bg-[#f5f3ff] rounded-lg">
+                  <strong className="text-[#4c4172]">Class Code:</strong>{" "}
+                  <span className="font-mono text-[#9d8adb] tracking-wider">
+                    {activeClass.classCode}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,11 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaFolderOpen } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaFolderOpen, FaFileAlt } from "react-icons/fa";
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
-import { enrolledClasses, rawTranscripts } from "../dashboard/mockData";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -17,6 +16,17 @@ export default function ReviewersPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [classCode, setClassCode] = useState("");
   const [studentProfile, setStudentProfile] = useState(null);
+
+  // Real data state
+  const [enrolledClasses, setEnrolledClasses] = useState([]);
+  const [rawTranscripts, setRawTranscripts] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingTranscripts, setLoadingTranscripts] = useState(true);
+
+  // Join class state
+  const [joinError, setJoinError] = useState("");
+  const [joinSuccess, setJoinSuccess] = useState("");
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     // Set initial time on mount
@@ -51,6 +61,39 @@ export default function ReviewersPage() {
 
     fetchStudentProfile();
 
+    // Fetch enrolled classes from API
+    const fetchEnrolledClasses = async () => {
+      try {
+        const response = await fetch('/api/students/classes');
+        if (response.ok) {
+          const data = await response.json();
+          setEnrolledClasses(data.classes || []);
+        }
+      } catch (error) {
+        console.error('Error fetching enrolled classes:', error);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    // Fetch raw transcripts from API
+    const fetchRawTranscripts = async () => {
+      try {
+        const response = await fetch('/api/students/transcriptions');
+        if (response.ok) {
+          const data = await response.json();
+          setRawTranscripts(data.transcriptions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching transcripts:', error);
+      } finally {
+        setLoadingTranscripts(false);
+      }
+    };
+
+    fetchEnrolledClasses();
+    fetchRawTranscripts();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -69,20 +112,58 @@ export default function ReviewersPage() {
     }
   };
 
-  const handleAddClass = () => {
-    if (classCode.trim()) {
-      console.log("Adding class with code:", classCode);
-      // TODO: Implement class addition logic
-      setClassCode("");
+  const handleAddClass = async () => {
+    if (!classCode.trim()) return;
+
+    setJoinError("");
+    setJoinSuccess("");
+    setJoining(true);
+
+    try {
+      const res = await fetch("/api/students/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classCode: classCode.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setJoinSuccess(`Joined ${data.class.subject} — Section ${data.class.section}!`);
+        setClassCode("");
+        // Refresh enrolled classes and transcripts
+        const [classesRes, transRes] = await Promise.all([
+          fetch('/api/students/classes'),
+          fetch('/api/students/transcriptions'),
+        ]);
+        if (classesRes.ok) {
+          const cData = await classesRes.json();
+          setEnrolledClasses(cData.classes || []);
+        }
+        if (transRes.ok) {
+          const tData = await transRes.json();
+          setRawTranscripts(tData.transcriptions || []);
+        }
+        setTimeout(() => setJoinSuccess(""), 3000);
+      } else {
+        setJoinError(data.error || "Failed to join class");
+        setTimeout(() => setJoinError(""), 4000);
+      }
+    } catch {
+      setJoinError("An error occurred. Please try again.");
+      setTimeout(() => setJoinError(""), 4000);
+    } finally {
+      setJoining(false);
     }
   };
 
   const handleClassClick = (classItem) => {
-    router.push(`/student/reviewers/${classItem.code}`);
+    router.push(`/student/reviewers/${classItem.classCode}`);
   };
 
   const handleTranscriptClick = (transcript) => {
-    router.push(`/student/reviewers/transcripts/${transcript.code}`);
+    const code = transcript.class?.classCode || transcript.course;
+    router.push(`/student/reviewers/transcripts/${code}`);
   };
 
   // Don't render clock until mounted to avoid hydration mismatch
@@ -284,53 +365,105 @@ export default function ReviewersPage() {
               <input
                 type="text"
                 className="class-input"
-                placeholder="P5U1A"
+                placeholder="e.g. A3F1B2"
                 value={classCode}
-                onChange={(e) => setClassCode(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddClass()}
+                onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddClass()}
+                disabled={joining}
+                style={{ fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}
               />
+              {joinError && (
+                <div className="join-feedback error">{joinError}</div>
+              )}
+              {joinSuccess && (
+                <div className="join-feedback success">{joinSuccess}</div>
+              )}
             </div>
-            <button className="add-class-btn" onClick={handleAddClass}>
-              Add Class
+            <button className="add-class-btn" onClick={handleAddClass} disabled={joining}>
+              {joining ? "Joining..." : "Join Class"}
             </button>
           </div>
 
           {/* Enrolled Classes Section */}
           <div className="section-container">
             <h2 className="section-title">Enrolled Classes</h2>
-            <div className="folders-grid">
-              {enrolledClasses.map((classItem) => (
-                <div
-                  key={classItem.id}
-                  className="folder-card"
-                  onClick={() => handleClassClick(classItem)}
-                >
-                  <div className="folder-icon-wrapper">
-                    <FaFolderOpen className="folder-icon" />
+            {loadingClasses ? (
+              <div className="empty-state-container">
+                <p className="empty-state-text">Loading classes...</p>
+              </div>
+            ) : enrolledClasses.length === 0 ? (
+              <div className="empty-state-container">
+                <FaFolderOpen className="empty-state-icon" />
+                <h3 className="empty-state-heading">No Enrolled Classes</h3>
+                <p className="empty-state-text">Enter a class code above to join a class and view reviewers.</p>
+              </div>
+            ) : (
+              <div className="folders-grid">
+                {enrolledClasses.map((classItem) => (
+                  <div
+                    key={classItem.id}
+                    className="folder-card"
+                    onClick={() => handleClassClick(classItem)}
+                  >
+                    <div className="folder-icon-wrapper">
+                      <FaFolderOpen className="folder-icon" />
+                    </div>
+                    <div className="folder-label">{classItem.subject}</div>
+                    <div className="folder-sublabel">Section {classItem.section}</div>
                   </div>
-                  <div className="folder-label">{classItem.code}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Raw Transcripts Section */}
           <div className="section-container">
             <h2 className="section-title">Raw Transcripts</h2>
-            <div className="folders-grid">
-              {rawTranscripts.map((transcript) => (
-                <div
-                  key={transcript.id}
-                  className="folder-card"
-                  onClick={() => handleTranscriptClick(transcript)}
-                >
-                  <div className="folder-icon-wrapper">
-                    <FaFolderOpen className="folder-icon" />
-                  </div>
-                  <div className="folder-label">{transcript.code}</div>
-                </div>
-              ))}
-            </div>
+            {loadingTranscripts ? (
+              <div className="empty-state-container">
+                <p className="empty-state-text">Loading transcripts...</p>
+              </div>
+            ) : rawTranscripts.length === 0 ? (
+              <div className="empty-state-container">
+                <FaFileAlt className="empty-state-icon" />
+                <h3 className="empty-state-heading">No Transcripts Available</h3>
+                <p className="empty-state-text">There are no uploaded transcripts for your enrolled classes yet.</p>
+              </div>
+            ) : (
+              <div className="folders-grid">
+                {/* Group transcripts by class */}
+                {(() => {
+                  const grouped = {};
+                  rawTranscripts.forEach((t) => {
+                    const key = t.class?.classCode || t.course;
+                    if (!grouped[key]) {
+                      grouped[key] = {
+                        classCode: key,
+                        subject: t.class?.subject || t.course,
+                        section: t.class?.section || "",
+                        count: 0,
+                      };
+                    }
+                    grouped[key].count++;
+                  });
+                  return Object.values(grouped).map((group) => (
+                    <div
+                      key={group.classCode}
+                      className="folder-card"
+                      onClick={() => router.push(`/student/reviewers/transcripts/${group.classCode}`)}
+                    >
+                      <div className="folder-icon-wrapper">
+                        <FaFileAlt className="folder-icon" />
+                      </div>
+                      <div className="folder-label">{group.subject}</div>
+                      <div className="folder-sublabel">
+                        {group.section ? `Section ${group.section} • ` : ""}{group.count} transcript{group.count !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
         </div>
       </main>
