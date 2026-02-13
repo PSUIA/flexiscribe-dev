@@ -7,7 +7,7 @@ import prisma from "@/lib/db";
  */
 export async function GET(request: NextRequest) {
   // Verify user has ADMIN or EDUCATOR role
-  const authResult = requireRole(request, ["ADMIN", "EDUCATOR"]);
+  const authResult = await requireRole(request, ["ADMIN", "EDUCATOR"]);
   
   if (authResult instanceof NextResponse) {
     return authResult; // Return error response

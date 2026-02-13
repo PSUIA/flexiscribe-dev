@@ -1,12 +1,12 @@
 import prisma from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import bcrypt from "bcrypt";
 
 // PATCH /api/admin/users/[id] - Update user
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -18,7 +18,7 @@ export async function PATCH(
       );
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
     const body = await request.json();
     const {
       email,
@@ -127,8 +127,8 @@ export async function PATCH(
 
 // DELETE /api/admin/users/[id] - Delete user
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -140,7 +140,7 @@ export async function DELETE(
       );
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
 
     // Get user before deletion
     const existingUser = await prisma.user.findUnique({

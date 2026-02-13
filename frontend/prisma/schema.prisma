@@ -57,6 +57,7 @@ model Student {
 
   achievements StudentAchievement[]
   badges       StudentBadge[]
+  classes      StudentClass[]
 }
 
 model Educator {
@@ -206,6 +207,7 @@ model StudentBadge {
 
 model Class {
   id        String  @id @default(cuid())
+  classCode String  @unique @default(cuid())
   subject   String
   section   String
   room      String
@@ -217,10 +219,27 @@ model Class {
   educatorId String
   educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
 
+  transcriptions Transcription[]
+  enrollments    StudentClass[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([educatorId])
+}
+
+model StudentClass {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  joinedAt  DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId])
+  @@index([studentId])
+  @@index([classId])
 }
 
 model Transcription {
@@ -232,6 +251,14 @@ model Transcription {
   content  String  @db.Text
   rawText  String? @db.Text
 
+  transcriptJson Json?
+  summaryJson    Json?
+  status         String  @default("COMPLETED")
+  sessionId      String?
+
+  classId String?
+  class   Class?  @relation(fields: [classId], references: [id], onDelete: SetNull)
+
   educatorId String
   educator   Educator @relation(fields: [educatorId], references: [id], onDelete: Cascade)
 
@@ -240,6 +267,8 @@ model Transcription {
 
   @@index([educatorId])
   @@index([course])
+  @@index([classId])
+  @@index([status])
 }
 
 model Notification {

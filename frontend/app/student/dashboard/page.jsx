@@ -311,10 +311,10 @@ export default function StudentDashboard() {
                   <h3>Jump Back In</h3>
                 </div>
                 <div className="jump-back-content">
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     padding: '2rem',
                     gap: '1rem',
@@ -333,14 +333,14 @@ export default function StudentDashboard() {
                       📚
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ 
-                        fontSize: '1rem', 
+                      <p style={{
+                        fontSize: '1rem',
                         fontWeight: '600',
                         color: 'var(--text-primary)',
                         marginBottom: '0.5rem',
                       }}>No Recent Activity</p>
-                      <p style={{ 
-                        fontSize: '0.85rem', 
+                      <p style={{
+                        fontSize: '0.85rem',
                         color: 'rgba(255, 255, 255, 0.7)',
                       }}>Start reviewing to track your progress</p>
                     </div>

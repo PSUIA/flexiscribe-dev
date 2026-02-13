@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
+import crypto from "crypto";
+
+function generateClassCode(): string {
+  return crypto.randomBytes(3).toString("hex").toUpperCase();
+}
 
 /**
  * Get educator's classes
@@ -84,8 +89,11 @@ export async function POST(request: NextRequest) {
     const { subject, section, room, day, startTime, endTime, students } =
       await request.json();
 
+    const classCode = generateClassCode();
+
     const newClass = await prisma.class.create({
       data: {
+        classCode,
         subject,
         section,
         room,

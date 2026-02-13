@@ -576,3 +576,15 @@
     padding: 6px 12px;
   }
 }
+
+/* Loading and Empty States */
+.quizzes-loading,
+.quizzes-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}

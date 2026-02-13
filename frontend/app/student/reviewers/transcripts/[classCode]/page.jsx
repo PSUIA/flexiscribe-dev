@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaFileAlt, FaEye, FaClock, FaCheckCircle } from "react-icons/fa";
-import UserMenu from "../../../dashboard/UserMenu";
-import NotificationMenu from "../../../dashboard/NotificationMenu";
-import SearchBar from "../../../dashboard/SearchBar";
-import { mockTranscriptsByClass } from "../../../dashboard/mockData";
+import UserMenu from "@/components/student/ui/UserMenu";
+import NotificationMenu from "@/components/student/ui/NotificationMenu";
+import SearchBar from "@/components/student/ui/SearchBar";
 import "../../../dashboard/styles.css";
 import "./styles.css";
 
@@ -20,8 +19,10 @@ export default function ClassTranscriptsPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [studentProfile, setStudentProfile] = useState(null);
   
-  // Get transcripts for this class
-  const transcripts = mockTranscriptsByClass[classCode] || [];
+  // Real data state
+  const [classInfo, setClassInfo] = useState(null);
+  const [transcripts, setTranscripts] = useState([]);
+  const [loadingTranscripts, setLoadingTranscripts] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -53,6 +54,38 @@ export default function ClassTranscriptsPage() {
     };
 
     fetchStudentProfile();
+
+    // Fetch class info
+    const fetchClassInfo = async () => {
+      try {
+        const response = await fetch('/api/students/classes');
+        if (response.ok) {
+          const data = await response.json();
+          const found = (data.classes || []).find((c) => c.classCode === classCode);
+          if (found) setClassInfo(found);
+        }
+      } catch (error) {
+        console.error('Error fetching class info:', error);
+      }
+    };
+
+    // Fetch transcripts for this class
+    const fetchTranscripts = async () => {
+      try {
+        const response = await fetch(`/api/students/transcriptions?classCode=${classCode}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTranscripts(data.transcriptions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching transcripts:', error);
+      } finally {
+        setLoadingTranscripts(false);
+      }
+    };
+
+    fetchClassInfo();
+    fetchTranscripts();
 
     return () => clearInterval(timer);
   }, []);
@@ -189,11 +222,17 @@ export default function ClassTranscriptsPage() {
           </div>
 
           <div className="class-header">
-            <h1 className="class-title">{classCode}</h1>
+            <h1 className="class-title">
+              {classInfo ? `${classInfo.subject} — Section ${classInfo.section}` : classCode}
+            </h1>
             <p className="class-subtitle">Raw Transcripts</p>
           </div>
 
-          {transcripts.length === 0 ? (
+          {loadingTranscripts ? (
+            <div className="empty-state">
+              <p>Loading transcripts...</p>
+            </div>
+          ) : transcripts.length === 0 ? (
             <div className="empty-state">
               <FaFileAlt className="empty-icon" />
               <h3>No Transcripts Available</h3>
@@ -206,11 +245,11 @@ export default function ClassTranscriptsPage() {
                   <div className="transcript-card-header">
                     <div className="file-type-badge">
                       <FaFileAlt />
-                      <span>{transcript.fileType}</span>
+                      <span>JSON</span>
                     </div>
-                    <div className={`status-badge ${transcript.status.toLowerCase()}`}>
+                    <div className={`status-badge ${transcript.status?.toLowerCase() || 'completed'}`}>
                       <FaCheckCircle />
-                      <span>{transcript.status}</span>
+                      <span>{transcript.status || 'COMPLETED'}</span>
                     </div>
                   </div>
                   
@@ -221,15 +260,15 @@ export default function ClassTranscriptsPage() {
                       <div className="meta-item">
                         <FaClock className="meta-icon" />
                         <span className="meta-label">Duration:</span>
-                        <span className="meta-value">{transcript.duration}</span>
+                        <span className="meta-value">{transcript.duration || '—'}</span>
                       </div>
                       <div className="meta-item">
                         <span className="meta-label">Date:</span>
-                        <span className="meta-value">{new Date(transcript.date).toLocaleDateString()}</span>
+                        <span className="meta-value">{transcript.date || new Date(transcript.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="meta-item">
-                        <span className="meta-label">Size:</span>
-                        <span className="meta-value">{transcript.fileSize}</span>
+                        <span className="meta-label">Educator:</span>
+                        <span className="meta-value">{transcript.educator?.fullName || '—'}</span>
                       </div>
                     </div>
                   </div>

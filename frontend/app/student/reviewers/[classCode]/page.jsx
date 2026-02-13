@@ -5,7 +5,6 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
-import { mockReviewersByClass } from "../../dashboard/mockData";
 import "../../dashboard/styles.css";
 import "./styles.css";
 
@@ -20,8 +19,10 @@ export default function ClassReviewersPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [studentProfile, setStudentProfile] = useState(null);
   
-  // Get reviewers for this class
-  const reviewers = mockReviewersByClass[classCode] || [];
+  // Real data state
+  const [classInfo, setClassInfo] = useState(null);
+  const [reviewers, setReviewers] = useState([]);
+  const [loadingReviewers, setLoadingReviewers] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -53,6 +54,40 @@ export default function ClassReviewersPage() {
     };
 
     fetchStudentProfile();
+
+    // Fetch class info from enrolled classes
+    const fetchClassInfo = async () => {
+      try {
+        const response = await fetch('/api/students/classes');
+        if (response.ok) {
+          const data = await response.json();
+          const found = (data.classes || []).find((c) => c.classCode === classCode);
+          if (found) {
+            setClassInfo(found);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching class info:', error);
+      }
+    };
+
+    // Fetch transcriptions/reviewers for this class
+    const fetchReviewers = async () => {
+      try {
+        const response = await fetch(`/api/students/transcriptions?classCode=${classCode}`);
+        if (response.ok) {
+          const data = await response.json();
+          setReviewers(data.transcriptions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching reviewers:', error);
+      } finally {
+        setLoadingReviewers(false);
+      }
+    };
+
+    fetchClassInfo();
+    fetchReviewers();
 
     return () => clearInterval(timer);
   }, []);
@@ -214,11 +249,17 @@ export default function ClassReviewersPage() {
           </div>
 
           <div className="class-header">
-            <h1 className="class-title">{classCode}</h1>
+            <h1 className="class-title">
+              {classInfo ? `${classInfo.subject} — Section ${classInfo.section}` : classCode}
+            </h1>
             <p className="class-subtitle">Enrolled Classes - Reviewers</p>
           </div>
 
-          {reviewers.length === 0 ? (
+          {loadingReviewers ? (
+            <div className="empty-state">
+              <p>Loading reviewers...</p>
+            </div>
+          ) : reviewers.length === 0 ? (
             <div className="empty-state">
               <FaBook className="empty-icon" />
               <h3>No Reviewers Available</h3>
@@ -231,23 +272,23 @@ export default function ClassReviewersPage() {
                   <div className="reviewer-card-header">
                     <div className="file-type-badge">
                       <FaFilePdf />
-                      <span>{reviewer.fileType}</span>
+                      <span>{reviewer.status}</span>
                     </div>
-                    <span className="file-size">{reviewer.fileSize}</span>
+                    <span className="file-size">{reviewer.duration || "—"}</span>
                   </div>
                   
                   <div className="reviewer-card-body">
                     <h3 className="reviewer-title">{reviewer.title}</h3>
-                    <p className="reviewer-description">{reviewer.description}</p>
+                    <p className="reviewer-description">{reviewer.course}</p>
                     
                     <div className="reviewer-meta">
                       <div className="meta-item">
-                        <span className="meta-label">Pages:</span>
-                        <span className="meta-value">{reviewer.pages}</span>
+                        <span className="meta-label">Educator:</span>
+                        <span className="meta-value">{reviewer.educator?.fullName || "—"}</span>
                       </div>
                       <div className="meta-item">
-                        <span className="meta-label">Updated:</span>
-                        <span className="meta-value">{new Date(reviewer.lastUpdated).toLocaleDateString()}</span>
+                        <span className="meta-label">Date:</span>
+                        <span className="meta-value">{reviewer.date || new Date(reviewer.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>

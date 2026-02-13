@@ -1,7 +1,6 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { mockCompletedQuizzes, mockQuizQuestions } from "../../dashboard/mockData";
 import FlashcardQuiz from "./FlashcardQuiz";
 import MCQQuiz from "./MCQQuiz";
 import FillInQuiz from "./FillInQuiz";
@@ -11,25 +10,43 @@ export default function QuizPage() {
   const router = useRouter();
   const [quiz, setQuiz] = useState(null);
   const [questions, setQuestions] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const quizId = parseInt(params.id);
-    const quizData = mockCompletedQuizzes.find(q => q.id === quizId);
-    const quizQuestions = mockQuizQuestions[quizId];
-
-    if (!quizData || !quizQuestions) {
-      router.push("/student/quizzes");
-      return;
+    async function fetchQuiz() {
+      try {
+        setLoading(true);
+        const quizId = params.id;
+        const response = await fetch(`/api/students/quizzes/${quizId}`);
+        if (!response.ok) {
+          setError('Quiz not found');
+          router.push("/student/quizzes");
+          return;
+        }
+        const data = await response.json();
+        if (data.success) {
+          setQuiz(data.quiz);
+          setQuestions(data.questions);
+        } else {
+          setError(data.error || 'Failed to load quiz');
+          router.push("/student/quizzes");
+        }
+      } catch (err) {
+        console.error('Error fetching quiz:', err);
+        setError('Failed to load quiz');
+        router.push("/student/quizzes");
+      } finally {
+        setLoading(false);
+      }
     }
-
-    setQuiz(quizData);
-    setQuestions(quizQuestions);
+    fetchQuiz();
   }, [params.id, router]);
 
-  if (!quiz || !questions) {
+  if (loading || !quiz || !questions) {
     return (
-      <div className="loading-container">
-        <div>Loading quiz...</div>
+      <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div>{error || 'Loading quiz...'}</div>
       </div>
     );
   }
@@ -43,6 +60,6 @@ export default function QuizPage() {
     case "Fill-in":
       return <FillInQuiz quiz={quiz} questions={questions} />;
     default:
-      return <div>Unknown quiz type</div>;
+      return <div>Unknown quiz type: {quiz.quizType}</div>;
   }
 }

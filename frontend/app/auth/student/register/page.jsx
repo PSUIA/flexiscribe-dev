@@ -30,7 +30,7 @@ export default function StudentRegister() {
 
   const handleBack = () => {
     if (step === 1) {
-      router.push("/");
+      router.push("/auth/role-selection");
     } else {
       setStep(step - 1);
       setError("");

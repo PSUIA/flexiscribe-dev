@@ -173,11 +173,16 @@ export default function Sidebar() {
               <Link
                 key={course}
                 href={`/educator/classes/${course.toLowerCase()}`}
-                className="block px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20"
+                className="block px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
               >
                 {course}
               </Link>
             ))}
+            {courses.length === 0 && (
+              <p className="px-4 py-3 text-sm text-white/60">
+                No classes assigned yet
+              </p>
+            )}
           </div>
         )}
 
