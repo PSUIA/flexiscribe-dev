@@ -7,6 +7,23 @@ function generateClassCode(): string {
   return crypto.randomBytes(3).toString("hex").toUpperCase(); // e.g. "A3F1B2"
 }
 
+const TIME_FORMAT_REGEX = /^(1[0-2]|[1-9]):([0-5]\d)\s(AM|PM)$/;
+
+function isValidTimeFormat(time: string): boolean {
+  return TIME_FORMAT_REGEX.test(time);
+}
+
+function timeToMinutes(time: string): number {
+  const match = time.match(TIME_FORMAT_REGEX);
+  if (!match) return -1;
+  let hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const period = match[3];
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
 // GET /api/admin/classes — List all classes with educator info
 export async function GET(request: Request) {
   try {
@@ -65,6 +82,28 @@ export async function POST(request: Request) {
     if (!subject || !section || !room || !day || !startTime || !educatorId) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate time format
+    if (!isValidTimeFormat(startTime)) {
+      return NextResponse.json(
+        { error: "Invalid start time format. Use format like '7:00 AM'" },
+        { status: 400 }
+      );
+    }
+
+    if (endTime && !isValidTimeFormat(endTime)) {
+      return NextResponse.json(
+        { error: "Invalid end time format. Use format like '9:00 AM'" },
+        { status: 400 }
+      );
+    }
+
+    if (endTime && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      return NextResponse.json(
+        { error: "End time must be after start time" },
         { status: 400 }
       );
     }

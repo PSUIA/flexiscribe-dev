@@ -4,8 +4,6 @@ import { useParams } from "next/navigation";
 import { GraduationCap, Bell } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 
-import { classes } from "@/lib/mock/classes";
-import { notifications } from "@/lib/mock/notifications";
 import SectionCard from "@/components/educator/classes/SectionCard";
 import StudentTableCard from "@/components/educator/classes/StudentTableCard";
 
@@ -58,7 +56,19 @@ function NotifDropdown({ notifications }) {
   );
 }
 
-function NotifItem({ name, message, time, unread }) {
+function NotifItem({ title, message, read, createdAt }) {
+  // Format relative time from createdAt
+  const timeAgo = createdAt ? (() => {
+    const diff = Date.now() - new Date(createdAt).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins} min${mins > 1 ? "s" : ""} ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs > 1 ? "s" : ""} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days > 1 ? "s" : ""} ago`;
+  })() : "";
+
   return (
     <div
       className={`
@@ -67,7 +77,7 @@ function NotifItem({ name, message, time, unread }) {
         cursor-pointer
         hover:bg-gray-50
         transition
-        ${unread ? "bg-[#f7f5ff]" : "bg-white"}
+        ${!read ? "bg-[#f7f5ff]" : "bg-white"}
       `}
     >
       {/* Avatar */}
@@ -80,14 +90,14 @@ function NotifItem({ name, message, time, unread }) {
         text-xs font-semibold
         shrink-0
       ">
-        {name[0]}
+        {(title || "N")[0]}
       </div>
 
       {/* Content */}
       <div className="flex-1">
         <p className="text-sm leading-snug">
           <span className="font-medium">
-            {name}
+            {title}
           </span>{" "}
           <span className="text-gray-600">
             {message}
@@ -95,12 +105,12 @@ function NotifItem({ name, message, time, unread }) {
         </p>
 
         <p className="text-xs text-gray-400 mt-1">
-          {time}
+          {timeAgo}
         </p>
       </div>
 
       {/* Unread dot */}
-      {unread && (
+      {!read && (
         <span className="
           w-2 h-2
           bg-[#9d8adb]
@@ -116,24 +126,60 @@ function NotifItem({ name, message, time, unread }) {
 
 export default function ClassPage() {
   const { course } = useParams();
-  const userName = "Uia.";
 
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
+  // Real data state
+  const [allClasses, setAllClasses] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [userName, setUserName] = useState("Educator");
+  const [activeSection, setActiveSection] = useState("");
+  const [activeClassId, setActiveClassId] = useState(null);
+
+  // Fetch classes, profile, and notifications from API
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [classesRes, profileRes, notifsRes] = await Promise.all([
+          fetch("/api/educator/classes"),
+          fetch("/api/educator/profile"),
+          fetch("/api/educator/notifications?limit=10"),
+        ]);
+
+        if (classesRes.ok) {
+          const data = await classesRes.json();
+          setAllClasses(data.classes || []);
+        }
+        if (profileRes.ok) {
+          const data = await profileRes.json();
+          setUserName(data.educator?.fullName?.split(" ")[0] || "Educator");
+        }
+        if (notifsRes.ok) {
+          const data = await notifsRes.json();
+          setNotifications(data.notifications || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Filter classes for this course
   const courseClasses = useMemo(() => {
-    return classes.filter(
+    return allClasses.filter(
       (c) =>
         c.subject.toLowerCase() ===
         course?.toLowerCase()
     );
-  }, [course]);
+  }, [course, allClasses]);
 
-  const [activeSection, setActiveSection] = useState("A");
-
+  // Set initial active section when classes load
   useEffect(() => {
-    if (courseClasses.length) {
+    if (courseClasses.length && !activeSection) {
       setActiveSection(courseClasses[0].section);
+      setActiveClassId(courseClasses[0].id);
     }
   }, [courseClasses]);
 
@@ -153,7 +199,7 @@ export default function ClassPage() {
   }, [open]);
 
   const unreadCount = notifications.filter(
-    (n) => n.unread
+    (n) => !n.read
   ).length;
 
   return (
@@ -256,18 +302,19 @@ export default function ClassPage() {
             <SectionCard
               key={cls.id}
               {...cls}
-              time={cls.start}
+              time={cls.startTime}
               active={activeSection === cls.section}
-              onClick={() =>
-                setActiveSection(cls.section)
-              }
+              onClick={() => {
+                setActiveSection(cls.section);
+                setActiveClassId(cls.id);
+              }}
             />
           ))}
         </div>
 
         {/* TABLE */}
         <div className="w-full max-w-full overflow-x-auto">
-          <StudentTableCard section={activeSection} />
+          <StudentTableCard section={activeSection} classId={activeClassId} />
         </div>
       </div>
     </div>

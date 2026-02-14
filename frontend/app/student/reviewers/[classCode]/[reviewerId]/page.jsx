@@ -5,9 +5,39 @@ import { Editor } from "@tinymce/tinymce-react";
 import { 
   FaMoon, FaSun, FaArrowLeft, FaDownload, FaSave
 } from "react-icons/fa";
-import mammoth from "mammoth";
-import { mockReviewersByClass } from "../../../dashboard/mockData";
 import "./styles.css";
+
+/**
+ * Convert summaryJson (Cornell Notes) to editable HTML for TinyMCE
+ */
+function summaryJsonToHtml(summaryJson) {
+  if (!summaryJson) return "<p>No summary data available.</p>";
+
+  const s = typeof summaryJson === "string" ? JSON.parse(summaryJson) : summaryJson;
+  const title = s.title || "Untitled";
+  const cueQuestions = s.cue_questions || [];
+  const notes = s.notes || [];
+  const summary = s.summary || "";
+
+  let html = `<table style="width:100%; border-collapse:collapse; margin:20px 0;">`;
+  html += `<tr><td colspan="2" style="border:2px solid #5b21b6; padding:12px; background:linear-gradient(135deg,#7c3aed,#5b21b6); color:white; font-weight:700; font-size:18px; text-align:center;">${title}</td></tr>`;
+  html += `<tr><td style="border:2px solid #5b21b6; padding:12px; width:30%; background:#f3f4f6; font-weight:700;">Cue Questions</td>`;
+  html += `<td style="border:2px solid #5b21b6; padding:12px; width:70%; font-weight:700;">Notes</td></tr>`;
+
+  const maxRows = Math.max(cueQuestions.length, notes.length);
+  for (let i = 0; i < maxRows; i++) {
+    const q = cueQuestions[i] || "";
+    const n = notes[i] || "";
+    html += `<tr>`;
+    html += `<td style="border:2px solid #5b21b6; padding:12px; width:30%; background:#f3f4f6;">${q}</td>`;
+    html += `<td style="border:2px solid #5b21b6; padding:12px; width:70%;">${n}</td>`;
+    html += `</tr>`;
+  }
+
+  html += `<tr><td colspan="2" style="border:2px solid #5b21b6; padding:12px; background:#fefce8;"><strong>Summary:</strong><br/>${summary}</td></tr>`;
+  html += `</table>`;
+  return html;
+}
 
 export default function ReviewerEditorPage() {
   const router = useRouter();
@@ -21,22 +51,12 @@ export default function ReviewerEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [reviewer, setReviewer] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
   const editorRef = useRef(null);
   const contentInitialized = useRef(false);
   const initialContentRef = useRef("");
   const isTyping = useRef(false);
-  
-  // Get reviewer data
-  const reviewers = mockReviewersByClass[classCode] || [];
-  const reviewer = reviewers.find(r => r.id === parseInt(reviewerId));
-  
-  // Use absolute URL for both localhost and network access
-  const getDocxUrl = () => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/sample.docx`;
-    }
-    return "/sample.docx";
-  };
 
   // Load theme preference
   useEffect(() => {
@@ -47,62 +67,42 @@ export default function ReviewerEditorPage() {
     }
   }, []);
 
-  // Load DOCX document
+  // Fetch transcription data from API and render summaryJson as editable HTML
   useEffect(() => {
     const loadDocument = async () => {
       try {
-        const docxUrl = getDocxUrl();
-        console.log("Loading document from:", docxUrl);
-        
-        // Check localStorage first
+        // Check localStorage first for user edits
         const savedContent = localStorage.getItem(`reviewer-${classCode}-${reviewerId}`);
         if (savedContent) {
-          console.log("Loading from localStorage");
           initialContentRef.current = savedContent;
           setEditorContent(savedContent);
           setContentLoaded(true);
-          setLoading(false);
-          return;
         }
 
-        console.log("Fetching DOCX file...");
-        const response = await fetch(docxUrl, {
-          method: 'GET',
-          cache: 'no-cache',
-          headers: {
-            'Accept': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          }
-        });
-        console.log("Response status:", response.status);
-        console.log("Response headers:", response.headers);
-        
-        if (!response.ok) throw new Error(`Document not found: ${response.status}`);
-        
-        const arrayBuffer = await response.arrayBuffer();
-        console.log("ArrayBuffer size:", arrayBuffer.byteLength);
-        
-        const result = await mammoth.convertToHtml({ 
-          arrayBuffer,
-          styleMap: [
-            "p[style-name='Heading 1'] => h1:fresh",
-            "p[style-name='Heading 2'] => h2:fresh",
-            "p[style-name='Heading 3'] => h3:fresh",
-            "b => strong",
-            "i => em",
-          ]
-        });
-        
-        console.log("Conversion result:", result.value.substring(0, 200));
-        initialContentRef.current = result.value;
-        setEditorContent(result.value);
-        setContentLoaded(true);
+        // Fetch transcription data from API
+        const response = await fetch(`/api/students/transcriptions/${reviewerId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load transcription: ${response.status}`);
+        }
+        const data = await response.json();
+        const transcription = data.transcription;
+        setReviewer(transcription);
+
+        // If no saved content, render summaryJson as initial HTML
+        if (!savedContent) {
+          const html = summaryJsonToHtml(transcription.summaryJson);
+          initialContentRef.current = html;
+          setEditorContent(html);
+          setContentLoaded(true);
+        }
+
         setLoading(false);
       } catch (err) {
         console.error("Error loading document:", err);
+        setFetchError(err.message);
         setEditorContent(`
           <h1>Welcome to the Reviewer Editor</h1>
           <p>Start typing to create your document...</p>
-          <p><em>Note: Place a DOCX file at public/sample.docx to load it automatically.</em></p>
           <p style="color: red;"><strong>Error: ${err.message}</strong></p>
         `);
         setLoading(false);
@@ -173,11 +173,12 @@ export default function ReviewerEditorPage() {
     }
   };
 
-  if (!reviewer) {
+  if (!loading && !reviewer && fetchError) {
     return (
       <div className="reviewer-editor-container">
         <div className="error-message">
           <h2>Reviewer not found</h2>
+          <p>{fetchError}</p>
           <button onClick={() => router.push(`/student/reviewers/${classCode}`)}>Go Back</button>
         </div>
       </div>
@@ -194,7 +195,7 @@ export default function ReviewerEditorPage() {
             <span>Back</span>
           </button>
           <div className="document-title">
-            <h2>{reviewer.title}</h2>
+            <h2>{reviewer?.title || 'Loading...'}</h2>
             <div className="document-info">{classCode} • Editable Document</div>
           </div>
         </div>

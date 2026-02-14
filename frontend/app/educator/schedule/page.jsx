@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import ScheduleGrid from "./components/ScheduleGrid";
-import { days } from "@/lib/mock/days";
-import { notifications } from "@/lib/mock/notifications";
 import { generateTimeSlots } from "@/lib/timeSlots";
+
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function SchedulePage() {
   const timeSlots = generateTimeSlots(7, 22);
@@ -30,7 +30,6 @@ export default function SchedulePage() {
       <ScheduleGrid
         classes={classes}
         days={days}
-        notifications={notifications}
         timeSlots={timeSlots}
       />
     </div>

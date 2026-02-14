@@ -2,6 +2,23 @@ import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 
+const TIME_FORMAT_REGEX = /^(1[0-2]|[1-9]):([0-5]\d)\s(AM|PM)$/;
+
+function isValidTimeFormat(time: string): boolean {
+  return TIME_FORMAT_REGEX.test(time);
+}
+
+function timeToMinutes(time: string): number {
+  const match = time.match(TIME_FORMAT_REGEX);
+  if (!match) return -1;
+  let hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const period = match[3];
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
 // DELETE /api/admin/classes/[id] — Delete a class
 export async function DELETE(
   request: Request,

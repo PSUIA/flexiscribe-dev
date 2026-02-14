@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "session_id": "session-mobile-embedded-001",
+    "run_id": "20260214_100000",
+    "course_code": "CPE103",
+    "generated_at": "2026-02-14 11:30:00"
+  },
+  "title": "Mobile Embedded Systems — Architecture, Power, and Communication",
+  "cue_questions": [
+    "What distinguishes a mobile embedded system from a general-purpose computer?",
+    "Why is power management the most critical constraint in mobile embedded design?",
+    "What is the difference between bare-metal firmware and an RTOS?",
+    "How does Bluetooth Low Energy (BLE) minimize power consumption?",
+    "What is sensor fusion and why is it useful?",
+    "Why should dynamic memory allocation be avoided in embedded firmware?",
+    "How does a dual-bank OTA update system ensure reliability?"
+  ],
+  "notes": [
+    "An embedded system is a specialized computing system for dedicated functions within a larger system; mobile embedded systems are portable and battery-powered.",
+    "Common examples include smartphones, fitness trackers, GPS devices, medical wearables, and automotive ECU modules.",
+    "Hardware architecture: microcontroller or application processor, SRAM/DRAM, flash storage, sensors, radios, displays, and actuators.",
+    "ARM Cortex-M is used for low-power wearables; ARM Cortex-A powers smartphones; RISC-V is an emerging open-source alternative.",
+    "Power management techniques: Dynamic Voltage and Frequency Scaling (DVFS) reduces clock speed and voltage when full performance is not needed.",
+    "Sleep modes (idle, standby, deep sleep) reduce current draw to microamps; deep sleep requires RTC or external interrupt to wake.",
+    "Bare-metal firmware runs directly on hardware without an OS — maximum control but difficult multitasking.",
+    "RTOS (FreeRTOS, Zephyr, Mbed OS) provides task scheduling, inter-task communication, and deterministic timing guarantees for real-time responsiveness.",
+    "Wireless protocols: BLE (short-range, low-power), Wi-Fi (local), LoRa (long-range, low-power), LTE-M/NB-IoT (wide-area cellular).",
+    "BLE uses 2.4 GHz band, short data bursts, and GATT profile for service/characteristic definitions.",
+    "Common sensors: accelerometer, gyroscope, GPS, temperature/humidity, heart rate/SpO2.",
+    "Sensor fusion combines multi-sensor data (e.g., IMU with Kalman filter) for more accurate orientation estimates.",
+    "Memory is severely limited (sometimes 64 KB RAM); avoid malloc/free fragmentation — use static allocation or memory pools.",
+    "OTA updates use dual-bank flash: new firmware downloads to secondary bank; bootloader rolls back on failure.",
+    "Security: hardware secure elements or TrustZone, TLS encryption, secure boot for firmware integrity verification."
+  ],
+  "summary": "This lecture covered the fundamentals of Mobile Embedded Systems. These are constrained, battery-powered devices optimized for dedicated tasks under tight power, memory, and real-time requirements. Key topics included hardware architecture (ARM Cortex-M/A, RISC-V), power management via DVFS and multiple sleep modes, the choice between bare-metal firmware and an RTOS for deterministic task scheduling, wireless communication protocols with a focus on BLE, sensor integration and fusion using algorithms like the Kalman filter, disciplined memory management without dynamic allocation, dual-bank OTA firmware updates, and security best practices including secure boot and TrustZone."
+}
