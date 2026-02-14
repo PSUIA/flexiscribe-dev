@@ -2,8 +2,10 @@
 
 import { X, BookOpen, MapPin, Clock, Calendar, User, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
+import { generateTimeOptions, timeToMinutes } from "@/lib/timeSlots";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const TIME_OPTIONS = generateTimeOptions();
 
 export default function EditClassModal({ classData, onClose }) {
   const [subject, setSubject] = useState(classData.subject || "");
@@ -42,7 +44,7 @@ export default function EditClassModal({ classData, onClose }) {
   const handleSave = async () => {
     setError("");
 
-    if (!subject || !section || !room || !day || !startTime || !educatorId) {
+    if (!subject || !section || !room || !day || !startTime || !endTime || !educatorId) {
       setError("Please fill in all required fields");
       return;
     }
@@ -172,25 +174,42 @@ export default function EditClassModal({ classData, onClose }) {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Start Time *</label>
-                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1">
+                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1 relative">
                   <Clock size={18} className="text-gray-600" />
-                  <input
+                  <select
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full bg-transparent outline-none text-gray-800"
-                  />
+                    onChange={(e) => {
+                      setStartTime(e.target.value);
+                      if (endTime && timeToMinutes(e.target.value) >= timeToMinutes(endTime)) {
+                        setEndTime("");
+                      }
+                    }}
+                    className="w-full bg-transparent outline-none appearance-none text-gray-800"
+                  >
+                    <option value="">Select start time</option>
+                    {TIME_OPTIONS.slice(0, -1).map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  <span className="absolute right-4 text-gray-500">▼</span>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">End Time</label>
-                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1">
+                <label className="text-sm font-medium text-gray-700">End Time *</label>
+                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1 relative">
                   <Clock size={18} className="text-gray-600" />
-                  <input
+                  <select
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full bg-transparent outline-none text-gray-800"
-                  />
+                    className="w-full bg-transparent outline-none appearance-none text-gray-800"
+                  >
+                    <option value="">Select end time</option>
+                    {TIME_OPTIONS.filter((t) => !startTime || timeToMinutes(t) > timeToMinutes(startTime)).map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  <span className="absolute right-4 text-gray-500">▼</span>
                 </div>
               </div>
             </div>

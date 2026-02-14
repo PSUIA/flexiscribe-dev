@@ -1,13 +1,34 @@
 "use client";
 
-import { studentsBySection } from "@/lib/mock/students";
+import { useState, useEffect } from "react";
 
-export default function StudentTableCard({ section }) {
+export default function StudentTableCard({ section, classId }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const students =
-    studentsBySection?.[
-      section?.toUpperCase()
-    ] ?? [];
+  useEffect(() => {
+    if (!classId) return;
+
+    async function fetchStudents() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/educator/classes/${classId}/students`);
+        if (res.ok) {
+          const data = await res.json();
+          setStudents(data.students || []);
+        } else {
+          setStudents([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch students:", error);
+        setStudents([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStudents();
+  }, [classId]);
 
   return (
     <div
@@ -103,7 +124,18 @@ export default function StudentTableCard({ section }) {
                 </tr>
               ))}
 
-              {students.length === 0 && (
+              {loading && (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-gray-400"
+                  >
+                    Loading students...
+                  </td>
+                </tr>
+              )}
+
+              {!loading && students.length === 0 && (
                 <tr>
                   <td
                     colSpan={3}

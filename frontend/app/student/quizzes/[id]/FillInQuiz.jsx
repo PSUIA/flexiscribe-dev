@@ -18,6 +18,7 @@ export default function FillInQuiz({ quiz, questions }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [answers, setAnswers] = useState({});
+  const [studentProfile, setStudentProfile] = useState(null);
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
@@ -55,6 +56,20 @@ export default function FillInQuiz({ quiz, questions }) {
       setDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     }
+
+    // Fetch student profile
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/students/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setStudentProfile(data.profile);
+        }
+      } catch (err) {
+        console.error('Error fetching student profile:', err);
+      }
+    };
+    fetchProfile();
 
     return () => clearInterval(timer);
   }, []);
@@ -271,7 +286,7 @@ export default function FillInQuiz({ quiz, questions }) {
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
             <NotificationMenu />
-            <UserMenu userName={mockUserProfile.username} userRole={mockUserProfile.role} />
+            <UserMenu userName={studentProfile?.username || 'Student'} userRole={studentProfile?.role || 'Student'} userAvatar={studentProfile?.avatar} />
           </div>
         </header>
         

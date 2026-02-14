@@ -1,9 +1,10 @@
 "use client";
 
-import { Calendar } from "lucide-react";
+import { Calendar, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import ClassBlock from "./ClassBlock";
 import EducatorHeader from "@/components/educator/layout/EducatorHeader";
+import { timeToMinutes } from "@/lib/timeSlots";
 
 /* ================= MAIN COMPONENT ================= */
 
@@ -12,7 +13,6 @@ const ROW_HEIGHT = 56;
 export default function ScheduleGrid({
   classes,
   days,
-  notifications,
   timeSlots,
 }) {
   const [activeClass, setActiveClass] = useState(null);
@@ -38,17 +38,25 @@ export default function ScheduleGrid({
       t.startsWith(cls.startTime)
     );
 
-    const endTime =
-      startIndex !== -1
-        ? timeSlots[startIndex + 2]?.split(" – ")[1]
-        : "";
+    // Calculate duration from endTime instead of hardcoding
+    let durationSlots = 3; // default 1.5 hours if no endTime
+    if (cls.endTime) {
+      const startMin = timeToMinutes(cls.startTime);
+      const endMin = timeToMinutes(cls.endTime);
+      if (startMin >= 0 && endMin > startMin) {
+        durationSlots = (endMin - startMin) / 30;
+      }
+    }
+
+    const displayEndTime = cls.endTime
+      || (startIndex !== -1 ? timeSlots[startIndex + durationSlots - 1]?.split(" – ")[1] : "");
 
     return {
       ...cls,
-      start: cls.startTime, // Add for compatibility
+      start: cls.startTime,
       startIndex,
-      durationSlots: 3,
-      startTime: `${cls.startTime} – ${endTime}`,
+      durationSlots,
+      startTime: `${cls.startTime} – ${displayEndTime}`,
     };
   });
 
@@ -123,8 +131,8 @@ export default function ScheduleGrid({
                         }}
                       >
                         <ClassBlock
-                          title={`CLASS ${cls.section}`}
-                          section={`Section ${cls.section}`}
+                          title={`${cls.subject}`}
+                          section={`${cls.section}`}
                           room={cls.room}
                           color={
                             cls.subject === "CPP117" &&

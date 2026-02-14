@@ -5,9 +5,40 @@ import {
   FaMoon, FaSun, FaArrowLeft, FaDownload, FaExpand, 
   FaCompress, FaSearchPlus, FaSearchMinus
 } from "react-icons/fa";
-import mammoth from "mammoth";
-import { mockTranscriptsByClass } from "../../../../dashboard/mockData";
 import "./styles.css";
+
+/**
+ * Convert transcriptJson chunks to readable HTML
+ */
+function transcriptJsonToHtml(transcriptJson) {
+  if (!transcriptJson) return "<p>No transcript data available.</p>";
+
+  const data = typeof transcriptJson === "string" ? JSON.parse(transcriptJson) : transcriptJson;
+  const chunks = data.chunks || data;
+
+  if (!Array.isArray(chunks) || chunks.length === 0) {
+    return "<p>No transcript chunks available.</p>";
+  }
+
+  let html = '<div class="transcript-chunks">';
+  html += '<h1 style="text-align:center; color:#5b21b6; margin-bottom:24px;">Lecture Transcript</h1>';
+
+  chunks.forEach((chunk) => {
+    const minute = chunk.minute ?? "";
+    const timestamp = chunk.timestamp || "";
+    const text = chunk.text || "";
+
+    html += `<div style="margin-bottom:16px; padding:12px 16px; border-left:4px solid #7c3aed; background:#faf5ff; border-radius:0 8px 8px 0;">`;
+    html += `<div style="font-size:12px; font-weight:700; color:#7c3aed; margin-bottom:4px;">`;
+    html += `Minute ${minute}${timestamp ? ` — ${timestamp}` : ""}`;
+    html += `</div>`;
+    html += `<div style="font-size:15px; line-height:1.7; color:#1a1a1a;">${text}</div>`;
+    html += `</div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
 
 export default function TranscriptViewerPage() {
   const router = useRouter();
@@ -20,16 +51,10 @@ export default function TranscriptViewerPage() {
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [transcript, setTranscript] = useState(null);
   const contentRef = useRef(null);
   const [lastTouchDistance, setLastTouchDistance] = useState(null);
   const [touchStartScale, setTouchStartScale] = useState(null);
-  
-  // Get transcript info
-  const transcripts = mockTranscriptsByClass[classCode] || [];
-  const transcript = transcripts.find(t => t.id === parseInt(transcriptId));
-
-  // For demo purposes, we'll use a sample DOCX URL
-  const docxUrl = "/sample.docx";
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -61,24 +86,29 @@ export default function TranscriptViewerPage() {
   }, []);
 
   useEffect(() => {
-    const loadDocx = async () => {
+    const loadTranscript = async () => {
       try {
         setLoading(true);
-        const response = await fetch(docxUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        setHtmlContent(result.value);
+        const response = await fetch(`/api/students/transcriptions/${transcriptId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load transcript: ${response.status}`);
+        }
+        const data = await response.json();
+        const transcription = data.transcription;
+        setTranscript(transcription);
+
+        const html = transcriptJsonToHtml(transcription.transcriptJson);
+        setHtmlContent(html);
         setLoading(false);
       } catch (err) {
-        console.error("Error loading DOCX:", err);
-        setError("Failed to load document. Please make sure a sample DOCX exists in the public folder.");
+        console.error("Error loading transcript:", err);
+        setError("Failed to load transcript data.");
         setLoading(false);
       }
     };
 
-    loadDocx();
-  }, [docxUrl]);
+    loadTranscript();
+  }, [transcriptId]);
 
   const handleZoomIn = () => {
     setScale(prevScale => Math.min(prevScale + 0.1, 3.0));
@@ -88,14 +118,13 @@ export default function TranscriptViewerPage() {
     setScale(prevScale => Math.max(prevScale - 0.1, 0.5));
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     try {
-      const response = await fetch(docxUrl);
-      const blob = await response.blob();
+      const blob = new Blob([htmlContent], { type: "text/html" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = transcript?.title || "transcript.docx";
+      a.download = `${transcript?.title || "transcript"}.html`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -164,11 +193,12 @@ export default function TranscriptViewerPage() {
     }
   };
 
-  if (!transcript) {
+  if (!loading && !transcript && error) {
     return (
       <div className="docx-viewer-container">
         <div className="error-message">
           <h2>Transcript not found</h2>
+          <p>{error}</p>
           <button onClick={() => router.push(`/student/reviewers/transcripts/${classCode}`)}>
             Go Back
           </button>
@@ -188,12 +218,11 @@ export default function TranscriptViewerPage() {
           </button>
           
           <div className="document-title">
-            <h2>{transcript.title}</h2>
+            <h2>{transcript?.title || 'Loading...'}</h2>
             <div className="document-info">
               <span className="info-badge">{classCode}</span>
-              {transcript.duration && <span>{transcript.duration}</span>}
-              {transcript.date && <span>{new Date(transcript.date).toLocaleDateString()}</span>}
-              {transcript.fileSize && <span>{transcript.fileSize}</span>}
+              {transcript?.duration && <span>{transcript.duration}</span>}
+              {transcript?.date && <span>{new Date(transcript.date).toLocaleDateString()}</span>}
             </div>
           </div>
         </div>
@@ -249,7 +278,6 @@ export default function TranscriptViewerPage() {
           ) : error ? (
             <div className="error-message">
               <p>{error}</p>
-              <p className="error-note">For demo: Add a file named "sample.docx" to the public folder</p>
             </div>
           ) : (
             <div 
