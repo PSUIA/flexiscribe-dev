@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon,
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
+import MessageModal from "@/components/shared/MessageModal";
 import "../../student/dashboard/styles.css";
 
 export default function ChangePassword() {
@@ -33,6 +34,7 @@ export default function ChangePassword() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     setMounted(true);
@@ -147,7 +149,7 @@ export default function ChangePassword() {
     // In a real app, this would send the code via email/SMS
     // For demo purposes, we'll just show it in console
     console.log("Verification code:", code);
-    alert(`Verification code sent! (Demo code: ${code})`);
+    setModalInfo({ isOpen: true, title: "Code Sent", message: `Verification code sent! (Demo code: ${code})`, type: "info" });
   };
 
   const handleContinueToVerification = (e) => {
@@ -174,7 +176,7 @@ export default function ChangePassword() {
 
     // Code is valid, proceed with password change
     // TODO: Implement password change API call
-    alert("Password changed successfully!");
+    setModalInfo({ isOpen: true, title: "Success", message: "Password changed successfully!", type: "success" });
     setFormData({
       currentPassword: "",
       newPassword: "",
@@ -517,6 +519,14 @@ export default function ChangePassword() {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

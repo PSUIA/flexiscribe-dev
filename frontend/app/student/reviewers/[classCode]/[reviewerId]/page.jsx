@@ -5,6 +5,8 @@ import { Editor } from "@tinymce/tinymce-react";
 import { 
   FaMoon, FaSun, FaArrowLeft, FaDownload, FaSave
 } from "react-icons/fa";
+import html2pdf from "html2pdf.js";
+import MessageModal from "@/components/shared/MessageModal";
 import "./styles.css";
 
 /**
@@ -53,6 +55,7 @@ export default function ReviewerEditorPage() {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [reviewer, setReviewer] = useState(null);
   const [fetchError, setFetchError] = useState(null);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const editorRef = useRef(null);
   const contentInitialized = useRef(false);
   const initialContentRef = useRef("");
@@ -154,22 +157,29 @@ export default function ReviewerEditorPage() {
 
   const handleDownloadPDF = async () => {
     try {
-      // TODO: Backend Integration
-      // const response = await fetch('http://your-backend-url/api/reviewers/convert-to-pdf', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ content: editorContent })
-      // });
-      // const blob = await response.blob();
-      // const url = window.URL.createObjectURL(blob);
-      // const a = document.createElement('a');
-      // a.href = url;
-      // a.download = `${reviewer?.title || 'reviewer'}.pdf`;
-      // a.click();
-      
-      alert("PDF download will be implemented with backend. See BACKEND_INTEGRATION.md");
+      // Build a temporary container with the editor content
+      const container = document.createElement('div');
+      container.innerHTML = editorContent;
+      container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      container.style.fontSize = '14px';
+      container.style.lineHeight = '1.6';
+      container.style.color = '#1a1a1a';
+      container.style.padding = '20px';
+
+      const filename = `${(reviewer?.title || 'reviewer').replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+
+      await html2pdf().set(opt).from(container).save();
     } catch (error) {
-      console.error("PDF download error:", error);
+      console.error('PDF download error:', error);
+      setModalInfo({ isOpen: true, title: "PDF Error", message: "Failed to generate PDF. Please try again.", type: "error" });
     }
   };
 
@@ -196,7 +206,7 @@ export default function ReviewerEditorPage() {
           </button>
           <div className="document-title">
             <h2>{reviewer?.title || 'Loading...'}</h2>
-            <div className="document-info">{classCode} • Editable Document</div>
+            <div className="document-info">{reviewer?.class?.subject || classCode} • Editable Document</div>
           </div>
         </div>
         <div className="toolbar-right">
@@ -304,6 +314,14 @@ export default function ReviewerEditorPage() {
           </div>
         )}
       </div>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

@@ -32,6 +32,8 @@ export default function StudentDashboard() {
   const [studentProfile, setStudentProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [inProgressQuizzes, setInProgressQuizzes] = useState([]);
+  const [recentReviewers, setRecentReviewers] = useState([]);
   const [streakData, setStreakData] = useState({
     count: 0,
     isActive: false,
@@ -109,6 +111,42 @@ export default function StudentDashboard() {
 
     fetchStudentProfile();
     fetchLeaderboard();
+
+    // Fetch quizzes that have no attempt yet (Jump Back In)
+    const fetchInProgressQuizzes = async () => {
+      try {
+        const response = await fetch('/api/students/quizzes');
+        if (response.ok) {
+          const data = await response.json();
+          // Quizzes without an attempt are "in progress" (student hasn't submitted yet)
+          const pending = (data.quizzes || []).filter((q) => !q.hasAttempt).slice(0, 3);
+          setInProgressQuizzes(pending);
+        }
+      } catch (error) {
+        console.error('Error fetching quizzes for jump back in:', error);
+      }
+    };
+
+    // Fetch recently added reviewers (transcriptions created within 24 hours)
+    const fetchRecentReviewers = async () => {
+      try {
+        const response = await fetch('/api/students/transcriptions');
+        if (response.ok) {
+          const data = await response.json();
+          const now = new Date();
+          const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          const recent = (data.transcriptions || []).filter(
+            (t) => new Date(t.createdAt) >= oneDayAgo
+          ).slice(0, 3);
+          setRecentReviewers(recent);
+        }
+      } catch (error) {
+        console.error('Error fetching recent reviewers:', error);
+      }
+    };
+
+    fetchInProgressQuizzes();
+    fetchRecentReviewers();
 
     return () => clearInterval(timer);
   }, []);
@@ -305,89 +343,133 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Jump Back In - Placeholder for future implementation */}
+            {/* Jump Back In - In-progress quizzes (no attempt yet) */}
             <div className="card jump-back lg:col-span-4">
                 <div className="card-header-compact">
                   <h3>Jump Back In</h3>
                 </div>
                 <div className="jump-back-content">
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '2rem',
-                    gap: '1rem',
-                    minHeight: '180px'
-                  }}>
+                  {inProgressQuizzes.length > 0 ? (
+                    inProgressQuizzes.map((q) => (
+                      <div
+                        key={q.id}
+                        style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%', cursor: 'pointer' }}
+                        onClick={() => router.push(`/student/quizzes/${q.id}`)}
+                      >
+                        <div className="progress-circle">
+                          <CircularProgressbar
+                            value={0}
+                            text="0%"
+                            styles={buildStyles({
+                              textSize: '28px',
+                              pathColor: 'var(--brand-secondary)',
+                              textColor: 'var(--accent-secondary)',
+                              trailColor: 'rgba(255,255,255,0.2)',
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <p className="progress-label">{q.lesson}</p>
+                          <p className="progress-section">{q.quizType} • {q.numQuestions} questions</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
                     <div style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '2.5rem',
+                      padding: '2rem',
+                      gap: '1rem',
+                      minHeight: '180px'
                     }}>
-                      📚
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2.5rem',
+                      }}>
+                        📚
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          marginBottom: '0.5rem',
+                        }}>No Recent Activity</p>
+                        <p style={{
+                          fontSize: '0.85rem',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                        }}>Start reviewing to track your progress</p>
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <p style={{
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        marginBottom: '0.5rem',
-                      }}>No Recent Activity</p>
-                      <p style={{
-                        fontSize: '0.85rem',
-                        color: 'rgba(255, 255, 255, 0.7)',
-                      }}>Start reviewing to track your progress</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
             </div>
 
-            {/* Recently Added - Placeholder for future implementation */}
+            {/* Recently Added - Reviewers added within 24 hours */}
             <div className="card recently-added lg:col-span-4">
                 <div className="card-header-compact">
                   <h3>Recently Added</h3>
                 </div>
                 <div className="recently-added-content">
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    padding: '2rem',
-                    gap: '1rem',
-                    minHeight: '180px'
-                  }}>
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
+                  {recentReviewers.length > 0 ? (
+                    recentReviewers.map((r) => (
+                      <div
+                        key={r.id}
+                        className="document-preview"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => router.push(`/student/reviewers/${r.class?.classCode || ''}/${r.id}`)}
+                      >
+                        <div className="doc-icon">📄</div>
+                        <div className="doc-info">
+                          <p className="doc-title">{r.title}</p>
+                          <p className="doc-subject">{r.course}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
                       justifyContent: 'center',
-                      fontSize: '2.5rem',
+                      padding: '2rem',
+                      gap: '1rem',
+                      minHeight: '180px'
                     }}>
-                      📄
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--accent-secondary) 0%, var(--brand-secondary) 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2.5rem',
+                      }}>
+                        📄
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ 
+                          fontSize: '1rem', 
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          marginBottom: '0.5rem',
+                        }}>No Content Available</p>
+                        <p style={{ 
+                          fontSize: '0.85rem', 
+                          color: 'rgba(255, 255, 255, 0.7)',
+                        }}>New reviewers will appear here</p>
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <p style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        marginBottom: '0.5rem',
-                      }}>No Content Available</p>
-                      <p style={{ 
-                        fontSize: '0.85rem', 
-                        color: 'rgba(255, 255, 255, 0.7)',
-                      }}>New reviewers will appear here</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
             </div>
 

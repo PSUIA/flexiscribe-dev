@@ -5,8 +5,10 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
+import MessageModal from "@/components/shared/MessageModal";
 import "../../dashboard/styles.css";
 import "./quiz-styles.css";
+import { trackActivity } from "../../../../utils/student";
 
 export default function FlashcardQuiz({ quiz, questions }) {
   const router = useRouter();
@@ -19,6 +21,9 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const [darkMode, setDarkMode] = useState(false);
   const [flippedStates, setFlippedStates] = useState({});
   const [studentProfile, setStudentProfile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
@@ -346,12 +351,33 @@ export default function FlashcardQuiz({ quiz, questions }) {
               {currentQuestionIndex === totalQuestions - 1 ? (
                 <button 
                   className="submit-quiz-btn"
-                  onClick={() => {
-                    alert('Flashcards reviewed successfully!');
-                    router.push('/student/quizzes');
+                  disabled={submitting}
+                  onClick={async () => {
+                    setSubmitting(true);
+                    try {
+                      const res = await fetch(`/api/students/quizzes/${quiz.id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ answers: {} }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        localStorage.removeItem(`quiz-flipped-${quiz.id}`);
+                        trackActivity('flashcard_session');
+                        setModalInfo({ isOpen: true, title: "Flashcards Reviewed!", message: `XP Earned: +${data.attempt.xpEarned} XP`, type: "success" });
+                        setShouldRedirect(true);
+                      } else {
+                        setModalInfo({ isOpen: true, title: "Error", message: data.error || 'Failed to submit review.', type: "error" });
+                        setSubmitting(false);
+                      }
+                    } catch (err) {
+                      console.error('Submit error:', err);
+                      setModalInfo({ isOpen: true, title: "Error", message: "Something went wrong. Please try again.", type: "error" });
+                      setSubmitting(false);
+                    }
                   }}
                 >
-                  Complete Review
+                  {submitting ? 'Submitting...' : 'Complete Review'}
                 </button>
               ) : (
                 <button 
@@ -365,6 +391,17 @@ export default function FlashcardQuiz({ quiz, questions }) {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => {
+          setModalInfo({ ...modalInfo, isOpen: false });
+          if (shouldRedirect) router.push('/student/quizzes');
+        }}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

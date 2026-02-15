@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon,
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
 import UserMenu from "@/components/student/ui/UserMenu";
+import MessageModal from "@/components/shared/MessageModal";
 import "../../student/dashboard/styles.css";
 
 // Default avatar options
@@ -48,6 +49,7 @@ export default function StudentProfile() {
   const [passwordErrors, setPasswordErrors] = useState({});
   const [passwordStep, setPasswordStep] = useState(1); // 1: Enter passwords, 2: Verify code
   const [generatedCode, setGeneratedCode] = useState("");
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [countdown, setCountdown] = useState(0);
 
   // Form state - will be populated from database
@@ -254,7 +256,7 @@ export default function StudentProfile() {
     // In a real app, this would send the code via email
     // For demo purposes, we'll just show it in console
     console.log("Verification code:", code);
-    alert(`Verification code sent to ${formData.email}! (Demo code: ${code})`);
+    setModalInfo({ isOpen: true, title: "Verification Code Sent", message: `Verification code sent to ${formData.email}! (Demo code: ${code})`, type: "info" });
   };
 
   const handleContinueToVerification = () => {
@@ -310,7 +312,7 @@ export default function StudentProfile() {
       // }
       
       // Mock success for now
-      alert("Password changed successfully!");
+      setModalInfo({ isOpen: true, title: "Success", message: "Password changed successfully!", type: "success" });
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "", verificationCode: "" });
       setPasswordStep(1);
       setGeneratedCode("");
@@ -374,10 +376,10 @@ export default function StudentProfile() {
       // }
       
       // Mock success for now
-      alert("Profile updated successfully!");
+      setModalInfo({ isOpen: true, title: "Success", message: "Profile updated successfully!", type: "success" });
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("An error occurred while updating profile");
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while updating profile.", type: "error" });
     }
   };
 
@@ -849,6 +851,14 @@ export default function StudentProfile() {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "session_id": "seed-session-001",
+    "run_id": "20260215_100000",
+    "course_code": "CPP117"
+  },
+  "summaries": [
+    {
+      "minute": 1,
+      "summary": "Introduction to Object-Oriented Programming (OOP) in C++. OOP organizes software design around objects rather than functions and logic.",
+      "key_points": [
+        "OOP is a programming paradigm centered on data/objects",
+        "Four pillars: encapsulation, abstraction, inheritance, polymorphism"
+      ]
+    },
+    {
+      "minute": 2,
+      "summary": "Encapsulation bundles data with methods and restricts direct access using access specifiers in C++.",
+      "key_points": [
+        "Encapsulation bundles data with operating methods",
+        "C++ access specifiers: public, private, protected",
+        "Class members are private by default"
+      ]
+    },
+    {
+      "minute": 3,
+      "summary": "Abstraction hides complex implementation details, implemented using abstract classes and pure virtual functions in C++.",
+      "key_points": [
+        "Abstraction shows only necessary features",
+        "Abstract classes contain at least one pure virtual function",
+        "Pure virtual functions are declared by assigning zero"
+      ]
+    },
+    {
+      "minute": 4,
+      "summary": "Inheritance allows classes to inherit properties and methods. C++ supports single, multiple, multilevel, hierarchical, and hybrid inheritance.",
+      "key_points": [
+        "Derived class inherits from base class",
+        "Multiple inheritance types supported in C++",
+        "Single inheritance: one base class"
+      ]
+    },
+    {
+      "minute": 5,
+      "summary": "Polymorphism means many forms, achieved through function overloading, operator overloading, and virtual functions. Demonstrated with Shape class hierarchy example.",
+      "key_points": [
+        "Polymorphism via overloading and virtual functions",
+        "Runtime polymorphism uses dynamic binding",
+        "Example: Shape base class with Circle and Rectangle derived classes"
+      ]
+    }
+  ]
+}
