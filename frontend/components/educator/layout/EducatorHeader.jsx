@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, X } from "lucide-react";
 
 export default function EducatorHeader({ userName = "Educator" }) {
-  const router = useRouter();
   const [openNotif, setOpenNotif] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [openProfile, setOpenProfile] = useState(false);
+  const [showAllNotifs, setShowAllNotifs] = useState(false);
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [loadingAll, setLoadingAll] = useState(false);
 
   useEffect(() => {
     async function fetchNotifications() {
@@ -40,8 +41,21 @@ export default function EducatorHeader({ userName = "Educator" }) {
     }
   }
 
-  function handleViewAllNotifications() {
-    router.push("/educator/notifications");
+  async function handleViewAllNotifications() {
+    setOpenNotif(false);
+    setShowAllNotifs(true);
+    setLoadingAll(true);
+    try {
+      const res = await fetch("/api/educator/notifications?limit=100");
+      if (res.ok) {
+        const data = await res.json();
+        setAllNotifications(data.notifications);
+      }
+    } catch (error) {
+      console.error("Failed to fetch all notifications:", error);
+    } finally {
+      setLoadingAll(false);
+    }
   }
 
   async function handleSignOut() {
@@ -77,6 +91,15 @@ export default function EducatorHeader({ userName = "Educator" }) {
           onMarkAllRead={handleMarkAllRead}
           onViewAll={handleViewAllNotifications}
           onClose={() => setOpenNotif(false)}
+        />
+      )}
+
+      {/* All Notifications Modal */}
+      {showAllNotifs && (
+        <AllNotificationsModal
+          notifications={allNotifications}
+          loading={loadingAll}
+          onClose={() => setShowAllNotifs(false)}
         />
       )}
 
@@ -176,6 +199,59 @@ function NotifDropdown({ notifications = [], onMarkAllRead, onViewAll, onClose }
         </div>
       </div>
     </>
+  );
+}
+
+function AllNotificationsModal({ notifications = [], loading, onClose }) {
+  function formatTime(createdAt) {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInSeconds = Math.floor((now - created) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} mins ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return created.toLocaleDateString();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h2 className="text-base font-semibold text-[#6b5fcf]">All Notifications</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+          >
+            <X size={18} className="text-gray-500" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="px-5 py-12 text-center text-gray-400 text-sm">Loading...</div>
+          ) : notifications.length === 0 ? (
+            <div className="px-5 py-12 text-center text-gray-400 text-sm">No notifications</div>
+          ) : (
+            notifications.map((item) => (
+              <NotifItem
+                key={item.id}
+                title={item.title}
+                message={item.message}
+                time={formatTime(item.createdAt)}
+                unread={!item.read}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

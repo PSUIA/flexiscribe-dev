@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
+import EducatorHeader from "@/components/educator/layout/EducatorHeader";
 
 export default function ClassesPage() {
   const [classes, setClasses] = useState([]);
+  const [userName, setUserName] = useState("Educator");
 
   useEffect(() => {
     async function fetchClasses() {
@@ -21,14 +24,36 @@ export default function ClassesPage() {
     fetchClasses();
   }, []);
 
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/educator/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setUserName(data.educator.fullName.split(" ")[0] || "Educator");
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
 
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg sm:text-2xl font-bold">
-          Classes
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#9b8ae0] flex items-center justify-center text-white">
+            <BookOpen size={20} />
+          </div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#6b5fcf]">
+            Classes
+          </h1>
+        </div>
+
+        <EducatorHeader userName={userName} />
       </div>
 
       {/* LIST */}

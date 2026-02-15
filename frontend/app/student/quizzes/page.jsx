@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
+import MessageModal from "@/components/shared/MessageModal";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -53,6 +54,7 @@ export default function QuizzesPage() {
   const questionNumbers = [10, 15, 20, 25, 30];
 
   const [showGeneratedNotification, setShowGeneratedNotification] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [generatedQuizInfo, setGeneratedQuizInfo] = useState(null);
 
   // Fetch available lessons
@@ -232,16 +234,16 @@ export default function QuizzesPage() {
           // Navigate to the generated quiz
           router.push(`/student/quizzes/${data.quiz.id}`);
         } else {
-          alert(`Failed to generate quiz: ${data.error || 'Unknown error'}\n${data.details || ''}`);
+          setModalInfo({ isOpen: true, title: "Generation Failed", message: `Failed to generate quiz: ${data.error || 'Unknown error'}\n${data.details || ''}`, type: "error" });
         }
       } catch (error) {
         console.error('Error generating quiz:', error);
-        alert('Failed to generate quiz. Please ensure Ollama is running and try again.');
+        setModalInfo({ isOpen: true, title: "Connection Error", message: "Failed to generate quiz. Please ensure Ollama is running and try again.", type: "error" });
       } finally {
         setIsGenerating(false);
       }
     } else {
-      alert("Please fill in all fields to generate a quiz");
+      setModalInfo({ isOpen: true, title: "Missing Fields", message: "Please fill in all fields to generate a quiz.", type: "info" });
     }
   };
 
@@ -685,6 +687,14 @@ export default function QuizzesPage() {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

@@ -279,7 +279,7 @@ export default function ClassReviewersPage() {
                   
                   <div className="reviewer-card-body">
                     <h3 className="reviewer-title">{reviewer.title}</h3>
-                    <p className="reviewer-description">{reviewer.course}</p>
+                    <p className="reviewer-description">{reviewer.class?.subject || reviewer.course}</p>
                     
                     <div className="reviewer-meta">
                       <div className="meta-item">

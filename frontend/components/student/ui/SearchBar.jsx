@@ -40,23 +40,42 @@ export default function SearchBar() {
     };
   }, []);
 
-  // Search for files based on query
+  // Search for files based on query (debounced API call)
   useEffect(() => {
-    if (searchQuery.trim().length > 0) {
-      setIsSearching(true);
-      setIsOpen(true);
-      
-      // TODO: Replace with actual API call to search transcripts, quizzes, and summaries
-      // For now, showing placeholder
-      setTimeout(() => {
-        setFilteredResults([]);
-        setIsSearching(false);
-      }, 300);
-    } else {
+    if (searchQuery.trim().length === 0) {
       setFilteredResults([]);
       setIsOpen(false);
       setIsSearching(false);
+      return;
     }
+
+    setIsSearching(true);
+    setIsOpen(true);
+
+    const controller = new AbortController();
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/students/search?q=${encodeURIComponent(searchQuery.trim())}`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) throw new Error("Search failed");
+        const data = await res.json();
+        setFilteredResults(data.results || []);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Search error:", err);
+          setFilteredResults([]);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(debounceTimer);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   const handleInputChange = (e) => {
