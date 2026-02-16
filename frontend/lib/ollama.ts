@@ -520,15 +520,8 @@ export async function getBestAvailableModel(): Promise<string> {
   
   // Priority order: prefer smaller, faster models
   const preferredModels = [
+    'gemma3:4b-cloud',
     'gemma3:4b',
-    'gemma3:1b',
-    'gemma2:2b',
-    'gemma:2b', 
-    'phi3:mini',
-    'phi3',
-    'tinyllama',
-    'llama3.2:1b',
-    'qwen2.5:0.5b',
   ];
   
   // First, try exact match

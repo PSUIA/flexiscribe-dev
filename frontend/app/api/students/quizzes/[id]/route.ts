@@ -34,6 +34,17 @@ export async function GET(
 
     const { id: quizId } = await params;
 
+    // Get the student record for ownership check
+    let studentId: string | null = null;
+    if (user.role === 'STUDENT') {
+      const student = await prisma.student.findUnique({
+        where: { userId: user.userId as string },
+      });
+      if (student) {
+        studentId = student.id;
+      }
+    }
+
     // Fetch quiz with questions and lesson info
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
@@ -54,6 +65,11 @@ export async function GET(
 
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
+    }
+
+    // Ensure the quiz belongs to the requesting student (self-paced, unique per student)
+    if (studentId && quiz.studentId && quiz.studentId !== studentId) {
+      return NextResponse.json({ error: 'Access denied – this quiz belongs to another student' }, { status: 403 });
     }
 
     const displayType = mapQuizType(quiz.type);
@@ -101,6 +117,15 @@ export async function GET(
       }
     });
 
+    // Fetch the student's latest attempt for this quiz (if any)
+    let latestAttempt = null;
+    if (studentId) {
+      latestAttempt = await prisma.quizAttempt.findFirst({
+        where: { quizId, studentId },
+        orderBy: { completedAt: 'desc' },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       quiz: {
@@ -115,6 +140,14 @@ export async function GET(
         quizType: displayType,
         questions: transformedQuestions,
       },
+      latestAttempt: latestAttempt ? {
+        id: latestAttempt.id,
+        score: latestAttempt.score,
+        totalQuestions: latestAttempt.totalQuestions,
+        accuracy: Math.round((latestAttempt.score / latestAttempt.totalQuestions) * 100),
+        completedAt: latestAttempt.completedAt.toISOString(),
+        answers: latestAttempt.answers,
+      } : null,
     });
   } catch (error) {
     console.error('Error fetching quiz:', error);
@@ -174,33 +207,53 @@ export async function POST(
 
     const totalQuestions = quiz.questions.length;
     let correctCount = 0;
+    const answerResults: Array<{
+      index: number;
+      correct: boolean;
+      userAnswer: any;
+      correctAnswer: any;
+    }> = [];
 
     // ----- Score calculation per quiz type -----
     if (quiz.type === 'FLASHCARD') {
       // Flashcards have no right/wrong – award flat XP
       correctCount = totalQuestions; // treat all as "completed"
+      quiz.questions.forEach((_, index) => {
+        answerResults.push({ index, correct: true, userAnswer: null, correctAnswer: null });
+      });
     } else {
       quiz.questions.forEach((q, index) => {
         const data = q.questionData as any;
         const userAnswer = submittedAnswers[String(index)];
 
-        if (userAnswer === undefined || userAnswer === null) return; // unanswered
+        if (userAnswer === undefined || userAnswer === null) {
+          // unanswered — mark as incorrect
+          if (quiz.type === 'MCQ') {
+            const correctIndex =
+              typeof data.correctAnswer === 'number'
+                ? data.correctAnswer
+                : (data.options || data.choices || []).indexOf(data.answer || data.correctAnswer);
+            answerResults.push({ index, correct: false, userAnswer: null, correctAnswer: correctIndex });
+          } else {
+            answerResults.push({ index, correct: false, userAnswer: null, correctAnswer: data.answer || data.correctAnswer || '' });
+          }
+          return;
+        }
 
         if (quiz.type === 'MCQ') {
-          // correctAnswer is the index of the right option
           const correctIndex =
             typeof data.correctAnswer === 'number'
               ? data.correctAnswer
               : (data.options || data.choices || []).indexOf(data.answer || data.correctAnswer);
-          if (Number(userAnswer) === correctIndex) {
-            correctCount++;
-          }
+          const isCorrect = Number(userAnswer) === correctIndex;
+          if (isCorrect) correctCount++;
+          answerResults.push({ index, correct: isCorrect, userAnswer: Number(userAnswer), correctAnswer: correctIndex });
         } else if (quiz.type === 'FILL_IN_BLANK') {
           const correctText = (data.answer || data.correctAnswer || '').toString().trim().toLowerCase();
           const userText = userAnswer.toString().trim().toLowerCase();
-          if (userText === correctText) {
-            correctCount++;
-          }
+          const isCorrect = userText === correctText;
+          if (isCorrect) correctCount++;
+          answerResults.push({ index, correct: isCorrect, userAnswer: userAnswer, correctAnswer: data.answer || data.correctAnswer || '' });
         }
       });
     }
@@ -215,14 +268,14 @@ export async function POST(
       xpEarned = correctCount * baseXpPerCorrect;
     }
 
-    // Create the quiz attempt
+    // Create the quiz attempt with answer results
     const attempt = await prisma.quizAttempt.create({
       data: {
         quizId: quiz.id,
         studentId: student.id,
         score: correctCount,
         totalQuestions,
-        answers: submittedAnswers,
+        answers: { submitted: submittedAnswers, results: answerResults },
       },
     });
 
@@ -243,6 +296,7 @@ export async function POST(
         accuracy: Math.round((correctCount / totalQuestions) * 100),
         xpEarned,
         newXp,
+        results: answerResults,
       },
     });
   } catch (error) {

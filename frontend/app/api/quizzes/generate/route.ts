@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { generateQuizWithGemma, checkOllamaAvailability } from '@/lib/ollama';
+import { verifyAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { lessonId, type, difficulty, count } = body;
+
+    // Authenticate user and get student record
+    const user = await verifyAuth(request);
+    let studentId: string | null = null;
+    if (user && user.role === 'STUDENT') {
+      const student = await prisma.student.findUnique({
+        where: { userId: user.userId as string },
+      });
+      if (student) {
+        studentId = student.id;
+      }
+    }
 
     // Validation
     if (!lessonId || !type || !difficulty || !count) {
@@ -69,13 +82,14 @@ export async function POST(request: NextRequest) {
       count
     );
 
-    // Save quiz to database
+    // Save quiz to database (tied to the student for uniqueness)
     const quiz = await prisma.quiz.create({
       data: {
         lessonId,
         type,
         difficulty,
         totalQuestions: generatedQuiz.items.length,
+        ...(studentId ? { studentId } : {}),
         questions: {
           create: generatedQuiz.items.map((item: any, index: number) => ({
             questionText: item.question || item.sentence || item.front || '',
