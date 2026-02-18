@@ -141,6 +141,7 @@
 /* Custom Dropdown Styles (similar to UserMenu) */
 .quiz-dropdown-trigger {
   width: 100%;
+  height: 56px;
   padding: 16px 20px;
   border-radius: 16px;
   border: 2px solid rgba(197, 166, 249, 0.3);
@@ -155,6 +156,14 @@
   gap: 12px;
   transition: all 0.3s ease;
   outline: none;
+  overflow: hidden;
+}
+
+.quiz-dropdown-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .dark-mode .quiz-dropdown-trigger {
@@ -228,9 +237,7 @@
   cursor: pointer;
   transition: background 0.2s ease;
   font-size: 15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .quiz-dropdown-item:hover {
@@ -589,9 +596,16 @@
 .quizzes-empty {
   text-align: center;
   padding: 48px 24px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(157, 138, 219, 0.08);
   border-radius: 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border: 1px dashed rgba(157, 138, 219, 0.25);
+}
+
+.dark-mode .quizzes-loading,
+.dark-mode .quizzes-empty {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
 }

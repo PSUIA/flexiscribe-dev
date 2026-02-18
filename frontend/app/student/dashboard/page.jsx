@@ -506,7 +506,7 @@ export default function StudentDashboard() {
                       <p style={{ 
                         fontSize: '1.1rem', 
                         fontWeight: '600',
-                        color: 'var(--text-primary)',
+                        color: 'var(--accent-secondary)',
                         marginBottom: '0.5rem',
                       }}>No Leaderboard Data</p>
                       <p style={{ 
@@ -561,7 +561,7 @@ export default function StudentDashboard() {
                               <div style={{ 
                                 fontSize: podium.fontSize === '2rem' ? '0.85rem' : '0.75rem', 
                                 fontWeight: podium.fontWeight || '600',
-                                color: podium.usernameColor || 'var(--text-primary)',
+                                color: podium.usernameColor || 'var(--accent-secondary)',
                                 textAlign: 'center',
                                 marginBottom: '0.25rem',
                                 overflow: 'hidden',
@@ -603,12 +603,12 @@ export default function StudentDashboard() {
                               alignItems: 'center',
                               padding: '0.75rem 1rem',
                               borderRadius: '8px',
-                              background: isCurrentUser ? 'rgba(41, 182, 246, 0.15)' : 'pink',
+                              background: isCurrentUser ? 'rgba(41, 182, 246, 0.15)' : 'rgba(255, 255, 255, 0.1)',
                               border: isCurrentUser ? '2px solid var(--accent-primary)' : '2px solid transparent',
                               transition: 'all 0.2s ease',
                             }}
-                            onMouseEnter={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
-                            onMouseLeave={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'var(--brand-tertiary)'; }}
+                            onMouseEnter={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
+                            onMouseLeave={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
                           >
                             <div style={{
                               width: '32px',
@@ -629,7 +629,7 @@ export default function StudentDashboard() {
                               <div style={{
                                 fontSize: '0.9rem',
                                 fontWeight: '600',
-                                color: 'var(--text-primary)',
+                                color: 'var(--accent-secondary)',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap'

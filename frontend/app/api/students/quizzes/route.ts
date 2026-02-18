@@ -32,8 +32,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // Fetch all quizzes with lesson info and the student's attempt data
+    // Fetch only quizzes that belong to this student (self-paced, unique per student)
     const quizzes = await prisma.quiz.findMany({
+      where: {
+        studentId: student.id,
+      },
       include: {
         lesson: {
           select: {
