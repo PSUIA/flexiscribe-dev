@@ -211,6 +211,4 @@ class SessionManager:
                         })
         return pending
 
-
-# Global singleton
-session_manager = SessionManager()
+session_manager = SessionManager()  # Global singleton
