@@ -518,72 +518,6 @@ export default function StudentDashboard() {
                   </div>
                 ) : (
                   <div>
-                    {/* Top 3 Podium Mini Version */}
-                    {leaderboard.length >= 3 && (
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'flex-end', 
-                        gap: '1rem',
-                        marginBottom: '2rem',
-                        padding: '1rem'
-                      }}>
-                        {[
-                          { medal: '🥈', gradient: 'linear-gradient(135deg, #C0C0C0 0%, #808080 100%)', size: 50, border: '#C0C0C0', fontSize: '1.5rem' }, // 2nd
-                          { medal: '👑', gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', size: 60, border: '#FFD700', fontSize: '2rem', translateY: -10, usernameColor: '#FFD700', xpColor: 'rgba(255, 255, 255, 0.8)', fontWeight: '700' }, // 1st
-                          { medal: '🥉', gradient: 'linear-gradient(135deg, #CD7F32 0%, #8B4513 100%)', size: 50, border: '#CD7F32', fontSize: '1.5rem' }, // 3rd
-                        ].map((podium, idx) => {
-                          const user = leaderboard[idx];
-                          return (
-                            <div key={idx} style={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              alignItems: 'center',
-                              flex: 1,
-                              maxWidth: '120px',
-                              transform: podium.translateY ? `translateY(${podium.translateY}px)` : 'none'
-                            }}>
-                              <div style={{
-                                width: podium.size,
-                                height: podium.size,
-                                borderRadius: '50%',
-                                background: podium.gradient,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: podium.fontSize,
-                                marginBottom: '0.5rem',
-                                border: `3px solid ${podium.border}`,
-                                boxShadow: podium.boxShadow || 'none'
-                              }}>
-                                {podium.medal}
-                              </div>
-                              <div style={{ 
-                                fontSize: podium.fontSize === '2rem' ? '0.85rem' : '0.75rem', 
-                                fontWeight: podium.fontWeight || '600',
-                                color: podium.usernameColor || 'var(--accent-secondary)',
-                                textAlign: 'center',
-                                marginBottom: '0.25rem',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                width: '100%'
-                              }}>
-                                {user?.username}
-                              </div>
-                              <div style={{ 
-                                fontSize: podium.fontSize === '2rem' ? '0.75rem' : '0.7rem', 
-                                color: podium.xpColor || 'rgba(255, 255, 255, 0.7)',
-                                fontWeight: podium.fontWeight ? '600' : 'normal'
-                              }}>
-                                {user?.xp?.toLocaleString()} XP
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
                     {/* Leaderboard List */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {leaderboard.slice(0, 3).map((user, index) => {
@@ -594,6 +528,12 @@ export default function StudentDashboard() {
                           if (rank === 3) return "#CD7F32";
                           return "var(--brand-primary)";
                         };
+                        const getRankIcon = (rank) => {
+                          if (rank === 1) return "🏆";
+                          if (rank === 2) return "🥈";
+                          if (rank === 3) return "🥉";
+                          return rank;
+                        }
 
                         return (
                           <div 
@@ -605,10 +545,17 @@ export default function StudentDashboard() {
                               borderRadius: '8px',
                               background: isCurrentUser ? 'rgba(41, 182, 246, 0.15)' : 'rgba(255, 255, 255, 0.1)',
                               border: isCurrentUser ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                              transition: 'all 0.2s ease',
+                              transition: 'all 0.3s ease',
+                              cursor: 'pointer',
                             }}
-                            onMouseEnter={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
-                            onMouseLeave={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                            onMouseEnter={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'; 
+                              e.currentTarget.style.transform = 'translateX(8px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                             }}
+                            onMouseLeave={(e) => { if (!isCurrentUser) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                              e.currentTarget.style.transform = 'translateX(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                             }}
                           >
                             <div style={{
                               width: '32px',
@@ -620,10 +567,10 @@ export default function StudentDashboard() {
                               justifyContent: 'center',
                               fontSize: '0.85rem',
                               fontWeight: '700',
-                              color: index < 3 ? '#000' : '#fff',
+                              color: index < 3 ? '#4c4172' : '#fff',
                               marginRight: '1rem',
                               flexShrink: 0
-                            }}>{index + 1}</div>
+                            }}>{getRankIcon(index + 1)}</div>
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{
