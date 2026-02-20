@@ -144,6 +144,9 @@ export default function MessageModal({ isOpen, onClose, title, message, type = "
 
         .message-modal-icon {
           margin-bottom: 16px;
+          align-items: center;
+          display: flex;
+          justify-content: center;
         }
 
         .message-modal-title {
