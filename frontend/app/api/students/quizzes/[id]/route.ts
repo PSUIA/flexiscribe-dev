@@ -83,11 +83,13 @@ export async function GET(
           return {
             id: index + 1,
             question: data.question || q.questionText,
-            options: data.options || data.choices || [],
-            correctAnswer: typeof data.correctAnswer === 'number'
-              ? data.correctAnswer
-              : (data.options || data.choices || []).indexOf(data.answer || data.correctAnswer),
-            hint: data.hint || 'No hint available.',
+            options: data.choices || data.options || [],
+            correctAnswer: typeof data.answerIndex === 'number'
+              ? data.answerIndex
+              : typeof data.correctAnswer === 'number'
+                ? data.correctAnswer
+                : (data.choices || data.options || []).indexOf(data.answer || data.correctAnswer),
+            hint: data.hint || data.explanation || 'No hint available.',
           };
 
         case 'FILL_IN_BLANK':
@@ -230,9 +232,11 @@ export async function POST(
           // unanswered — mark as incorrect
           if (quiz.type === 'MCQ') {
             const correctIndex =
-              typeof data.correctAnswer === 'number'
-                ? data.correctAnswer
-                : (data.options || data.choices || []).indexOf(data.answer || data.correctAnswer);
+              typeof data.answerIndex === 'number'
+                ? data.answerIndex
+                : typeof data.correctAnswer === 'number'
+                  ? data.correctAnswer
+                  : (data.choices || data.options || []).indexOf(data.answer || data.correctAnswer);
             answerResults.push({ index, correct: false, userAnswer: null, correctAnswer: correctIndex });
           } else {
             answerResults.push({ index, correct: false, userAnswer: null, correctAnswer: data.answer || data.correctAnswer || '' });
@@ -242,9 +246,11 @@ export async function POST(
 
         if (quiz.type === 'MCQ') {
           const correctIndex =
-            typeof data.correctAnswer === 'number'
-              ? data.correctAnswer
-              : (data.options || data.choices || []).indexOf(data.answer || data.correctAnswer);
+            typeof data.answerIndex === 'number'
+              ? data.answerIndex
+              : typeof data.correctAnswer === 'number'
+                ? data.correctAnswer
+                : (data.choices || data.options || []).indexOf(data.answer || data.correctAnswer);
           const isCorrect = Number(userAnswer) === correctIndex;
           if (isCorrect) correctCount++;
           answerResults.push({ index, correct: isCorrect, userAnswer: Number(userAnswer), correctAnswer: correctIndex });

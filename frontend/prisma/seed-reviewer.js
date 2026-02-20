@@ -157,8 +157,17 @@ async function main() {
       console.log("\n⚠️  Lesson already exists. Skipping creation.");
       console.log(`   Lesson ID: ${existingLesson.rows[0].id}`);
     } else {
-      // Use the raw transcript text as lesson content (Ollama uses this to generate quizzes)
-      const lessonContent = rawText || content;
+      // Use the final summary as lesson content (Ollama uses this to generate quizzes)
+      let lessonContent = content;
+      if (summaryJson) {
+        // Build plain text from the summary JSON for better quiz generation
+        const parts = [];
+        if (summaryJson.title) parts.push(summaryJson.title);
+        if (summaryJson.cue_questions?.length) parts.push('Key Questions:\n' + summaryJson.cue_questions.join('\n'));
+        if (summaryJson.notes?.length) parts.push('Notes:\n' + summaryJson.notes.join('\n'));
+        if (summaryJson.summary) parts.push('Summary:\n' + summaryJson.summary);
+        lessonContent = parts.join('\n\n');
+      }
 
       const lessonResult = await pool.query(
         `INSERT INTO "Lesson" (id, title, subject, content, "createdAt", "updatedAt")
