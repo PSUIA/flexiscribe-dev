@@ -36,22 +36,23 @@ export default function ScheduleCard() {
       <div
         className="
           w-full
-          min-h-[275px]
+          min-h-[220px] sm:min-h-[250px] md:min-h-[275px] lg:min-h-[310px] xl:min-h-[340px]
           bg-gradient-to-br from-[#9d8adb] to-[#4c4172]
-          rounded-[36px]
-          shadow-[0_15px_60px_rgba(76,65,114,0.30)]
+          rounded-[16px] md:rounded-[24px] lg:rounded-[36px]
+          shadow-[0_4px_20px_rgba(0,0,0,0.08)]
           text-white
           overflow-hidden
-          transition-transform hover:scale-[1.01]
+          transition-all duration-300
+          hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
         "
       >
         {/* HEADER */}
         <div
           className="
             text-center
-            text-xl
+            text-base sm:text-lg md:text-xl lg:text-xl
             font-semibold
-            py-4
+            py-3 sm:py-4 lg:py-4
             bg-white/15
             shadow-[inset_0_-5px_6px_rgba(0,0,0,0.25)]
           "
@@ -63,10 +64,10 @@ export default function ScheduleCard() {
         <div
           className="
             space-y-2
-            px-4 py-3
-            max-h-[200px]
+            px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4
+            max-h-[160px] sm:max-h-[180px] md:max-h-[200px] lg:max-h-[250px] xl:max-h-[280px]
             overflow-y-auto
-            pr-3
+            pr-3 lg:pr-4
           "
         >
           {schedules.length === 0 ? (
@@ -92,8 +93,8 @@ function ScheduleItem({ subject, section, startTime, room }) {
       className="
         relative
         flex gap-8
-        pl-16 pr-6 py-3
-        rounded-[22px]
+        pl-12 sm:pl-16 pr-4 sm:pr-6 py-2 sm:py-3
+        rounded-[18px] sm:rounded-[22px]
         bg-white/18
         shadow-[0_6px_14px_rgba(0,0,0,0.25)]
       "
@@ -114,10 +115,10 @@ function ScheduleItem({ subject, section, startTime, room }) {
       />
 
       <div>
-        <p className="text-lg font-semibold">
+        <p className="text-sm sm:text-base md:text-base lg:text-lg font-semibold">
           {subject} - Section {section}
         </p>
-        <p className="text-sm text-white/75">
+        <p className="text-xs sm:text-sm lg:text-sm text-white/75">
           {startTime} • Room {room}
         </p>
       </div>

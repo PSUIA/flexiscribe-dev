@@ -29,20 +29,20 @@ export default function TranscriptionHeader() {
       <div className="flex items-center justify-between gap-3">
 
         {/* LEFT */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#9b8ae0] flex items-center justify-center text-white">
-            <FileText size={20} />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#9b8ae0] flex items-center justify-center text-white shadow-md">
+            <FileText size={18} />
           </div>
 
-          <h1 className="text-lg sm:text-xl font-semibold text-[#6b5fcf]">
+          <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-[#6b5fcf] dark:text-[#c5b8f5]">
             Transcriptions
           </h1>
 
           {/* DESKTOP SEARCH */}
-          <div className="hidden lg:block relative w-[520px]">
+          <div className="hidden lg:block relative w-[340px] xl:w-[620px] 2xl:w-[660px]">
             <Search
               size={20}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9d8adb]"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffffff]"
             />
             <input
               type="text"
@@ -51,10 +51,10 @@ export default function TranscriptionHeader() {
                 w-full
                 pl-[48px] pr-4 py-3
                 rounded-full
-                bg-[#e9e8f2]
+                bg-[#9d8adb]
                 text-sm
-                text-[#6b6b6b]
-                placeholder:text-[#9d8adb]
+                text-[#ffffff]
+                placeholder:text-[#ffffff]
                 outline-none
                 shadow-[0_3px_15px_rgba(0,0,0,0.05)]
               "
@@ -70,7 +70,7 @@ export default function TranscriptionHeader() {
       <div className="relative w-full mt-3 lg:hidden">
         <Search
           size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9d8adb]"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffffff]"
         />
         <input
           type="text"
@@ -79,10 +79,10 @@ export default function TranscriptionHeader() {
             w-full
             pl-[48px] pr-4 py-3
             rounded-full
-            bg-[#e9e8f2]
+            bg-[#9d8adb]
             text-sm
-            text-[#6b6b6b]
-            placeholder:text-[#9d8adb]
+            text-[#ffffff]
+            placeholder:text-[#ffffff]
             outline-none
             shadow-[0_3px_15px_rgba(0,0,0,0.05)]
           "

@@ -28,16 +28,18 @@ export default function LectureRecordingsCard() {
       className="
         relative overflow-visible
         bg-gradient-to-br from-[#9d8adb] to-[#4c4172]
-        rounded-[36px]
-        px-4 md:px-3 pt-4 pb-6
-        shadow-[0_14px_40px_rgba(0,0,0,0.15)]
-        text-white min-h-[420px] md:min-h-[600px]
+        rounded-[16px] md:rounded-[24px] lg:rounded-[36px]
+        px-3 sm:px-4 md:px-3 lg:px-4 pt-3 sm:pt-4 pb-4 sm:pb-6
+        shadow-[0_4px_20px_rgba(0,0,0,0.08)]
+        text-white min-h-[360px] sm:min-h-[420px] md:min-h-[400px] lg:min-h-[720px] xl:min-h-[760px]
         flex flex-col
+        transition-all duration-300
+        hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
       "
     >
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-3 px-6 md:px-14">
-        <h3 className="text-lg md:text-xl font-bold">
+      <div className="flex items-center justify-between mb-2 sm:mb-3 px-4 sm:px-6 md:px-8 lg:px-10">
+        <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
           Lecture Recordings
         </h3>
       </div>
@@ -70,15 +72,15 @@ export default function LectureRecordingsCard() {
 function LectureItem({ date, duration, course }) {
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-sm text-white/90 px-2">
+      <div className="flex justify-between text-xs sm:text-sm text-white/90 px-1 sm:px-2">
         <span>{date}</span>
         <span>{duration}</span>
       </div>
 
-      <div className="bg-white rounded-full px-8 py-3 flex items-center gap-7 shadow-sm">
+      <div className="bg-white dark:bg-[#2d2640] rounded-full px-4 sm:px-8 py-2 sm:py-3 flex items-center gap-4 sm:gap-7 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
         <Link
           href={`/educator/transcriptions?course=${course}`}
-          className="text-[#6f63a8] font-medium hover:underline"
+          className="text-[#6f63a8] font-medium hover:underline transition-colors duration-200"
         >
           View Transcript
         </Link>

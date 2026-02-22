@@ -38,7 +38,7 @@ export default function PreviewPanel({ transcript }) {
   const hasJsonData = !!(summaryData || transcriptData);
 
   return (
-    <div className="h-full rounded-[28px] sm:rounded-[42px] bg-gradient-to-br from-[#9d8adb] to-[#7d6ac4] p-4 sm:p-6 flex flex-col">
+    <div className="h-full rounded-[20px] sm:rounded-[28px] lg:rounded-[42px] bg-gradient-to-br from-[#9d8adb] to-[#7d6ac4] p-4 sm:p-6 flex flex-col transition-all duration-300">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div className="flex items-center gap-3">
@@ -47,7 +47,7 @@ export default function PreviewPanel({ transcript }) {
             <div className="flex bg-white/10 rounded-full p-0.5">
               <button
                 onClick={() => setActiveTab("summary")}
-                className={`px-3 py-1 text-xs rounded-full transition ${
+                className={`px-3 py-1 text-xs rounded-full transition-all duration-200 ${
                   activeTab === "summary"
                     ? "bg-white/25 text-white font-semibold"
                     : "text-white/60 hover:text-white/80"
@@ -57,7 +57,7 @@ export default function PreviewPanel({ transcript }) {
               </button>
               <button
                 onClick={() => setActiveTab("transcript")}
-                className={`px-3 py-1 text-xs rounded-full transition ${
+                className={`px-3 py-1 text-xs rounded-full transition-all duration-200 ${
                   activeTab === "transcript"
                     ? "bg-white/25 text-white font-semibold"
                     : "text-white/60 hover:text-white/80"
@@ -77,7 +77,7 @@ export default function PreviewPanel({ transcript }) {
             )}
             <button
               onClick={download}
-              className="self-start sm:self-auto text-white text-xs bg-white/20 px-4 py-1.5 rounded-full hover:bg-white/30 transition"
+               className="self-start sm:self-auto text-white text-xs bg-white/20 px-4 py-1.5 rounded-full hover:bg-white/30 hover:scale-105 active:scale-95 transition-all duration-200"
             >
               Download PDF
             </button>
@@ -86,7 +86,7 @@ export default function PreviewPanel({ transcript }) {
       </div>
 
       {/* FRAME */}
-      <div className="relative flex-1 rounded-[20px] sm:rounded-[30px] bg-[#2f2b47] p-3 sm:p-6 overflow-hidden">
+       <div className="relative flex-1 rounded-[16px] sm:rounded-[24px] lg:rounded-[30px] bg-[#2f2b47] p-3 sm:p-6 overflow-hidden">
         {!transcript && (
           <div className="h-full flex items-center justify-center">
             <p className="text-white/70 text-sm">Select a transcript to preview</p>
@@ -102,7 +102,7 @@ export default function PreviewPanel({ transcript }) {
               >
                 <div
                   ref={pdfRef}
-                  className="bg-white w-full sm:w-[560px] min-h-[520px] sm:min-h-[792px] border border-black shadow-[0_14px_40px_rgba(0,0,0,0.35)]"
+                  className="bg-white w-full sm:w-[560px] min-h-[380px] sm:min-h-[560px] lg:min-h-[792px] border border-black shadow-[0_14px_40px_rgba(0,0,0,0.35)]"
                 >
                   {/* ═══════ SUMMARY VIEW (Cornell Notes) ═══════ */}
                   {activeTab === "summary" && (
@@ -161,10 +161,10 @@ export default function PreviewPanel({ transcript }) {
                   {activeTab === "transcript" && (
                     <>
                       {/* TOP BAR */}
-                      <div className="bg-[#9d8adb] text-white font-semibold border-b border-black text-xs px-4 py-2 flex justify-between">
-                        <span>{transcript.date}</span>
-                        <span>{transcript.title}</span>
-                        <span>{transcript.duration}</span>
+                      <div className="bg-[#9d8adb] text-white font-semibold border-b border-black text-[10px] sm:text-xs px-3 sm:px-4 py-2 flex flex-wrap justify-between gap-x-3 gap-y-0.5">
+                        <span className="shrink-0">{transcript.date}</span>
+                        <span className="truncate min-w-0 flex-1 text-center px-1">{transcript.title}</span>
+                        <span className="shrink-0">{transcript.duration}</span>
                       </div>
 
                       {/* TRANSCRIPT CHUNKS */}

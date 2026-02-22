@@ -64,15 +64,15 @@ export default function ClassPage() {
     <div className="p-4 sm:p-6 lg:p-8">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
 
         {/* LEFT */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#9b8ae0] flex items-center justify-center text-white">
-            <GraduationCap size={20} />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#9b8ae0] flex items-center justify-center text-white shadow-md">
+            <GraduationCap size={18} />
           </div>
 
-          <h1 className="text-sm sm:text-xl font-semibold text-[#6b5fcf] uppercase">
+          <h1 className="text-sm sm:text-lg lg:text-xl font-semibold text-[#6b5fcf] dark:text-[#c5b8f5] uppercase">
             Class : {course}
           </h1>
         </div>
@@ -82,7 +82,7 @@ export default function ClassPage() {
       </div>
 
       {/* CONTENT */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
 
         {/* SECTION CARDS */}
         <div
@@ -92,7 +92,7 @@ export default function ClassPage() {
             sm:grid-cols-2
             lg:grid-cols-1
             gap-4
-            w-full lg:w-[420px]
+            w-full lg:w-[340px] xl:w-[400px] 2xl:w-[420px]
           "
         >
           {courseClasses.map((cls) => (

@@ -42,7 +42,7 @@ export default function CourseTabs({
               onClick={() => onChange(course)}
               className={`
                 shrink-0
-                px-4 sm:px-8
+                px-3 sm:px-5 lg:px-8
                 py-2 sm:py-3
                 rounded-t-[16px] sm:rounded-t-[22px]
                 text-[11px] sm:text-sm
@@ -57,6 +57,7 @@ export default function CourseTabs({
                 }
                 active:scale-[0.96]
                 active:-translate-y-[2px]
+                hover:translate-y-[-2px] hover:shadow-lg
               `}
               style={{
                 background: `linear-gradient(to bottom, ${colors.from}, ${colors.to})`,

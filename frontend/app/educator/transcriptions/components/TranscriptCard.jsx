@@ -24,7 +24,7 @@ export default function TranscriptCard({
 
   return (
     <div
-      className={`bg-white rounded-[26px] sm:rounded-[28px] overflow-hidden transition-all duration-300 ease-out cursor-pointer ${
+      className={`bg-white dark:bg-[#2d2640] rounded-[20px] sm:rounded-[28px] overflow-hidden transition-all duration-300 ease-out cursor-pointer hover:translate-y-[-4px] ${
         selected
           ? "ring-2 ring-[#9d8adb] shadow-[0_12px_30px_rgba(157,138,219,0.28)]"
           : "shadow-[0_8px_22px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
@@ -33,7 +33,7 @@ export default function TranscriptCard({
     >
       {/* HEADER */}
       <div className="bg-gradient-to-br from-[#8f7bd1] to-[#7d6ac4] px-5 sm:px-6 py-4 sm:py-5 flex justify-between items-start gap-4">
-        <h3 className="text-white font-semibold text-base sm:text-[15px] leading-snug max-w-[75%] break-words">
+        <h3 className="text-white font-semibold text-[13px] sm:text-sm lg:text-[15px] leading-snug max-w-[75%] break-words">
           {transcript.title || "No title"}
         </h3>
         <span className="text-[11px] text-white bg-white/20 px-3 py-1.5 rounded-full font-medium shrink-0">
@@ -42,7 +42,7 @@ export default function TranscriptCard({
       </div>
 
       {/* BODY */}
-      <div className="px-5 sm:px-6 py-5 text-[13px] space-y-4">
+      <div className="px-5 sm:px-6 py-4 sm:py-5 text-[13px] space-y-4">
         {[
           ["Date", transcript.date],
           ["Duration", transcript.duration],
@@ -66,7 +66,7 @@ export default function TranscriptCard({
         {/* ACTION */}
         <button
           onClick={(e) => { e.stopPropagation(); handleClick(); }}
-          className="mt-5 w-full rounded-[16px] border border-[#c8c1f1] py-3.5 text-[#6f63a8] font-medium hover:bg-[#edeaff]"
+           className="mt-4 sm:mt-5 w-full rounded-[16px] border border-[#c8c1f1] py-3 sm:py-3.5 text-[#6f63a8] font-medium hover:bg-[#edeaff] hover:shadow-md transition-all duration-200"
         >
           View Transcript
         </button>

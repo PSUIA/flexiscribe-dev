@@ -67,7 +67,7 @@ function Student({ name, exp, icon, rank }) {
 
 function LeaderboardColumn({ data, startRank }) {
   return (
-    <div className="w-[150px] md:w-[180px] space-y-1 shrink-0">
+    <div className="w-[150px] md:w-[180px] lg:w-[200px] xl:w-[220px] space-y-1 shrink-0">
       {data.map((s, i) => (
         <Student
           key={s.name}
@@ -109,30 +109,32 @@ export default function StudentsLeaderboardCard() {
       className="
         relative
         bg-gradient-to-br from-[#8f7acb] to-[#5a4a86]
-        rounded-[32px]
-        px-6 md:px-10
-        py-3
+        rounded-[16px] md:rounded-[24px] lg:rounded-[32px]
+        px-4 sm:px-6 md:px-10 lg:px-12 xl:px-14
+        py-2 sm:py-3 lg:py-4 xl:py-5
         text-white
-        shadow-[-8px_-8px_20px_rgba(255,255,255,0.15),_8px_8px_24px_rgba(0,0,0,0.25)]
+        shadow-[0_4px_20px_rgba(0,0,0,0.08)]
         overflow-visible
+        transition-all duration-300
+        hover:translate-y-[-4px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
       "
     >
       {/* HEADER */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🏆</span>
-          <h3 className="text-xl font-semibold tracking-wide">
+          <span className="text-xl sm:text-2xl">🏆</span>
+          <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold tracking-wide">
             Students Leaderboard
           </h3>
         </div>
 
-        <span className="text-sm text-white/70">
+        <span className="text-xs sm:text-sm text-white/70">
           Weekly Ranking
         </span>
       </div>
 
       {/* CONTENT */}
-      <div className="flex items-start overflow-x-auto md:overflow-visible">
+      <div className="flex items-start overflow-x-auto md:overflow-visible edu-scrollbar">
         <LeaderboardColumn
           data={col1}
           startRank={1}
