@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaLightbulb, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
@@ -14,7 +14,6 @@ export default function FillInQuiz({ quiz, questions }) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
-  const [showHint, setShowHint] = useState(false);
   const [currentTime, setCurrentTime] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +26,37 @@ export default function FillInQuiz({ quiz, questions }) {
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
+  const answersRef = useRef(answers);
+
+  // Keep ref in sync for unmount/tab-change saves
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+
+  // Save progress on page unload, tab switch, or navigation away
+  useEffect(() => {
+    const saveProgress = () => {
+      const currentAnswers = answersRef.current;
+      if (Object.keys(currentAnswers).length > 0) {
+        localStorage.setItem(`quiz-answers-${quiz.id}`, JSON.stringify(currentAnswers));
+        localStorage.setItem(`quiz-progress-${quiz.id}`, JSON.stringify({
+          quizId: quiz.id,
+          lesson: quiz.lesson,
+          quizType: quiz.quizType,
+          totalQuestions,
+          answeredCount: Object.keys(currentAnswers).length,
+          lastUpdated: new Date().toISOString(),
+        }));
+      }
+    };
+    const handleBeforeUnload = () => saveProgress();
+    const handleVisibilityChange = () => { if (document.hidden) saveProgress(); };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      saveProgress();
+    };
+  }, [quiz.id, quiz.lesson, quiz.quizType, totalQuestions]);
 
   // Load saved answers from localStorage
   useEffect(() => {
@@ -45,6 +75,16 @@ export default function FillInQuiz({ quiz, questions }) {
   useEffect(() => {
     if (Object.keys(answers).length > 0) {
       localStorage.setItem(`quiz-answers-${quiz.id}`, JSON.stringify(answers));
+      // Save progress metadata for Jump Back In
+      const progress = {
+        quizId: quiz.id,
+        lesson: quiz.lesson,
+        quizType: quiz.quizType,
+        totalQuestions: totalQuestions,
+        answeredCount: Object.keys(answers).length,
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem(`quiz-progress-${quiz.id}`, JSON.stringify(progress));
     }
   }, [answers, quiz.id]);
 
@@ -100,7 +140,6 @@ export default function FillInQuiz({ quiz, questions }) {
       // Load the answer for the next question
       const nextAnswer = answers[currentQuestionIndex + 1];
       setUserAnswer(nextAnswer !== undefined ? nextAnswer : "");
-      setShowHint(false);
     }
   };
 
@@ -110,7 +149,6 @@ export default function FillInQuiz({ quiz, questions }) {
       // Load the answer for the previous question
       const prevAnswer = answers[currentQuestionIndex - 1];
       setUserAnswer(prevAnswer !== undefined ? prevAnswer : "");
-      setShowHint(false);
     }
   };
 
@@ -316,21 +354,6 @@ export default function FillInQuiz({ quiz, questions }) {
 
           {/* Fill-in Container */}
           <div className="fillin-container">
-            {/* Hint Button */}
-            <button 
-              className="hint-button"
-              onClick={() => setShowHint(!showHint)}
-            >
-              <FaLightbulb /> Get a hint.
-            </button>
-
-            {/* Hint Display */}
-            {showHint && (
-              <div className="hint-display">
-                {currentQuestion.hint}
-              </div>
-            )}
-
             {/* Question Card */}
             <div className="fillin-question-card">
               {renderQuestion()}
@@ -360,8 +383,10 @@ export default function FillInQuiz({ quiz, questions }) {
                       const data = await res.json();
                       if (data.success) {
                         localStorage.removeItem(`quiz-answers-${quiz.id}`);
+                        localStorage.removeItem(`quiz-progress-${quiz.id}`);
                         trackActivity('quiz_completed');
-                        setModalInfo({ isOpen: true, title: "Quiz Submitted!", message: `Score: ${data.attempt.score}/${data.attempt.totalQuestions} (${data.attempt.accuracy}%)\nXP Earned: +${data.attempt.xpEarned} XP`, type: "success" });
+                        const attemptLabel = data.attempt.isFirstAttempt ? '1st Attempt' : 'Retry (10% XP)';
+                        setModalInfo({ isOpen: true, title: "Quiz Submitted!", message: `Score: ${data.attempt.score}/${data.attempt.totalQuestions} (${data.attempt.accuracy}%)\n${attemptLabel}\nXP Earned: +${data.attempt.xpEarned} XP`, type: "success" });
                         setShouldRedirect(true);
                       } else {
                         setModalInfo({ isOpen: true, title: "Error", message: data.error || 'Failed to submit quiz.', type: "error" });

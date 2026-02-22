@@ -5,7 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import StudentSidebar from "@/components/student/layout/StudentSidebar";
 import StudentHeader from "@/components/student/layout/StudentHeader";
 import { toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode, handleNavigation as utilHandleNavigation } from "../../../utils/student";
-import { ALL_RANKS } from "@/utils/student";
+import { ALL_RANKS, calculateStreak } from "@/utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -20,6 +20,7 @@ export default function StudentLeaderboard() {
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [studentProfile, setStudentProfile] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [streakData, setStreakData] = useState({ count: 0, isActive: false, lastActivityDate: null });
 
   useEffect(() => {
     setMounted(true);
@@ -40,6 +41,10 @@ export default function StudentLeaderboard() {
     if (savedImage) {
       setUserProfileImage(savedImage);
     }
+
+    // Initialize streak data
+    const currentStreak = calculateStreak();
+    setStreakData(currentStreak);
 
     // Fetch student profile from database
     const fetchStudentProfile = async () => {
@@ -420,7 +425,7 @@ export default function StudentLeaderboard() {
                   <div className="stat-info">
                     <p className="stat-label">Study Streak</p>
                     <p className="stat-value">
-                      {currentUserRank.streak || 0} {currentUserRank.streak === 1 ? "day" : "days"}
+                      {streakData.count} {streakData.count === 1 ? "day" : "days"}
                     </p>
                   </div>
                 </div>

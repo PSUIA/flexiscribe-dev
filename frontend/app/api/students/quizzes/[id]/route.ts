@@ -3,14 +3,19 @@ import prisma from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
 
 // XP awarded per correct answer based on difficulty
+// HARD 30 questions perfect = 300 XP
 const XP_PER_CORRECT: Record<string, number> = {
   EASY: 5,
-  MEDIUM: 10,
-  HARD: 15,
+  MEDIUM: 7,
+  HARD: 10,
 };
 
-// Flat XP for completing a flashcard review
-const FLASHCARD_COMPLETION_XP = 10;
+// XP per flashcard reviewed, scaled by difficulty
+const FLASHCARD_XP_PER_CARD: Record<string, number> = {
+  EASY: 2,
+  MEDIUM: 3,
+  HARD: 5,
+};
 
 // Map DB quiz type enum to display-friendly label
 function mapQuizType(type: string): string {
@@ -266,12 +271,27 @@ export async function POST(
 
     // ----- XP calculation -----
     const baseXpPerCorrect = XP_PER_CORRECT[quiz.difficulty] ?? XP_PER_CORRECT.MEDIUM;
-    let xpEarned: number;
+    let baseXpEarned: number;
 
     if (quiz.type === 'FLASHCARD') {
-      xpEarned = FLASHCARD_COMPLETION_XP;
+      const xpPerCard = FLASHCARD_XP_PER_CARD[quiz.difficulty] ?? FLASHCARD_XP_PER_CARD.MEDIUM;
+      baseXpEarned = totalQuestions * xpPerCard;
     } else {
-      xpEarned = correctCount * baseXpPerCorrect;
+      baseXpEarned = correctCount * baseXpPerCorrect;
+    }
+
+    // Check if this is the first attempt or a retry
+    const existingAttempt = await prisma.quizAttempt.findFirst({
+      where: { quizId: quiz.id, studentId: student.id },
+    });
+    const isFirstAttempt = !existingAttempt;
+
+    // 1st take = 100% XP, retries = 10% XP (always rounded up, no decimals)
+    let xpEarned: number;
+    if (isFirstAttempt) {
+      xpEarned = baseXpEarned;
+    } else {
+      xpEarned = Math.ceil(baseXpEarned * 0.10);
     }
 
     // Create the quiz attempt with answer results
@@ -301,6 +321,7 @@ export async function POST(
         totalQuestions,
         accuracy: Math.round((correctCount / totalQuestions) * 100),
         xpEarned,
+        isFirstAttempt,
         newXp,
         results: answerResults,
       },

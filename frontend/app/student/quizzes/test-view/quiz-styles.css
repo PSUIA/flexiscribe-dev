@@ -79,42 +79,6 @@
   padding: 0 20px;
 }
 
-/* Hint Button */
-.hint-button {
-  background: rgba(76, 65, 114, 0.8);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 16px;
-  border: none;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.hint-button:hover {
-  background: rgba(76, 65, 114, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.hint-display {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--brand-tertiary);
-  padding: 16px 24px;
-  border-radius: 16px;
-  margin-bottom: 24px;
-  font-size: 15px;
-  line-height: 1.6;
-  border-left: 4px solid #ffd700;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
 /* ============================================
    FLASHCARD STYLES
    ============================================ */

@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaLightbulb, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
@@ -14,7 +14,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const [currentTime, setCurrentTime] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +26,37 @@ export default function FlashcardQuiz({ quiz, questions }) {
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
+  const flippedStatesRef = useRef(flippedStates);
+
+  // Keep ref in sync for unmount/tab-change saves
+  useEffect(() => { flippedStatesRef.current = flippedStates; }, [flippedStates]);
+
+  // Save progress on page unload, tab switch, or navigation away
+  useEffect(() => {
+    const saveProgress = () => {
+      const currentStates = flippedStatesRef.current;
+      if (Object.keys(currentStates).length > 0) {
+        localStorage.setItem(`quiz-flipped-${quiz.id}`, JSON.stringify(currentStates));
+        localStorage.setItem(`quiz-progress-${quiz.id}`, JSON.stringify({
+          quizId: quiz.id,
+          lesson: quiz.lesson,
+          quizType: quiz.quizType,
+          totalQuestions,
+          answeredCount: Object.keys(currentStates).length,
+          lastUpdated: new Date().toISOString(),
+        }));
+      }
+    };
+    const handleBeforeUnload = () => saveProgress();
+    const handleVisibilityChange = () => { if (document.hidden) saveProgress(); };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      saveProgress();
+    };
+  }, [quiz.id, quiz.lesson, quiz.quizType, totalQuestions]);
 
   // Load saved flipped states from localStorage
   useEffect(() => {
@@ -45,6 +75,16 @@ export default function FlashcardQuiz({ quiz, questions }) {
   useEffect(() => {
     if (Object.keys(flippedStates).length > 0) {
       localStorage.setItem(`quiz-flipped-${quiz.id}`, JSON.stringify(flippedStates));
+      // Save progress metadata for Jump Back In
+      const progress = {
+        quizId: quiz.id,
+        lesson: quiz.lesson,
+        quizType: quiz.quizType,
+        totalQuestions: totalQuestions,
+        answeredCount: Object.keys(flippedStates).length,
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem(`quiz-progress-${quiz.id}`, JSON.stringify(progress));
     }
   }, [flippedStates, quiz.id]);
 
@@ -100,7 +140,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
       // Maintain the current flip state for the next card
       const nextFlipped = flippedStates[currentQuestionIndex + 1];
       setIsFlipped(nextFlipped !== undefined ? nextFlipped : isFlipped);
-      setShowHint(false);
     }
   };
 
@@ -110,7 +149,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
       // Maintain the current flip state for the previous card
       const prevFlipped = flippedStates[currentQuestionIndex - 1];
       setIsFlipped(prevFlipped !== undefined ? prevFlipped : isFlipped);
-      setShowHint(false);
     }
   };
 
@@ -299,21 +337,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
 
           {/* Flashcard Container */}
           <div className="flashcard-container">
-            {/* Hint Button */}
-            <button 
-              className="hint-button"
-              onClick={() => setShowHint(!showHint)}
-            >
-              <FaLightbulb /> Get a hint.
-            </button>
-
-            {/* Hint Display */}
-            {showHint && (
-              <div className="hint-display">
-                {currentQuestion.hint}
-              </div>
-            )}
-
             {/* Flashcard */}
             <div 
               className={`flashcard ${isFlipped ? 'flipped' : ''}`}
@@ -363,8 +386,10 @@ export default function FlashcardQuiz({ quiz, questions }) {
                       const data = await res.json();
                       if (data.success) {
                         localStorage.removeItem(`quiz-flipped-${quiz.id}`);
+                        localStorage.removeItem(`quiz-progress-${quiz.id}`);
                         trackActivity('flashcard_session');
-                        setModalInfo({ isOpen: true, title: "Flashcards Reviewed!", message: `XP Earned: +${data.attempt.xpEarned} XP`, type: "success" });
+                        const attemptLabel = data.attempt.isFirstAttempt ? '1st Attempt' : 'Retry (10% XP)';
+                        setModalInfo({ isOpen: true, title: "Flashcards Reviewed!", message: `${attemptLabel}\nXP Earned: +${data.attempt.xpEarned} XP`, type: "success" });
                         setShouldRedirect(true);
                       } else {
                         setModalInfo({ isOpen: true, title: "Error", message: data.error || 'Failed to submit review.', type: "error" });

@@ -261,8 +261,8 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 100px 1fr 200px 150px;
-  gap: 20px;
+  grid-template-columns: 80px 1fr 170px 130px;
+  gap: 16px;
   padding: 15px 20px;
   background: var(--brand-secondary);
   border-radius: 12px;
@@ -285,8 +285,8 @@
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 100px 1fr 200px 150px;
-  gap: 20px;
+  grid-template-columns: 80px 1fr 170px 130px;
+  gap: 16px;
   padding: 20px;
   background: var(--surface-secondary);
   border-radius: 12px;
@@ -488,7 +488,7 @@
 @media (max-width: 1024px) {
   .table-header,
   .leaderboard-row {
-    grid-template-columns: 80px 1fr 150px 120px;
+    grid-template-columns: 60px 1fr 140px 100px;
   }
 
   .stats-grid {
@@ -627,4 +627,64 @@
   background: linear-gradient(135deg, rgba(157, 138, 219, 0.1), rgba(255, 193, 118, 0.1));
   border-radius: 12px;
   margin: 20px 0;
+}
+
+/* Streak Badge */
+.streak-col {
+  justify-content: center;
+}
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 107, 53, 0.15);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.streak-fire-icon {
+  font-size: 16px;
+  color: #ff6b35;
+}
+
+.streak-badge span {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff6b35;
+}
+
+/* Quizzes Badge */
+.quizzes-col {
+  justify-content: center;
+}
+
+.quizzes-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(157, 138, 219, 0.15);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.quizzes-game-icon {
+  font-size: 16px;
+  color: var(--accent-primary);
+}
+
+.quizzes-badge span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.leaderboard-row.current-user .streak-badge span,
+.leaderboard-row.current-user .streak-fire-icon {
+  color: #ff8c5a;
+}
+
+.leaderboard-row.current-user .quizzes-badge span,
+.leaderboard-row.current-user .quizzes-game-icon {
+  color: var(--accent-secondary);
 }
