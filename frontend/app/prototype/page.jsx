@@ -464,8 +464,8 @@ export default function PrototypeDashboard() {
         <div className="prototype-header">
           <div className="logo-section">
             <div className="logo-content">
-              <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-24 w-24" />
-              <div className="flex flex-col items-start">
+              <img src="/img/fLexiScribe-logo-purple.png" alt="Logo" className="logo-icon" />
+              <div className="logo-text">
                 <h1 className="text-4xl font-bold">fLexiScribe</h1>
                 <p className="text-sm font-normal">Your Note-Taking Assistant</p>
               </div>

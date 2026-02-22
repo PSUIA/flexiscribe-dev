@@ -233,8 +233,8 @@ export default function StudentDashboard() {
             <div style={{ height: '200px' }}></div>
           </div>
         </aside>
-        <main className="main-content">
-          <div>Loading...</div>
+        <main className="main-content flex flex-col min-h-screen">
+          <div className="flex items-center justify-center flex-1 text-white opacity-60">Loading...</div>
         </main>
       </div>
     );
@@ -276,7 +276,7 @@ export default function StudentDashboard() {
       />
 
       {/* Main Content */}
-      <main className="main-content flex flex-col justify-between min-h-screen">
+        <main className="main-content flex flex-col min-h-screen">
         <StudentHeader 
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -284,7 +284,7 @@ export default function StudentDashboard() {
         />
         
         {/* Grid Contents */}
-        <div className="dashboard-grid">
+        <div className="dashboard-grid pb-4 sm:pb-6 lg:pb-8">
             {/* Welcome Banner */}
             <div className="welcome-banner md:col-span-2 lg:col-span-8">
               <div className="grid grid-cols-2 grid-rows-2">
