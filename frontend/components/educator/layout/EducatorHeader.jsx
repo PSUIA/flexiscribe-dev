@@ -77,11 +77,11 @@ export default function EducatorHeader({ userName = "Educator" }) {
       {/* Notification Button */}
       <button
         onClick={() => setOpenNotif(!openNotif)}
-        className="w-10 h-10 rounded-full bg-[#f1effb] flex items-center justify-center hover:bg-[#e5e1fa] relative"
+        className="w-11 h-11 lg:w-[50px] lg:h-[50px] rounded-full bg-gradient-to-br from-[#9d8adb] to-[#4c4172] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-all duration-300 hover:scale-105 active:scale-95 relative"
       >
-        <Bell size={18} className="text-[#6b5fcf]" />
+        <Bell size={18} className="text-white" />
         {notifications.filter((n) => !n.read).length > 0 && (
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <span className="edu-notif-badge absolute top-[2px] right-[2px] w-2.5 h-2.5 bg-[#e74c3c] rounded-full border-2 border-white" />
         )}
       </button>
 
@@ -107,25 +107,25 @@ export default function EducatorHeader({ userName = "Educator" }) {
       <div className="relative">
         <button
           onClick={() => setOpenProfile(!openProfile)}
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="text-right hidden md:block">
-            <div className="text-sm font-semibold text-[#6b5fcf]">
+            <div className="text-sm lg:text-base font-semibold text-[var(--edu-text-primary,#4c4172)] transition-colors">
               {userName}
             </div>
-            <div className="text-xs text-gray-500">Instructor</div>
+            <div className="text-xs lg:text-sm text-[var(--edu-text-secondary,#666)] transition-colors">Instructor</div>
           </div>
 
-          <div className="w-10 h-10 rounded-full bg-[#9b8ae0] flex items-center justify-center text-white font-bold">
+          <div className="w-11 h-11 lg:w-[50px] lg:h-[50px] rounded-full bg-gradient-to-br from-[#9d8adb] to-[#4c4172] flex items-center justify-center text-white font-bold shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-all duration-300 group-hover:scale-105">
             {initial}
           </div>
         </button>
 
         {openProfile && (
-          <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-lg border z-50">
+          <div className="edu-dropdown-animate absolute right-0 top-14 min-w-[200px] bg-white dark:bg-[#2d2640] dark:border-[rgba(139,127,199,0.25)] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.15)] border border-[rgba(157,138,219,0.15)] z-50 overflow-hidden">
             <button
               onClick={handleSignOut}
-              className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+              className="w-full px-5 py-3.5 text-left text-sm hover:bg-[rgba(231,76,60,0.1)] dark:hover:bg-[rgba(231,76,60,0.15)] flex items-center gap-3 text-[#e74c3c] transition-colors duration-200"
             >
               <LogOut size={16} />
               Sign Out
@@ -159,22 +159,23 @@ function NotifDropdown({ notifications = [], onMarkAllRead, onViewAll, onClose }
         className="fixed inset-0 z-40"
         onClick={onClose}
       />
-      <div className="absolute right-0 top-12 w-[280px] sm:w-[360px] bg-white text-gray-800 rounded-xl border shadow-lg z-50 overflow-hidden">
-        <div className="px-4 py-3 flex justify-between border-b">
-          <h3 className="text-sm font-semibold">Notifications</h3>
+      <div className="edu-dropdown-animate edu-notification-dropdown absolute right-0 top-14 w-[320px] sm:w-[380px] bg-white dark:bg-[#2d2640] dark:text-[#e8e8e8] text-gray-800 rounded-xl border border-[rgba(157,138,219,0.15)] dark:border-[rgba(139,127,199,0.25)] shadow-[0_8px_24px_rgba(0,0,0,0.15)] z-50 overflow-hidden">
+        <div className="px-4 py-3 flex justify-between items-center border-b border-[rgba(157,138,219,0.2)] dark:border-[rgba(139,127,199,0.2)]">
+          <h3 className="text-sm font-semibold text-[var(--edu-text-primary,#4c4172)] dark:text-[#e8e8e8]">Notifications</h3>
 
           <button
             onClick={onMarkAllRead}
-            className="text-xs text-[#9d8adb] hover:underline"
+            className="text-xs text-[#9d8adb] hover:underline font-medium"
           >
             Mark all as read
           </button>
         </div>
 
-        <div className="max-h-[300px] overflow-y-auto">
+        <div className="max-h-[350px] overflow-y-auto edu-scrollbar">
           {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-gray-500 text-sm">
-              No notifications
+            <div className="flex flex-col items-center justify-center px-4 py-8 text-center text-[var(--edu-text-secondary,#666)]">
+              <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔔</span>
+              <span className="text-sm">No notifications</span>
             </div>
           ) : (
             notifications.map((item) => (
@@ -219,16 +220,16 @@ function AllNotificationsModal({ notifications = [], loading, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center edu-modal-overlay">
+      <div className="edu-modal-content bg-white dark:bg-[#2d2640] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.25)] w-full max-w-[700px] mx-4 max-h-[80vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-base font-semibold text-[#6b5fcf]">All Notifications</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(157,138,219,0.2)] dark:border-[rgba(139,127,199,0.2)]">
+          <h2 className="text-base font-semibold text-[#4c4172] dark:text-[#e8e8e8]">All Notifications</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+            className="w-8 h-8 rounded-full hover:bg-[rgba(157,138,219,0.1)] flex items-center justify-center transition-colors duration-200"
           >
-            <X size={18} className="text-gray-500" />
+            <X size={18} className="text-[var(--edu-text-secondary,#666)]" />
           </button>
         </div>
 
@@ -261,24 +262,24 @@ function NotifItem({ title, message, time, unread }) {
   return (
     <div
       className={`
-        flex gap-3 px-4 py-3 hover:bg-gray-50 transition
-        ${unread ? "bg-[#f7f5ff]" : "bg-white"}
+        edu-notif-item flex gap-3 px-4 py-3 hover:bg-[rgba(157,138,219,0.08)] transition-all duration-200 cursor-pointer
+        ${unread ? "bg-[rgba(157,138,219,0.06)]" : "bg-white"}
       `}
     >
-      <div className="w-9 h-9 rounded-full bg-[#9d8adb]/20 text-[#6b5cbf] flex items-center justify-center text-xs font-semibold">
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#9d8adb]/30 to-[#4c4172]/20 text-[#6b5cbf] flex items-center justify-center text-xs font-semibold shrink-0">
         {initial}
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <p className="text-sm">
-          <span className="font-medium">{title}</span>{" "}
-          <span className="text-gray-600">{message}</span>
+          <span className="font-medium text-[var(--edu-text-primary,#4c4172)]">{title}</span>{" "}
+          <span className="text-[var(--edu-text-secondary,#666)]">{message}</span>
         </p>
 
         <p className="text-xs text-gray-400 mt-1">{time}</p>
       </div>
 
-      {unread && <span className="w-2 h-2 bg-[#9d8adb] rounded-full mt-2" />}
+      {unread && <span className="w-2 h-2 bg-[#9d8adb] rounded-full mt-2 shrink-0" style={{ animation: 'eduPulse 2s ease-in-out infinite' }} />}
     </div>
   );
 }

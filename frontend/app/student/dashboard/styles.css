@@ -411,7 +411,7 @@ body {
   color: var(--accent-secondary);
   display: flex;
   border-radius: 16px;
-  padding: 25px;
+  padding: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -433,7 +433,7 @@ body {
 }
 
 .welcome-mascot {
-  font-size: 100px;
+  font-size: clamp(48px, 12vw, 100px);
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
@@ -1094,6 +1094,7 @@ body {
 
   .welcome-banner {
     border-radius: 10px;
+    padding: 25px;
   }
 
   .card {
@@ -1192,6 +1193,7 @@ body {
 
   .welcome-banner {
     border-radius: 24px;
+    padding: 30px;
   }
 
   .welcome-text h2 {

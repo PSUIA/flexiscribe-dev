@@ -73,44 +73,38 @@ export default function DashboardPage() {
       </div>
 
       {/* ================= DESKTOP ================= */}
-      <div className="hidden lg:block p-8 max-w-[1600px] mx-auto">
+      <div className="hidden lg:flex gap-6 xl:gap-8 p-6 xl:p-10 max-w-[1600px] mx-auto">
 
-        <div className="grid grid-cols-12 gap-6">
+        {/* LEFT COLUMN — takes remaining width */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6 xl:gap-8">
 
-          {/* SEARCH */}
-          <div className="col-span-8">
-            <SearchBar
-              placeholder="Search..."
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
+          <SearchBar
+            placeholder="Search..."
+            onChange={(e) => setQuery(e.target.value)}
+          />
 
-          {/* PROFILE */}
-          <div className="col-span-4 row-span-2">
-            <ProfessorProfileCard />
-          </div>
+          <WelcomeCard />
 
-          <div className="col-span-8">
-            <WelcomeCard />
-          </div>
-
-          <div className="col-span-4 row-span-2">
-            <LectureRecordingsCard />
-          </div>
-
-          <div className="col-span-4">
+          <div className="grid grid-cols-2 gap-6 xl:gap-8">
             <ScheduleCard />
-          </div>
-
-          <div className="col-span-4">
             <CalendarCard />
           </div>
 
-          <div className="col-span-8">
-            <StudentsLeaderboardCard />
+          <StudentsLeaderboardCard />
+
+        </div>
+
+        {/* RIGHT COLUMN — fixed width sidebar */}
+        <div className="w-[320px] xl:w-[360px] 2xl:w-[400px] shrink-0 flex flex-col gap-6 xl:gap-8">
+
+          <ProfessorProfileCard />
+
+          <div className="flex-1">
+            <LectureRecordingsCard />
           </div>
 
         </div>
+
       </div>
     </>
   );

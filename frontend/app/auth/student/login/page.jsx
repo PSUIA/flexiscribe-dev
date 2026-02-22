@@ -104,30 +104,30 @@ export default function Login() {
 
   return (
     <div className="container">
-        <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
+        <button className="btn-back fixed top-4 right-4 z-50" onClick={handleBack}>
           <FiArrowLeft size={18} />
           Back
         </button>
-      <div className="neu-card w-full max-w-md mx-auto justify-center">
+      <div className="neu-card w-full max-w-md mx-3 sm:mx-auto">
         {/* Title */}
-        <div className="flex flex-col items-center mb-6 mt-2">
-          <span className="font-extrabold text-4xl text-center mb-2">Student Log In</span>
-          <span className="text-center text-md mb-2">Access your fLexiScribe student portal</span>
+        <div className="flex flex-col items-center mb-4 sm:mb-6 mt-1 sm:mt-2">
+          <span className="text-[#4c4172] font-extrabold text-2xl sm:text-3xl md:text-4xl text-center mb-2">Student Log In</span>
+          <span className="text-[#4c4172] text-center text-xs sm:text-sm md:text-base mb-2">Access your fLexiScribe student portal</span>
         </div>
         {/* Success message */}
         {success && (
-          <p className="success-msg mb-4 text-center">{success}</p>
+          <p className="success-msg mb-3 sm:mb-4 text-center">{success}</p>
         )}
 
         {/* Error message */}
         {error && (
-          <p className="error-msg mb-4 text-center">{error}</p>
+          <p className="error-msg mb-3 sm:mb-4 text-center">{error}</p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 md:space-y-8">
           {/* Student Number */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="text-[#4c4172] block text-sm font-medium mb-2">
               Student Number
             </label>
             <input
@@ -142,10 +142,10 @@ export default function Login() {
           {/* Password */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-medium">
+              <label className="text-[#4c4172] text-sm font-medium">
                 Password
               </label>
-              <a href="/auth/forgot-password" className="text-sm font-semibold hover:underline">
+              <a href="/auth/forgot-password" className="text-[#4c4172] text-sm font-semibold hover:underline">
                 Forgot Password?
               </a>
             </div>
@@ -197,9 +197,9 @@ export default function Login() {
         </form>
 
         {/* Footer */}
-        <p className="mt-10 text-center text-sm">
+        <p className="text-[#4c4172] mt-6 sm:mt-8 md:mt-10 text-center text-xs sm:text-sm">
           No account?{" "}
-          <a href="/auth/student/register" className="font-semibold hover:underline">
+          <a href="/auth/student/register" className="text-[#4c4172] font-semibold hover:underline">
             Create Account
           </a>
         </p>

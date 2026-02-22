@@ -120,17 +120,19 @@ export default function Sidebar() {
   }, []);
 
   return (
-    <aside className="h-screen w-[360px] bg-gradient-to-b from-[#9d8adb] to-[#4c4172] text-white flex flex-col px-10 overflow-y-auto">
+    <aside className="edu-sidebar h-screen w-[300px] bg-gradient-to-b from-[#9d8adb] to-[#4c4172] text-white flex flex-col px-5 overflow-y-auto">
       
       {/* Logo */}
-      <div className="mt-10 mb-8 flex justify-center">
-        <Image
-          src="/flexiscribe-logo.png"
-          alt="FlexiScribe Logo"
-          width={320}
-          height={50}
-          priority
+      <div className="flex align-center gap-12px width-full py-6 px-2 mb-4">
+        <img
+          src="/img/flexiscribe-logo.png"
+          alt="fLexiScribe Logo"
+          className="h-16 w-16"
         />
+        <div className="flex flex-col items-start">
+          <h1 className="text-2xl font-bold tracking-wide">fLexiScribe</h1>
+          <p className="text-xs">Your Note-Taking Assistant</p>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -153,27 +155,27 @@ export default function Sidebar() {
         {/* Classes */}
         <button
           onClick={() => setOpenClasses(!openClasses)}
-          className={`flex items-center gap-5 px-8 py-5 rounded-2xl transition ${
-            openClasses ? "bg-[#a998e6]" : "hover:bg-[#a998e6]"
+          className={`edu-nav-item flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 ${
+            openClasses ? "active" : ""
           }`}
         >
-          <GraduationCap size={32} />
-          <span className="text-lg flex-1 text-left">Classes</span>
+          <GraduationCap size={24} className="opacity-90" />
+          <span className="text-[15px] flex-1 text-left">Classes</span>
           <ChevronDown
-            size={22}
-            className={`transition-transform ${
+            size={18}
+            className={`transition-transform duration-300 ${
               openClasses ? "rotate-180" : ""
             }`}
           />
         </button>
 
         {openClasses && (
-          <div className="ml-14 mt-2 space-y-2">
+          <div className="ml-10 mt-1 space-y-1">
             {courses.map((course) => (
               <Link
                 key={course}
                 href={`/educator/classes/${course.toLowerCase()}`}
-                className="block px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+                className="edu-nav-sub-item block px-4 py-2.5 rounded-lg bg-white/10 text-sm"
               >
                 {course}
               </Link>
@@ -195,9 +197,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Clock */}
-      <div className="mt-auto mb-10 flex flex-col items-center">
-        <AnalogClock />
-        <p className="mt-4 text-sm opacity-90">
+      <div className="edu-clock-widget mt-auto mb-8">
+        <AnalogClock size={130} />
+        <p className="edu-clock-time mt-3">
           {time}, {day}
         </p>
       </div>
@@ -211,12 +213,12 @@ function NavItem({ icon: Icon, label, href, active }) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-5 px-8 py-5 rounded-2xl transition ${
-        active ? "bg-[#a998e6] font-semibold" : "hover:bg-[#a998e6]"
+      className={`edu-nav-item flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 ${
+        active ? "active" : ""
       }`}
     >
-      <Icon size={32} />
-      <span className="text-lg">{label}</span>
+      <Icon size={24} className="opacity-90" />
+      <span className="text-[15px]">{label}</span>
     </Link>
   );
 }
