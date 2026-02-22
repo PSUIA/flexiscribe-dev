@@ -333,7 +333,7 @@ export default function PrototypeDashboard() {
             <button className="guide-close" onClick={() => setShowGuide(false)}>✕</button>
 
             <div className="guide-header">
-              <img src="/img/fLexiScribe-logo.png" alt="Logo" className="guide-logo" />
+              <img src="/img/fLexiScribe-logo-purple.png" alt="Logo" className="guide-logo" />
               <div>
                 <h2 className="guide-title">fLexiScribe</h2>
                 <p className="guide-subtitle">Your Note-Taking Assistant</p>

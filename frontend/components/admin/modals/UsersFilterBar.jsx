@@ -144,6 +144,7 @@ export default function UsersFilterBar({
         <button
           onClick={onAddUser}
           className="
+            w-full sm:w-auto
             px-5 py-2 rounded-full
             bg-[#9d8adb]
             text-white

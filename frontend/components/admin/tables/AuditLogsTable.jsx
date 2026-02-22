@@ -42,7 +42,7 @@ function MobileLogCard({ log }) {
   const { date, time } = formatDateTime(log.createdAt);
 
   return (
-    <div className="border rounded-xl p-8 bg-white space-y-3 shadow-sm">
+    <div className="border rounded-xl p-4 sm:p-6 bg-white space-y-3 shadow-sm">
       <div className="flex justify-between text-xs text-gray-500">
         <span>{date}</span>
         <span>{time}</span>

@@ -37,8 +37,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Allow access to public paths and root
-  if (isPublicPath || pathname === "/") {
+  // Allow access to public paths, root, and admin landing page
+  if (isPublicPath || pathname === "/" || pathname === "/admin") {
     return NextResponse.next();
   }
 
