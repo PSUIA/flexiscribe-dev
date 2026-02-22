@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaLightbulb, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import "../../dashboard/styles.css";
 import "./quiz-styles.css";
 
@@ -9,7 +9,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const [currentTime, setCurrentTime] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -53,7 +52,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setIsFlipped(false);
-      setShowHint(false);
     }
   };
 
@@ -61,7 +59,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       setIsFlipped(false);
-      setShowHint(false);
     }
   };
 
@@ -146,11 +143,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
                       <p style={{marginBottom: '12px', color: 'var(--text-secondary)'}}>
                         <strong>Back:</strong> {q.back}
                       </p>
-                      {q.hint && (
-                        <p style={{marginTop: '12px', padding: '12px', background: 'rgba(255, 215, 0, 0.15)', borderLeft: '4px solid #ffd700', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '14px'}}>
-                          <strong>💡 Note:</strong> {q.hint}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -236,9 +228,6 @@ export default function FlashcardQuiz({ quiz, questions }) {
           <h1 className="quiz-title">{quiz.lesson}</h1>
 
           <div className="flashcard-container">
-            <button className="hint-button" onClick={() => setShowHint(!showHint)}><FaLightbulb /> Get a hint.</button>
-            {showHint && <div className="hint-display">{currentQuestion.hint}</div>}
-
             <div className={`flashcard ${isFlipped ? 'flipped' : ''}`} onClick={handleFlip}>
               <div className="flashcard-inner">
                 <div className="flashcard-front">

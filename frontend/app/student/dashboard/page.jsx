@@ -113,14 +113,32 @@ export default function StudentDashboard() {
     fetchLeaderboard();
 
     // Fetch quizzes that have no attempt yet (Jump Back In)
+    // Also include quizzes with saved local progress
     const fetchInProgressQuizzes = async () => {
       try {
         const response = await fetch('/api/students/quizzes');
         if (response.ok) {
           const data = await response.json();
           // Quizzes without an attempt are "in progress" (student hasn't submitted yet)
-          const pending = (data.quizzes || []).filter((q) => !q.hasAttempt).slice(0, 3);
-          setInProgressQuizzes(pending);
+          const pending = (data.quizzes || []).filter((q) => !q.hasAttempt);
+          
+          // Merge with localStorage progress data
+          const withProgress = pending.map((q) => {
+            const savedProgress = localStorage.getItem(`quiz-progress-${q.id}`);
+            if (savedProgress) {
+              const progress = JSON.parse(savedProgress);
+              return {
+                ...q,
+                answeredCount: progress.answeredCount || 0,
+                progressPercent: Math.round((progress.answeredCount / q.numQuestions) * 100),
+              };
+            }
+            return { ...q, answeredCount: 0, progressPercent: 0 };
+          });
+          
+          // Sort: quizzes with progress first, then by last updated
+          withProgress.sort((a, b) => b.progressPercent - a.progressPercent);
+          setInProgressQuizzes(withProgress.slice(0, 3));
         }
       } catch (error) {
         console.error('Error fetching quizzes for jump back in:', error);
@@ -334,7 +352,7 @@ export default function StudentDashboard() {
                       </>
                     )}
                   </div>
-                  <div className="streak-count">{streakData.count} days</div>
+                  <div className="streak-count">{streakData.count} {streakData.count === 1 ? 'day' : 'days'}</div>
                   {streakData.isActive ? (
                     <div className="streak-status active">✓ Active</div>
                   ) : (
@@ -358,11 +376,11 @@ export default function StudentDashboard() {
                       >
                         <div className="progress-circle">
                           <CircularProgressbar
-                            value={0}
-                            text="0%"
+                            value={q.progressPercent || 0}
+                            text={`${q.progressPercent || 0}%`}
                             styles={buildStyles({
                               textSize: '28px',
-                              pathColor: 'var(--brand-secondary)',
+                              pathColor: q.progressPercent > 0 ? 'var(--brand-secondary)' : 'rgba(255,255,255,0.3)',
                               textColor: 'var(--accent-secondary)',
                               trailColor: 'rgba(255,255,255,0.2)',
                             })}
@@ -370,7 +388,7 @@ export default function StudentDashboard() {
                         </div>
                         <div>
                           <p className="progress-label">{q.lesson}</p>
-                          <p className="progress-section">{q.quizType} • {q.numQuestions} questions</p>
+                          <p className="progress-section">{q.quizType} • {q.answeredCount > 0 ? `${q.answeredCount}/${q.numQuestions} answered` : `${q.numQuestions} questions`}</p>
                         </div>
                       </div>
                     ))
