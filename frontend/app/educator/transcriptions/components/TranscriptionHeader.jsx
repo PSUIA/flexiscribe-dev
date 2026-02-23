@@ -39,7 +39,7 @@ export default function TranscriptionHeader() {
           </h1>
 
           {/* DESKTOP SEARCH */}
-          <div className="hidden lg:block relative w-[340px] xl:w-[620px] 2xl:w-[660px]">
+          <div className="hidden lg:block relative w-[300px] xl:w-[500px] 2xl:w-[600px]">
             <Search
               size={20}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffffff]"
