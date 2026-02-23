@@ -1,15 +1,11 @@
-import queue
-import threading
+import time
 import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
+import threading
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import SAMPLE_RATE, CHUNK_DURATION, CHANNELS, WHISPER_MODEL, WHISPER_DEVICE, WHISPER_COMPUTE_TYPE
+from config import SAMPLE_RATE, CHANNELS, WHISPER_MODEL, WHISPER_DEVICE, WHISPER_COMPUTE_TYPE
 
-# Lazy-load the model (only once)
 _model = None
 _model_lock = threading.Lock()
 
@@ -29,52 +25,82 @@ def get_whisper_model() -> WhisperModel:
     return _model
 
 
-def whisper_worker(text_queue: queue.Queue, stop_event: threading.Event):
+def whisper_worker(text_queue, stop_event, session):
     """
-    Records live audio from mic, transcribes with Whisper, and sends text to text_queue.
-    Respects stop_event to gracefully shut down.
+    Live transcription worker for a session:
+    - Real-time partial transcript every 10 seconds
+    - Summarizes every 60 seconds
     """
     model = get_whisper_model()
-    print("[INFO] Whisper worker started.")
-    buffer = []
+    print(f"[INFO] Whisper worker started for session {session.session_id}")
 
-    def callback(indata, frames, time_info, status):
+    audio_buffer = []
+    transcript_buffer = []
+
+    DISPLAY_INTERVAL = 10  # seconds for real-time display
+    SUMMARY_INTERVAL = 60  # seconds for summarization
+
+    last_display_time = time.time()
+    last_summary_time = time.time()
+
+    def audio_callback(indata, frames, time_info, status):
         if status:
             print(f"[WARN] {status}")
-        buffer.append(indata[:, 0].copy())
+        audio_buffer.append(indata[:, 0].copy())  # mono
 
     try:
         with sd.InputStream(
             samplerate=SAMPLE_RATE,
             channels=CHANNELS,
-            callback=callback,
-            blocksize=int(SAMPLE_RATE * CHUNK_DURATION),
+            callback=audio_callback,
+            blocksize=int(SAMPLE_RATE * DISPLAY_INTERVAL),
         ):
-            print("[INFO] Recording audio...")
+            print(f"[INFO] Recording audio for session {session.session_id}...")
             while not stop_event.is_set():
-                sd.sleep(CHUNK_DURATION * 1000)
+                time.sleep(0.5)  # check buffer twice per second
 
-                if not buffer:
+                if not audio_buffer:
                     continue
 
-                audio_data = np.concatenate(buffer, axis=0)
-                buffer.clear()
+                now = time.time()
 
-                if np.max(np.abs(audio_data)) > 0:
-                    audio_data = audio_data.astype(np.float32)
-                    audio_data /= np.max(np.abs(audio_data))
+                # 1️⃣ Real-time 10s display
+                if now - last_display_time >= DISPLAY_INTERVAL:
+                    audio_data = np.concatenate(audio_buffer, axis=0)
+                    audio_buffer.clear()
 
-                segments, _ = model.transcribe(audio_data, beam_size=5)
-                transcript_text = " ".join(
-                    [seg.text.strip() for seg in segments]
-                ).strip()
+                    if np.max(np.abs(audio_data)) > 0:
+                        audio_data = audio_data.astype(np.float32)
+                        audio_data /= np.max(np.abs(audio_data))
 
-                if transcript_text:
-                    text_queue.put(transcript_text)
-                else:
-                    print("[DEBUG] Whisper returned empty transcript.")
+                    segments, _ = model.transcribe(audio_data, beam_size=5)
+                    partial_text = " ".join(seg.text.strip() for seg in segments if seg.text.strip())
+
+                    if partial_text:
+                        transcript_buffer.append(partial_text)
+                        # Send to queue for frontend display
+                        text_queue.put({"mode": "transcript", "text": partial_text})
+                        # Append to session for SSE streaming
+                        session.transcript_chunks.append({
+                            "timestamp": int(now),
+                            "text": partial_text
+                        })
+
+                    last_display_time = now
+
+                # 2️⃣ 60-second summarization
+                if now - last_summary_time >= SUMMARY_INTERVAL and transcript_buffer:
+                    summary_text = " ".join(transcript_buffer)
+                    text_queue.put({"mode": "summary", "text": summary_text})
+                    # Store minute summary in session
+                    session.minute_summaries.append({
+                        "timestamp": int(now),
+                        "summary": summary_text
+                    })
+                    transcript_buffer = []  # reset after summarizing
+                    last_summary_time = now
 
     except Exception as e:
-        print(f"[ERROR] Whisper worker error: {e}")
+        print(f"[ERROR] Whisper worker for session {session.session_id}: {e}")
     finally:
-        print("[INFO] Whisper worker stopped.")
+        print(f"[INFO] Whisper worker stopped for session {session.session_id}")

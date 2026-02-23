@@ -5,7 +5,7 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 # Whisper settings
 SAMPLE_RATE = 16000
-CHUNK_DURATION = 5  # seconds per audio chunk
+CHUNK_DURATION = 10  # seconds per audio chunk
 CHANNELS = 1
 WHISPER_MODEL = "base"
 WHISPER_DEVICE = "cpu"
