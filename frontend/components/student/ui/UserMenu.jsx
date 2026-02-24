@@ -53,7 +53,7 @@ export default function UserMenu({ userName, userRole, userAvatar }) {
 
   const handleChangePassword = () => {
     setIsOpen(false);
-    router.push("/student/change-password");
+    router.push("/student/profile#change-password");
   };
 
   const handleLogout = async () => {

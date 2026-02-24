@@ -25,6 +25,10 @@ class TranscriptionSession:
         self.status = "running"  # running | stopping | completed | error
 
         # Live data accumulation
+        # live_chunks: every ~10s Whisper fragment for real-time display
+        self.live_chunks: list = []
+        self.live_chunk_counter = 0
+        # transcript_chunks: aggregated 60s text for per-minute summarization
         self.transcript_chunks: list = []
         self.minute_summaries: list = []
         self.final_summary: Optional[dict] = None
@@ -86,6 +90,18 @@ class TranscriptionSession:
                 "duration": self.duration_formatted,
             },
             "chunks": self.transcript_chunks,
+        }
+
+    def get_live_transcript_json(self) -> dict:
+        """Return the live (10s) transcript data for real-time display."""
+        return {
+            "metadata": {
+                "session_id": self.session_id,
+                "run_id": self.run_id,
+                "course_code": self.course_code,
+                "duration": self.duration_formatted,
+            },
+            "chunks": self.live_chunks,
         }
 
     def get_summary_json(self) -> dict:

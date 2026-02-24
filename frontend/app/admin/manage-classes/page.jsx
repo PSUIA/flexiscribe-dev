@@ -11,7 +11,7 @@ export default function ManageClassesPage() {
     <div className="p-3 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#4c4172]">Manage Classes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#4c4172]">Manage Classes</h1>
         <button
           onClick={() => setAddOpen(true)}
           className="px-5 py-2.5 bg-[#9d8adb] text-white rounded-full font-semibold hover:opacity-90 transition"

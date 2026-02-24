@@ -14,38 +14,35 @@
   --bg-image: url('/img/bg-img.png');
 }
 
-/* Container */
+/* Container — base: smallest mobile */
 .prototype-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   overflow-x: hidden;
-  animation: gradientMove 30s ease infinite;
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;
   background: var(--brand-primary);
   background-image: var(--bg-image);
-  background-size: 200% 200%;
-  padding: 2rem;
+  background-size: 100% 100%;
+  padding: 0.75rem;
   position: relative;
 }
 
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Main Content */
+/* Main Content — base: smallest mobile */
 .prototype-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 1200px;
-  background: linear-gradient(135deg, rgba(157, 138, 219, 0.95) 0%, rgba(76, 65, 114, 0.95) 100%);
-  border-radius: 30px;
-  padding: 3rem;
-  box-shadow: 
+  background: var(--accent-secondary);
+  border-radius: 16px;
+  padding: 1.25rem 1rem;
+  box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   backdrop-filter: blur(20px);
@@ -53,30 +50,40 @@
   position: relative;
 }
 
-/* Action Buttons */
+/* Action Buttons — base: icon-only on smallest mobile */
 .action-buttons {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
+  top: 0.75rem;
+  right: 0.75rem;
   display: flex;
-  gap: 0.75rem;
+  flex-direction: row;
+  gap: 0.5rem;
   z-index: 10;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--brand-tertiary);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px var(--brand-tertiary);
+}
+
+/* Hide text labels on the smallest screens */
+.action-btn span {
+  display: none;
 }
 
 .action-btn:hover {
@@ -87,7 +94,8 @@
 }
 
 .action-btn svg {
-  font-size: 1.1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .help-btn:hover {
@@ -126,14 +134,14 @@
   }
 }
 
-/* Guide Modal */
+/* Guide Modal — base: mobile */
 .guide-modal {
-  background: linear-gradient(135deg, rgba(157, 138, 219, 0.98) 0%, rgba(76, 65, 114, 0.98) 100%);
-  border-radius: 24px;
-  padding: 2.5rem;
+  background: var(--accent-secondary);
+  border-radius: 16px;
+  padding: 1.25rem;
   max-width: 700px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.5),
@@ -155,15 +163,15 @@
 
 .guide-close {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 40px;
-  height: 40px;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 1.5rem;
+  background: var(--brand-tertiary);
+  color: var(--accent-secondary);
+  font-size: 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -184,29 +192,27 @@
   gap: 1rem;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid var(--brand-tertiary);
 }
 
 .guide-logo {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .guide-title {
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  color: white;
+  color: var(--brand-tertiary);
   margin: 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .guide-subtitle {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  color: var(--brand-tertiary);
   margin: 0.25rem 0 0 0;
 }
 
@@ -217,55 +223,60 @@
   margin-bottom: 2rem;
 }
 
+/* Guide step — base: single column, centered (smallest mobile) */
 .guide-step {
   display: grid;
-  grid-template-columns: 60px 60px 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
   align-items: center;
-  padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.08);
+  padding: 0.875rem;
+  background: var(--brand-tertiary);
   border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.15);
+  text-align: center;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .guide-step:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--brand-tertiary);
   border-color: rgba(255, 255, 255, 0.25);
   transform: translateX(5px);
 }
 
 .guide-step-number {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--accent-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: white;
+  color: var(--brand-tertiary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
 }
 
 .guide-step-icon {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: linear-gradient(145deg, rgba(197, 166, 249, 0.4), rgba(157, 138, 219, 0.4));
+  background: var(--accent-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
-  color: white;
+  font-size: 1.5rem;
+  color: var(--brand-tertiary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
 }
 
 .stop-icon {
   width: 24px;
   height: 24px;
-  background: white;
+  background: var(--brand-tertiary);
   border-radius: 4px;
 }
 
@@ -274,33 +285,33 @@
 }
 
 .guide-step-title {
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: white;
+  color: var(--accent-secondary);
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .guide-step-text {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
   margin: 0;
   line-height: 1.6;
 }
 
 .guide-step-text strong {
-  color: white;
+  color: var(--accent-secondary);
   font-weight: 600;
 }
 
 .guide-button {
   width: 100%;
-  padding: 1rem;
+  padding: 0.85rem;
   border-radius: 14px;
   border: none;
-  background: linear-gradient(145deg, rgba(197, 166, 249, 0.9), rgba(157, 138, 219, 0.9));
-  color: white;
-  font-size: 1.1rem;
+  background: var(--brand-tertiary);
+  color: var(--accent-secondary);
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -308,15 +319,16 @@
 }
 
 .guide-button:hover {
-  background: linear-gradient(145deg, rgba(197, 166, 249, 1), rgba(157, 138, 219, 1));
+  background: var(--brand-secondary);
+  color: var(--accent-secondary);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
-/* Header */
+/* Header — base */
 .prototype-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 0.75rem;
 }
 
 .logo-section {
@@ -333,42 +345,40 @@
 }
 
 .logo-icon {
-  width: 80px;
-  height: 80px;
+  width: fit-content;
+  height: 3.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 1rem;
-  box-shadow: 
-    0 8px 20px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  padding: 8px;
 }
 
 .logo-text h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--accent-secondary);
+  display: flex;
+  justify-content: flex-start;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--brand-tertiary);
   margin: 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.5px;
 }
 
 .logo-text p {
-  font-size: 1.25rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0.5rem 0 0 0;
+  display: flex;
+  justify-content: flex-start;
+  font-size: 0.825rem;
+  font-weight: normal;
+  color: var(--brand-tertiary);
+  margin: 0;
   letter-spacing: 0.5px;
 }
 
-/* Control Panel */
+/* Control Panel — base: single column for portrait mobile */
 .control-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  max-width: 900px;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 320px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -376,24 +386,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .control-label {
-  font-size: 1.75rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: var(--accent-secondary);
+  color: var(--brand-tertiary);
   letter-spacing: 2px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Control Buttons */
+/* Control Buttons — base: touch-friendly mobile size */
 .control-button {
-  width: 200px;
-  height: 200px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  border: 6px solid rgba(255, 255, 255, 0.4);
-  background: linear-gradient(145deg, rgba(118, 96, 169, 0.8), rgba(91, 76, 135, 0.8));
+  border: 4px solid rgba(255, 255, 255, 0.4);
+  background: var(--brand-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,7 +447,7 @@
 }
 
 .control-icon {
-  font-size: 4rem;
+  font-size: 2.75rem;
   color: var(--accent-secondary);
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   transition: all 0.3s ease;
@@ -456,8 +466,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 60px;
-  height: 60px;
+  width: 45px;
+  height: 45px;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
 }
@@ -483,7 +493,7 @@
 
 /* Mic Button Specific */
 .mic-button.connected {
-  background: linear-gradient(145deg, rgba(118, 96, 169, 0.8), rgba(91, 76, 135, 0.8));
+  background: var(--brand-tertiary);
   position: relative;
 }
 
@@ -630,14 +640,14 @@
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
-/* Control Status */
+/* Control Status — base */
 .control-status {
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  text-align: center;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--brand-tertiary);
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  min-height: 1.5rem;
+  text-align: center;
+  min-height: 1.25rem;
 }
 
 .mic-status {
@@ -658,23 +668,23 @@
   filter: drop-shadow(0 0 4px rgba(144, 238, 144, 0.5));
 }
 
-/* Sound Wave Visualization */
+/* Sound Wave Visualization — base */
 .sound-wave {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   height: 100%;
   width: 100%;
   position: absolute;
   top: 0;
   left: 0;
-  padding: 0 3rem;
+  padding: 0 1.75rem;
 }
 
 .wave-bar {
-  width: 10px;
-  height: calc(20px + var(--bar-height, 0) * 80px);
+  width: 6px;
+  height: calc(12px + var(--bar-height, 0) * 50px);
   background: linear-gradient(
     to top,
     rgba(255, 255, 255, 1),
@@ -699,408 +709,267 @@
   }
 }
 
-/* Responsive Design */
+/* ════════════════════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS — Mobile-First (min-width)
+   Priority order: landscape phone → small tablet → tablet → desktop
+   ════════════════════════════════════════════════════════════════════════ */
 
-/* 7-inch Capacitive Touch Display (800x480 or 1024x600) */
-@media (max-width: 800px) and (min-width: 600px) {
+/* ── Landscape Phone Override ──────────────────────────────────────────
+   Short viewport (max-height: 500px) in landscape = collapsed vertical
+   layout with 2-column control panel (the "prioritized" landscape view).
+   ─────────────────────────────────────────────────────────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
   .prototype-container {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
+    align-items: flex-start;
   }
 
   .prototype-content {
-    padding: 1.5rem 1.25rem;
-    max-width: 100%;
-    border-radius: 20px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 14px;
   }
 
-  /* Action Buttons - Optimized for touch */
-  .action-buttons {
-    top: 0.75rem;
-    right: 0.75rem;
-    gap: 0.5rem;
-  }
-
-  .action-btn {
-    padding: 0.75rem 1rem;
-    font-size: 0.8rem;
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  .action-btn svg {
-    font-size: 1rem;
-  }
-
-  /* Header - Compact for small screen */
   .prototype-header {
-    margin-bottom: 2rem;
+    margin-bottom: 0.25rem;
   }
 
-  .logo-content {
-    gap: 0.75rem;
-  }
+  .logo-icon { height: 2.75rem; }
+  .logo-text h1 { font-size: 1.25rem; }
+  .logo-text p  { font-size: 0.7rem; }
 
-  .logo-content img {
-    width: 60px;
-    height: 60px;
-  }
+  /* Action buttons — icon-only to save horizontal space */
+  .action-buttons { top: 0.5rem; right: 0.5rem; gap: 0.4rem; }
+  .action-btn { padding: 0.45rem; width: 36px; height: 36px; }
+  .action-btn span { display: none; }
 
-  .logo-content h1 {
-    font-size: 2rem;
-  }
-
-  .logo-content p {
-    font-size: 0.85rem;
-  }
-
-  /* Control Panel - Single column for 7-inch display */
+  /* 2-column control panel for landscape */
   .control-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    max-width: 400px;
-    margin: 0 auto;
+    max-width: 520px;
   }
+  .control-section { gap: 0.6rem; }
+  .control-button  { width: 110px; height: 110px; min-width: 110px; min-height: 110px; border-width: 3px; }
+  .control-icon    { font-size: 2.25rem; }
+  .control-label   { font-size: 1rem; }
+  .control-status  { font-size: 0.75rem; min-height: 1rem; }
+  .play-button.recording::after { width: 36px; height: 36px; }
+  .sound-wave { padding: 0 1.25rem; gap: 0.2rem; }
+  .wave-bar   { width: 5px; height: calc(10px + var(--bar-height, 0) * 40px); }
 
-  .control-section {
-    gap: 1rem;
+  /* Course bar — single row */
+  .course-selector-bar {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
   }
+  .course-ready-label { font-size: 0.75rem; }
+  .recording-info { font-size: 0.75rem; gap: 0.4rem; }
 
-  .control-label {
-    font-size: 1.35rem;
-  }
+  /* Transcript — shorter in landscape */
+  .live-transcript-panel   { margin-top: 0.5rem; }
+  .live-transcript-content { max-height: 100px; }
 
-  /* Control Buttons - Touch-friendly size */
-  .control-button {
-    width: 170px;
-    height: 170px;
-    border-width: 5px;
-    min-width: 170px;
-    min-height: 170px;
-  }
-
-  .control-icon {
-    font-size: 3.25rem;
-  }
-
-  .control-status {
-    font-size: 0.95rem;
-    min-height: 44px;
-  }
-
-  /* Play button recording state */
-  .play-button.recording::after {
-    width: 55px;
-    height: 55px;
-  }
-
-  /* Sound wave in button */
-  .sound-wave {
-    padding: 0 2.25rem;
-    gap: 0.4rem;
-  }
-
-  .wave-bar {
-    width: 8px;
-    height: calc(16px + var(--bar-height, 0) * 65px);
-  }
-
-  /* Guide Modal - Optimized for 7-inch */
-  .guide-modal {
-    padding: 1.75rem;
-    max-height: 88vh;
-    border-radius: 18px;
-  }
-
-  .guide-close {
-    width: 44px;
-    height: 44px;
-    font-size: 1.25rem;
-  }
-
-  .guide-logo {
-    width: 50px;
-    height: 50px;
-  }
-
-  .guide-title {
-    font-size: 1.65rem;
-  }
-
-  .guide-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .guide-step {
-    grid-template-columns: 55px 55px 1fr;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-
-  .guide-step-number,
-  .guide-step-icon {
-    width: 55px;
-    height: 55px;
-    font-size: 1.75rem;
-  }
-
-  .guide-step-title {
-    font-size: 1.05rem;
-  }
-
-  .guide-step-text {
-    font-size: 0.85rem;
-    line-height: 1.5;
-  }
-
-  .guide-button {
-    padding: 0.9rem;
-    font-size: 1rem;
-    min-height: 50px;
-  }
+  .guide-modal { max-height: 92vh; overflow-y: auto; }
 }
 
-/* Tablet and below */
-@media (max-width: 768px) {
-  .prototype-content {
-    padding: 2rem 1.5rem;
-  }
+/* ── min-width: 480px — Larger phones (portrait) ───────────────────────── */
+@media (min-width: 480px) {
+  .prototype-container { padding: 1rem; }
+  .prototype-content   { padding: 1.5rem 1.25rem; border-radius: 20px; }
 
-  .action-buttons {
-    top: 1rem;
-    right: 1rem;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+  /* Show text labels in action buttons */
+  .action-btn span { display: inline; }
+  .action-btn { padding: 0.65rem 1rem; width: auto; height: auto; }
+  .action-btn svg { font-size: 1rem; }
 
-  .action-btn {
-    padding: 0.65rem 1rem;
-    font-size: 0.85rem;
-  }
+  .logo-icon    { height: 4rem; }
+  .logo-text h1 { font-size: 1.75rem; }
+  .logo-text p  { font-size: 0.875rem; }
+  .prototype-header { margin-bottom: 1rem; }
 
-  .action-btn svg {
-    font-size: 1rem;
-  }
+  .control-panel   { max-width: 360px; }
+  .control-section { gap: 1.25rem; }
+  .control-button  { width: 150px; height: 150px; border-width: 4px; }
+  .control-icon    { font-size: 3rem; }
+  .control-label   { font-size: 1.25rem; }
+  .control-status  { font-size: 0.875rem; min-height: 1.5rem; }
+  .play-button.recording::after { width: 48px; height: 48px; }
+  .sound-wave { padding: 0 2rem; gap: 0.3rem; }
+  .wave-bar   { width: 7px; height: calc(14px + var(--bar-height, 0) * 58px); }
 
-  .guide-modal {
-    padding: 2rem;
-    max-height: 85vh;
+  /* Course bar — row */
+  .course-selector-bar {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    margin-bottom: 1.25rem;
   }
+  .course-ready-label { font-size: 0.85rem; text-align: left; }
+  .recording-info { font-size: 0.9rem; justify-content: flex-start; }
 
-  .guide-header {
-    flex-direction: column;
-    text-align: center;
-  }
+  .live-transcript-content { max-height: 200px; }
 
-  .guide-title {
-    font-size: 1.75rem;
-  }
+  /* Guide modal */
+  .guide-modal   { padding: 1.5rem; border-radius: 18px; }
+  .guide-close   { width: 38px; height: 38px; top: 1rem; right: 1rem; }
+  .guide-title   { font-size: 1.5rem; }
+  .guide-subtitle { font-size: 0.85rem; }
 
-  .guide-step {
-    grid-template-columns: 50px 50px 1fr;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-
-  .guide-step-number {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-  }
-
-  .guide-step-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-  }
-
-  .guide-step-title {
-    font-size: 1.1rem;
-  }
-
-  .guide-step-text {
-    font-size: 0.85rem;
-  }
-
-  .logo-text h1 {
-    font-size: 2.25rem;
-  }
-
-  .logo-text p {
-    font-size: 1rem;
-  }
-
-  .control-panel {
-    grid-template-columns: 1fr;
-    gap: 3rem;
-  }
-
-  .control-button {
-    width: 180px;
-    height: 180px;
-  }
-
-  .control-icon {
-    font-size: 3.5rem;
-  }
-
-  .control-label {
-    font-size: 1.5rem;
-  }
-
-  .control-status {
-    font-size: 1rem;
-  }
-
-  .sound-wave {
-    padding: 0 2.5rem;
-    gap: 0.4rem;
-  }
-
-  .wave-bar {
-    width: 8px;
-    height: calc(18px + var(--bar-height, 0) * 70px);
-  }
+  /* Guide steps: number + icon + content columns */
+  .guide-step { grid-template-columns: 50px 50px 1fr; gap: 0.75rem; text-align: left; padding: 1rem; }
+  .guide-step-number,
+  .guide-step-icon   { margin: 0; width: 50px; height: 50px; font-size: 1.5rem; }
+  .guide-step-title  { font-size: 1rem; }
+  .guide-step-text   { font-size: 0.8rem; }
+  .guide-button      { padding: 0.9rem; font-size: 1rem; }
 }
 
-@media (max-width: 480px) {
-  .prototype-container {
-    padding: 1rem;
-  }
+/* ── min-width: 600px — 7-inch display (800×480 landscape) / Small tablets ─ */
+@media (min-width: 600px) {
+  .prototype-container { padding: 1rem; }
+  .prototype-content   { padding: 1.5rem 1.25rem; border-radius: 20px; max-width: 100%; }
 
-  .prototype-content {
-    padding: 1.5rem 1rem;
-    border-radius: 20px;
-  }
+  .action-buttons { top: 0.75rem; right: 0.75rem; gap: 0.5rem; }
+  .action-btn     { padding: 0.75rem 1rem; font-size: 0.8rem; min-height: 44px; min-width: 44px; }
+  .action-btn svg { font-size: 1rem; }
 
-  .action-buttons {
-    top: 0.75rem;
-    right: 0.75rem;
-  }
+  .logo-icon    { height: 4.5rem; }
+  .logo-text h1 { font-size: 2rem; }
+  .logo-text p  { font-size: 0.9rem; }
 
-  .action-btn span {
-    display: none;
-  }
+  /* 2-column control panel */
+  .control-panel   { grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 600px; }
+  .control-section { gap: 1rem; }
+  .control-label   { font-size: 1.35rem; }
+  .control-button  { width: 170px; height: 170px; min-width: 170px; min-height: 170px; border-width: 5px; }
+  .control-icon    { font-size: 3.25rem; }
+  .control-status  { font-size: 0.95rem; min-height: 44px; }
+  .play-button.recording::after { width: 55px; height: 55px; }
+  .sound-wave { padding: 0 2.25rem; gap: 0.4rem; }
+  .wave-bar   { width: 8px; height: calc(16px + var(--bar-height, 0) * 65px); }
 
-  .action-btn {
-    padding: 0.75rem;
-    width: 44px;
-    height: 44px;
-    justify-content: center;
-  }
+  .course-selector-bar     { width: auto; margin-bottom: 1.5rem; }
+  .live-transcript-content { max-height: 220px; }
+  .live-transcript-panel   { margin-top: 1.25rem; border-radius: 18px; }
 
-  .guide-modal {
-    padding: 1.5rem;
-    border-radius: 16px;
-  }
-
-  .guide-close {
-    width: 36px;
-    height: 36px;
-    top: 1rem;
-    right: 1rem;
-  }
-
-  .guide-logo {
-    width: 50px;
-    height: 50px;
-  }
-
-  .guide-title {
-    font-size: 1.5rem;
-  }
-
-  .guide-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .guide-step {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-    text-align: center;
-  }
-
+  /* Guide */
+  .guide-modal   { padding: 1.75rem; max-height: 88vh; border-radius: 18px; }
+  .guide-close   { width: 44px; height: 44px; font-size: 1.25rem; }
+  .guide-logo    { width: 50px; height: 50px; }
+  .guide-title   { font-size: 1.65rem; }
+  .guide-step    { grid-template-columns: 55px 55px 1fr; gap: 0.75rem; padding: 1rem; }
   .guide-step-number,
-  .guide-step-icon {
-    margin: 0 auto;
-  }
+  .guide-step-icon   { width: 55px; height: 55px; font-size: 1.75rem; }
+  .guide-step-title  { font-size: 1.05rem; }
+  .guide-step-text   { font-size: 0.85rem; line-height: 1.5; }
+  .guide-button      { padding: 0.9rem; font-size: 1rem; min-height: 50px; }
+}
 
-  .guide-step-title {
-    font-size: 1rem;
-  }
+/* ── min-width: 768px — Tablets ──────────────────────────────────────── */
+@media (min-width: 768px) {
+  .prototype-content { padding: 2rem 1.5rem; }
 
-  .guide-step-text {
-    font-size: 0.8rem;
-  }
+  .action-buttons { top: 1rem; right: 1rem; flex-direction: row; gap: 0.75rem; }
+  .action-btn     { padding: 0.65rem 1rem; font-size: 0.85rem; }
+  .action-btn svg { font-size: 1rem; }
 
-  .guide-button {
-    padding: 0.85rem;
-    font-size: 1rem;
-  }
+  .logo-icon    { height: 5rem; padding: 10px; }
+  .logo-text h1 { font-size: 2.25rem; }
+  .logo-text p  { font-size: 1rem; }
+  .prototype-header { margin-bottom: 1rem; }
 
-  .logo-icon {
-    width: 60px;
-    height: 60px;
-  }
+  .control-panel   { grid-template-columns: 1fr 1fr; gap: 3rem; max-width: 700px; }
+  .control-section { gap: 1.5rem; }
+  .control-button  { width: 180px; height: 180px; border-width: 5px; }
+  .control-icon    { font-size: 3.5rem; }
+  .control-label   { font-size: 1.5rem; }
+  .control-status  { font-size: 1rem; min-height: 1.5rem; }
+  .play-button.recording::after { width: 58px; height: 58px; }
+  .sound-wave { padding: 0 2.5rem; gap: 0.4rem; }
+  .wave-bar   { width: 8px; height: calc(18px + var(--bar-height, 0) * 70px); }
 
-  .logo-icon svg {
-    width: 35px;
-    height: 35px;
-  }
+  .course-selector-bar { flex-direction: row; align-items: center; margin-bottom: 1.5rem; }
+  .recording-info { justify-content: flex-start; }
+  .live-transcript-content { max-height: 250px; }
 
-  .logo-text h1 {
-    font-size: 1.75rem;
-  }
+  .guide-modal   { padding: 2rem; max-height: 85vh; border-radius: 20px; }
+  .guide-close   { width: 40px; height: 40px; top: 1.5rem; right: 1.5rem; font-size: 1.35rem; }
+  .guide-header  { flex-direction: row; text-align: left; }
+  .guide-title   { font-size: 1.75rem; }
+  .guide-subtitle { font-size: 0.9rem; }
+  .guide-step    { grid-template-columns: 50px 50px 1fr; gap: 0.75rem; padding: 1rem; }
+  .guide-step-number,
+  .guide-step-icon   { width: 50px; height: 50px; font-size: 1.75rem; }
+  .guide-step-title  { font-size: 1.1rem; }
+  .guide-step-text   { font-size: 0.85rem; }
+}
 
-  .logo-text p {
-    font-size: 0.875rem;
-  }
+/* ── min-width: 1024px — Desktop ─────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .prototype-container { padding: 2rem; align-items: center; }
+  .prototype-content   { padding: 3rem; border-radius: 30px; max-width: 1200px; }
 
-  .control-button {
-    width: 150px;
-    height: 150px;
-    border-width: 4px;
-  }
+  .action-buttons { top: 1.5rem; right: 1.5rem; gap: 0.75rem; }
+  .action-btn     { padding: 0.75rem 1.25rem; font-size: 0.95rem; }
+  .action-btn svg { font-size: 1.1rem; }
 
-  .control-icon {
-    font-size: 3rem;
-  }
+  .logo-icon    { height: 5rem; }
+  .logo-text h1 { font-size: 2rem; }
+  .logo-text p  { font-size: 1rem; }
+  .prototype-header { margin-bottom: 1rem; }
 
-  .control-label {
-    font-size: 1.25rem;
-  }
+  .control-panel   { grid-template-columns: 1fr 1fr; gap: 4rem; max-width: 900px; }
+  .control-section { gap: 1.5rem; }
+  .control-button  { width: 200px; height: 200px; border-width: 6px; }
+  .control-icon    { font-size: 4rem; }
+  .control-label   { font-size: 1.75rem; }
+  .control-status  { font-size: 1.125rem; min-height: 1.5rem; }
+  .play-button.recording::after { width: 60px; height: 60px; }
+  .sound-wave { padding: 0 3rem; gap: 0.5rem; }
+  .wave-bar   { width: 10px; height: calc(20px + var(--bar-height, 0) * 80px); }
 
-  .control-status {
-    font-size: 0.875rem;
-  }
+  .course-selector-bar     { width: 250px; margin-bottom: 1.5rem; }
+  .live-transcript-panel   { margin-top: 1.5rem; border-radius: 20px; }
+  .live-transcript-header  { padding: 1rem 1.5rem; }
+  .live-transcript-header h3 { font-size: 0.95rem; }
+  .live-transcript-content { max-height: 300px; padding: 1rem 1.5rem; }
+  .chunk-count { font-size: 0.8rem; }
+  .chunk-timestamp { font-size: 0.8rem; min-width: 75px; }
+  .chunk-text  { font-size: 0.9rem; }
 
-  .play-button.recording::after {
-    width: 50px;
-    height: 50px;
-  }
-
-  .sound-wave {
-    padding: 0 2rem;
-    gap: 0.3rem;
-  }
-
-  .wave-bar {
-    width: 6px;
-    height: calc(15px + var(--bar-height, 0) * 55px);
-  }
+  .guide-modal    { padding: 2.5rem; border-radius: 24px; max-width: 700px; }
+  .guide-close    { width: 40px; height: 40px; top: 1.5rem; right: 1.5rem; font-size: 1.5rem; }
+  .guide-logo     { width: 60px; height: 60px; }
+  .guide-title    { font-size: 2rem; }
+  .guide-subtitle { font-size: 0.95rem; }
+  .guide-content  { gap: 1.5rem; margin-bottom: 2rem; }
+  .guide-step     { grid-template-columns: 60px 60px 1fr; gap: 1rem; padding: 1.25rem; }
+  .guide-step-number,
+  .guide-step-icon   { width: 60px; height: 60px; font-size: 2rem; }
+  .guide-step-icon   { font-size: 1.75rem; }
+  .guide-step-title  { font-size: 1.25rem; }
+  .guide-step-text   { font-size: 0.95rem; }
+  .guide-button      { padding: 1rem; font-size: 1.1rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Course Selector Bar
+   Course Selector Bar — base: full-width column on mobile
    ═══════════════════════════════════════════════════════════════════════ */
 .course-selector-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem 1.25rem;
+  gap: 0.5rem;
+  width: fit-content;
+  margin: 0 auto 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--brand-tertiary);
   border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
 }
 
@@ -1112,8 +981,8 @@
   border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 0.95rem;
+  color: var(--accent-secondary);
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1137,15 +1006,17 @@
 
 .course-ready-label {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 .recording-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -1155,6 +1026,7 @@
   border-radius: 50%;
   background: #ef4444;
   animation: pulse-dot 1s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse-dot {
@@ -1227,15 +1099,16 @@
 .no-courses {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--brand-tertiary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Live Transcript Panel
+   Live Transcript Panel — base: compact mobile
    ═══════════════════════════════════════════════════════════════════════ */
 .live-transcript-panel {
-  margin-top: 1.5rem;
-  border-radius: 20px;
+  margin-top: 1rem;
+  width: 100%;
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
@@ -1246,30 +1119,30 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem;
   background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .live-transcript-header h3 {
   color: white;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .chunk-count {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .live-transcript-content {
-  max-height: 300px;
+  max-height: 160px;
   overflow-y: auto;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem;
 }
 
 .live-transcript-empty {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--brand-tertiary);
   text-align: center;
   font-style: italic;
   padding: 1rem 0;
@@ -1296,16 +1169,16 @@
 .chunk-timestamp {
   color: var(--accent-primary);
   font-family: "Courier New", monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
-  min-width: 75px;
+  min-width: 70px;
 }
 
 .chunk-text {
   color: rgba(255, 255, 255, 0.85);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
@@ -1330,17 +1203,3 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Responsive for new elements */
-@media (max-width: 768px) {
-  .course-selector-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  .recording-info {
-    justify-content: center;
-  }
-  .live-transcript-content {
-    max-height: 200px;
-  }
-}

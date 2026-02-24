@@ -19,28 +19,29 @@ export default function SidebarClient() {
         aria-label="Open sidebar"
         className="
           fixed top-5 left-0 z-50
-          px-2 py-3
+          w-[50px] h-[50px]
 
           bg-gradient-to-b from-[#9d8adb] to-[#4c4172]
           text-white
-          shadow-lg
+          shadow-[0_4px_12px_rgba(0,0,0,0.2)]
 
-          rounded-r-xl
+          rounded-r-full
 
           flex items-center justify-center
 
           transition-all duration-300
-          hover:pl-3
+          hover:scale-110 hover:shadow-[0_6px_18px_rgba(0,0,0,0.25)]
+          active:scale-95
           md:hidden
         "
       >
-        <Menu size={16} />
+        <Menu size={20} />
       </button>
 
       {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden edu-fade-in"
           onClick={() => setOpen(false)}
         />
       )}

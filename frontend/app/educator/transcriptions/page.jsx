@@ -81,7 +81,7 @@ export default function TranscriptionsPage() {
         flex-1
         mt-4 sm:mt-6
         flex flex-col
-        lg:grid lg:grid-cols-[360px_1fr]
+        lg:grid lg:grid-cols-[300px_1fr] xl:grid-cols-[340px_1fr] 2xl:grid-cols-[380px_1fr]
         gap-4 sm:gap-6
         min-h-0
       ">
@@ -93,6 +93,8 @@ export default function TranscriptionsPage() {
           pb-6
           rounded-xl
           flex-shrink-0
+          max-h-[45vh] lg:max-h-none
+          edu-scrollbar
         ">
           <div className="space-y-4 sm:space-y-6 px-1">
             {filtered.map((t) => (

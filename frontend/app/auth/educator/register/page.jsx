@@ -158,34 +158,34 @@ export default function EducatorRegister() {
 
   return (
     <div className="container">
-      <button className="btn-back fixed top-4 right-4" onClick={handleBack}>
+      <button className="btn-back fixed top-4 right-4 z-50" onClick={handleBack}>
         <FiArrowLeft size={18} />
         Back
       </button>
-      <div className="neu-card w-full max-w-md mx-auto justify-center">
+      <div className="neu-card w-full max-w-md mx-3 sm:mx-auto">
         {/* Title */}
-        <div className="flex flex-col items-center mb-6 mt-2">
-          <span className="font-extrabold text-4xl text-center mb-2">
+        <div className="flex flex-col items-center mb-3 sm:mb-4 mt-1 sm:mt-2">
+          <span className="text-[#4c4172] font-extrabold text-2xl sm:text-3xl md:text-4xl text-center mb-2">
             Educator Registration
           </span>
-          <span className="text-center text-md mb-2">
+          <span className="text-[#4c4172] text-center text-xs sm:text-sm md:text-base mb-2">
             {step === 1 && "Step 1 of 2: Personal Details"}
             {step === 2 && "Step 2 of 2: Account Details"}
           </span>
         </div>
 
         {/* Success message */}
-        {success && <p className="success-msg mb-4 text-center">{success}</p>}
+        {success && <p className="success-msg mb-3 sm:mb-4 text-center">{success}</p>}
 
         {/* Error message */}
-        {error && <p className="error-msg mb-4 text-center">{error}</p>}
+        {error && <p className="error-msg mb-3 sm:mb-4 text-center">{error}</p>}
 
         {/* Step 1: Personal Details */}
         {step === 1 && (
-          <form onSubmit={handleStep1Submit} className="space-y-6">
+          <form onSubmit={handleStep1Submit} className="space-y-4 sm:space-y-6">
             {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Full Name
               </label>
               <input
@@ -199,7 +199,7 @@ export default function EducatorRegister() {
 
             {/* Department Specialization */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Department Specialization
               </label>
               <select
@@ -218,7 +218,7 @@ export default function EducatorRegister() {
 
             {/* Date of Birth */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Date of Birth
               </label>
               <input
@@ -231,7 +231,7 @@ export default function EducatorRegister() {
 
             {/* Gender */}
             <div>
-              <label className="block text-sm font-medium mb-2">Gender</label>
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">Gender</label>
               <select
                 className="neu-input"
                 value={gender}
@@ -253,10 +253,10 @@ export default function EducatorRegister() {
 
         {/* Step 2: Account Details */}
         {step === 2 && (
-          <form onSubmit={handleStep2Submit} className="space-y-6">
+          <form onSubmit={handleStep2Submit} className="space-y-4 sm:space-y-6">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Username
               </label>
               <input
@@ -270,7 +270,7 @@ export default function EducatorRegister() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Email Address
               </label>
               <input
@@ -284,7 +284,7 @@ export default function EducatorRegister() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Password
               </label>
               <div className="relative">
@@ -328,7 +328,7 @@ export default function EducatorRegister() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="text-[#4c4172] block text-sm font-medium mb-2">
                 Confirm Password
               </label>
               <div className="relative">
@@ -359,9 +359,9 @@ export default function EducatorRegister() {
         )}
 
         {/* Footer */}
-        <p className="mt-6 text-center text-sm">
+        <p className="text-[#4c4172] mt-4 sm:mt-6 text-center text-xs sm:text-sm">
           Already have an account?{" "}
-          <a href="/auth/educator/login" className="font-semibold hover:underline">
+          <a href="/auth/educator/login" className="text-[#4c4172] font-semibold hover:underline">
             Log In
           </a>
         </p>

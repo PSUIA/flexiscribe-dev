@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import html2pdf from "html2pdf.js";
 import MessageModal from "@/components/shared/MessageModal";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import "./styles.css";
 
 /**
@@ -197,6 +198,7 @@ export default function ReviewerEditorPage() {
 
   return (
     <div className={`reviewer-editor-container ${darkMode ? 'dark-mode' : ''}`}>
+      {loading && <LoadingScreen />}
       {/* Toolbar */}
       <div className="editor-toolbar">
         <div className="toolbar-left">
@@ -227,12 +229,7 @@ export default function ReviewerEditorPage() {
 
       {/* Editor */}
       <div className="editor-content">
-        {loading ? (
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>Loading document...</p>
-          </div>
-        ) : (
+        {!loading && (
           <div className="tinymce-wrapper">
             <Editor
               key={contentLoaded ? 'loaded' : 'loading'}

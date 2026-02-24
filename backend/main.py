@@ -110,7 +110,7 @@ def start_transcription(req: StartRequest):
     # Start whisper worker thread
     t1 = threading.Thread(
         target=whisper_worker,
-        args=(session.text_queue, session.stop_event),
+        args=(session.text_queue, session.stop_event, session),
         daemon=True,
     )
 
@@ -195,9 +195,11 @@ def get_session_status(session_id: str):
         "educator_id": session.educator_id,
         "status": session.status,
         "duration": session.duration_formatted,
+        "live_chunks_count": len(session.live_chunks),
         "chunks_count": len(session.transcript_chunks),
         "summaries_count": len(session.minute_summaries),
         "has_final_summary": session.final_summary is not None,
+        "live_transcript": session.get_live_transcript_json(),
         "transcript": session.get_transcript_json(),
         "minute_summaries": session.get_summary_json(),
     }
@@ -214,16 +216,27 @@ def get_live_transcript(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
 
     def event_stream():
-        last_chunk_count = 0
+        last_live_count = 0
+        last_summary_count = 0
         while session.status == "running":
-            current_count = len(session.transcript_chunks)
-            if current_count > last_chunk_count:
-                # Send new chunks
-                new_chunks = session.transcript_chunks[last_chunk_count:]
+            # Stream new live chunks (every ~10s) for real-time display
+            current_live = len(session.live_chunks)
+            if current_live > last_live_count:
+                new_chunks = session.live_chunks[last_live_count:]
                 for chunk in new_chunks:
-                    data = json.dumps(chunk)
+                    data = json.dumps({"type": "live_chunk", **chunk})
                     yield f"data: {data}\n\n"
-                last_chunk_count = current_count
+                last_live_count = current_live
+
+            # Stream new minute summaries as they complete
+            current_summaries = len(session.minute_summaries)
+            if current_summaries > last_summary_count:
+                new_summaries = session.minute_summaries[last_summary_count:]
+                for summary in new_summaries:
+                    data = json.dumps({"type": "minute_summary", **summary})
+                    yield f"data: {data}\n\n"
+                last_summary_count = current_summaries
+
             time.sleep(1)
 
         # Send final event

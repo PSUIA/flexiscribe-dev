@@ -38,17 +38,18 @@ export default function SectionCard({
       }}
       className={`
         w-full
-        rounded-[26px] sm:rounded-[36px]
+        rounded-[20px] sm:rounded-[30px] lg:rounded-[36px]
         bg-gradient-to-br from-[#9d8adb] to-[#4c4172]
         p-[5px] sm:p-[6px]
-        shadow-[0_22px_45px_rgba(76,65,114,0.35)]
+        shadow-[0_4px_20px_rgba(0,0,0,0.08)]
         cursor-pointer
-        transition
+        transition-all duration-300
+        hover:translate-y-[-6px] hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
         ${active ? "ring-2 ring-[#9b8ae0]" : ""}
       `}
     >
       {/* INNER */}
-      <div className="rounded-[22px] sm:rounded-[30px] bg-white overflow-hidden">
+      <div className="rounded-[22px] sm:rounded-[30px] bg-white dark:bg-[#2d2640] overflow-hidden">
 
         {/* HEADER */}
         <div
@@ -95,27 +96,27 @@ export default function SectionCard({
         </div>
 
         {/* BODY */}
-        <div className="px-4 sm:px-6 py-5 sm:py-8 text-[#6b5fcf]">
+        <div className="px-4 sm:px-6 py-5 sm:py-8 text-[#6b5fcf] dark:text-[#c5b8f5]">
 
           {/* TOP */}
           <div className="flex justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
-              <Users size={24} className="text-[#8f7cc8]" />
-              <span className="font-semibold text-sm sm:text-lg text-[#8f7cc8]">
+              <Users size={20} className="text-[#8f7cc8] dark:text-[#b0a8d4] sm:w-6 sm:h-6" />
+              <span className="font-semibold text-sm sm:text-lg text-[#8f7cc8] dark:text-[#b0a8d4]">
                 {students ?? 0}
               </span>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="font-semibold text-sm sm:text-lg text-[#8f7cc8]">
+              <span className="font-semibold text-sm sm:text-lg text-[#8f7cc8] dark:text-[#b0a8d4]">
                 Lecture
               </span>
-              <BookOpen size={24} className="text-[#8f7cc8]" />
+              <BookOpen size={20} className="text-[#8f7cc8] dark:text-[#b0a8d4] sm:w-6 sm:h-6" />
             </div>
           </div>
 
           {/* DIVIDER */}
-          <div className="my-4 sm:my-6 h-px bg-[#e3def7]" />
+          <div className="my-4 sm:my-6 h-px bg-[#e3def7] dark:bg-[rgba(139,127,199,0.3)]" />
 
           {/* BOTTOM */}
           <div
@@ -124,21 +125,21 @@ export default function SectionCard({
               text-xs sm:text-base
             "
           >
-            <span className="font-semibold text-[#8f7cc8]">
+            <span className="font-semibold text-[#8f7cc8] dark:text-[#b0a8d4]">
               ROOM : {room || "-"}
             </span>
 
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="text-right leading-tight">
-                <div className="font-semibold text-[#8f7cc8]">
+                <div className="font-semibold text-[#8f7cc8] dark:text-[#b0a8d4]">
                   {day || "-"}
                 </div>
-                <div className="text-[10px] sm:text-sm text-[#8f7cc8]/80">
+                <div className="text-[10px] sm:text-sm text-[#8f7cc8]/80 dark:text-[#b0a8d4]/70">
                   {time || "-"}
                 </div>
               </div>
 
-              <Clock size={20} className="text-[#8f7cc8]" />
+              <Clock size={18} className="text-[#8f7cc8] dark:text-[#b0a8d4] sm:w-5 sm:h-5" />
             </div>
           </div>
         </div>

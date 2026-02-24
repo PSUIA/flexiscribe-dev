@@ -1,5 +1,5 @@
 /**
- * Ollama API integration for Gemma 3 1B
+ * Ollama API integration for Gemma 3 4B
  */
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
@@ -55,25 +55,25 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Get a rotating slice of the transcript for each batch
+ * Get a rotating slice of the summary for each batch
  * This prevents mode collapse by exposing the model to different content each attempt
  */
-function getTranscriptSlice(
-  transcript: string,
+function getSummarySlice(
+  summary: string,
   batchIndex: number,
   windowSize: number = 2000,
   overlap: number = 200
 ): string {
   const step = windowSize - overlap;
-  const start = (batchIndex * step) % Math.max(transcript.length - windowSize, 1);
-  const end = Math.min(start + windowSize, transcript.length);
+  const start = (batchIndex * step) % Math.max(summary.length - windowSize, 1);
+  const end = Math.min(start + windowSize, summary.length);
   
   // If we've wrapped around and the slice is too small, start from beginning
-  if (end - start < windowSize / 2 && transcript.length > windowSize) {
-    return transcript.slice(0, windowSize);
+  if (end - start < windowSize / 2 && summary.length > windowSize) {
+    return summary.slice(0, windowSize);
   }
   
-  return transcript.slice(start, end);
+  return summary.slice(start, end);
 }
 
 // ============================================================================
@@ -547,7 +547,7 @@ export async function getBestAvailableModel(): Promise<string> {
  * Implements batch processing with deduplication to ensure exact count
  */
 export async function generateQuizWithGemma(
-  transcript: string,
+  summary: string,
   type: 'MCQ' | 'FILL_IN_BLANK' | 'FLASHCARD',
   difficulty: 'EASY' | 'MEDIUM' | 'HARD',
   count: number
@@ -580,9 +580,9 @@ export async function generateQuizWithGemma(
     while (allValidItems.length < count && attempts < MAX_ATTEMPTS) {
       const remainingCount = count - allValidItems.length;
       
-      // Get rotating transcript slice to prevent mode collapse
-      const transcriptSlice = getTranscriptSlice(transcript, attempts);
-      console.log(`\nBatch ${attempts + 1}: Using transcript slice (chars ${attempts * 1200 % transcript.length}-${(attempts * 1200 % transcript.length) + transcriptSlice.length})`);
+      // Get rotating summary slice to prevent mode collapse
+      const summarySlice = getSummarySlice(summary, attempts);
+      console.log(`\nBatch ${attempts + 1}: Using summary slice (chars ${attempts * 1200 % summary.length}-${(attempts * 1200 % summary.length) + summarySlice.length})`);
       
       // Dynamic batch size based on recent failure rate
       let batchSize = BASE_BATCH_SIZE;
@@ -613,7 +613,7 @@ export async function generateQuizWithGemma(
       console.log(`Batch ${attempts + 1}: Requesting ${batchCount} items (${allValidItems.length}/${count} collected)`);
       
       // Generate batch with rotating content and concept memory
-      const batchPrompt = buildPrompt(type, difficulty, batchCount, transcriptSlice, recentConcepts);
+      const batchPrompt = buildPrompt(type, difficulty, batchCount, summarySlice, recentConcepts);
       const rawResponse = await generateWithOllama(batchPrompt, {
         temperature,
         requireJson: true,
@@ -731,16 +731,16 @@ function buildPrompt(
   type: 'MCQ' | 'FILL_IN_BLANK' | 'FLASHCARD',
   difficulty: 'EASY' | 'MEDIUM' | 'HARD',
   count: number,
-  transcript: string,
+  summary: string,
   recentConcepts: string[] = []
 ): string {
   switch (type) {
     case 'MCQ':
-      return buildMCQPrompt(difficulty, count, transcript, recentConcepts);
+      return buildMCQPrompt(difficulty, count, summary, recentConcepts);
     case 'FILL_IN_BLANK':
-      return buildFillInBlankPrompt(difficulty, count, transcript, recentConcepts);
+      return buildFillInBlankPrompt(difficulty, count, summary, recentConcepts);
     case 'FLASHCARD':
-      return buildFlashcardPrompt(difficulty, count, transcript, recentConcepts);
+      return buildFlashcardPrompt(difficulty, count, summary, recentConcepts);
     default:
       throw new Error(`Unknown quiz type: ${type}`);
   }
@@ -749,7 +749,7 @@ function buildPrompt(
 /**
  * Build MCQ generation prompt with all quality controls
  */
-function buildMCQPrompt(difficulty: string, count: number, transcript: string, recentConcepts: string[] = []): string {
+function buildMCQPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
   const difficultyGuidelines = {
     EASY: '- Focus on basic facts, definitions, and direct recall\n- Questions should test if student remembers key information\n- Correct answer should be clearly stated in the content',
     MEDIUM: '- Test understanding and application of concepts\n- Questions should require connecting ideas\n- Choices should be plausible but distinguishable',
@@ -763,21 +763,21 @@ ${recentConcepts.map(c => `- ${c}`).join('\n')}
 
 You MUST cover DIFFERENT concepts not listed above.` : '';
 
-  return `You are an expert educational quiz creator. Your task is to create multiple-choice questions based ONLY on the provided content.
+  return `You are an expert educational quiz creator. Your task is to create multiple-choice questions based ONLY on the provided summary.
 
-CONTENT TO ANALYZE:
-${transcript}
+SUMMARY TO ANALYZE:
+${summary}
 ${conceptMemory}
 
 ⚠️ CRITICAL - STAY ON TOPIC:
-- Generate questions ONLY about the topics, concepts, and facts in the content above
+- Generate questions ONLY about the topics, concepts, and facts in the summary above
 - DO NOT generate questions from your general knowledge about other subjects
-- If the content is about linguistics, DO NOT create biology questions
-- If the content is about history, DO NOT create science questions
-- Your questions MUST directly relate to what you just read in the CONTENT section
-- Each question must reference specific information that appears in the content
+- If the summary is about linguistics, DO NOT create biology questions
+- If the summary is about history, DO NOT create science questions
+- Your questions MUST directly relate to what you just read in the SUMMARY section
+- Each question must reference specific information that appears in the summary
 
-YOUR TASK: Create exactly ${count} multiple-choice questions at ${difficulty} difficulty about THE TOPICS IN THE CONTENT ABOVE.
+YOUR TASK: Create exactly ${count} multiple-choice questions at ${difficulty} difficulty about THE TOPICS IN THE SUMMARY ABOVE.
 
 DIFFICULTY GUIDELINES:
 ${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
@@ -787,22 +787,22 @@ QUALITY REQUIREMENTS:
 2. All 4 choices must be grammatically consistent
 3. Wrong choices (distractors) must be plausible but clearly incorrect
 4. Avoid "all of the above" or "none of the above" options
-5. The explanation must reference specific content from the transcript
+5. The explanation must reference specific content from the summary
 
 CRITICAL CONSTRAINT:
-- The correct answer MUST be explicitly stated or directly paraphrased from the content
-- Do NOT infer information not clearly mentioned in the content
-- Do NOT create questions about topics not covered in the content
-- Stick closely to the facts and terminology used in the source material
+- The correct answer MUST be explicitly stated or directly paraphrased from the summary
+- Do NOT infer information not clearly mentioned in the summary
+- Do NOT create questions about topics not covered in the summary
+- Stick closely to the facts and terminology used in the summary
 
 NO REDUNDANCY:
-- Each question MUST cover a DIFFERENT concept, fact, or aspect from the content
+- Each question MUST cover a DIFFERENT concept, fact, or aspect from the summary
 - Do NOT ask about the same topic twice in different words
-- Spread questions across the entire content, not just one section
+- Spread questions across the entire summary, not just one section
 - Avoid questions that test the same knowledge point
 
 CITATION REQUIREMENT:
-- Every correct answer must be traceable to a specific sentence in the content
+- Every correct answer must be traceable to a specific sentence in the summary
 - If you cannot find supporting text, DO NOT use that question
 
 EXPLANATION RULE (MANDATORY - CRITICAL FOR VALIDATION):
@@ -818,18 +818,18 @@ Good explanation example (WILL PASS VALIDATION):
 
 SELF-CHECK BEFORE FINAL OUTPUT (FAIL = DISCARD ITEM):
 For each question:
-1. TOPIC CHECK: Is this question about a topic actually mentioned in the content? If NO → discard immediately
-2. Find the exact sentence in content that supports the correct answer
-3. Verify all incorrect options contradict or are absent from the content  
-4. Verify explanation directly references the supporting content
+1. TOPIC CHECK: Is this question about a topic actually mentioned in the summary? If NO → discard immediately
+2. Find the exact sentence in the summary that supports the correct answer
+3. Verify all incorrect options contradict or are absent from the summary  
+4. Verify explanation directly references the supporting summary
 5. CRITICAL: Does the explanation explicitly mention words from the correct choice? If NO → discard
 6. Could the explanation also justify ANY wrong option? If YES → discard
 7. Is this question similar to any previously generated? If YES → discard
 If any check fails, regenerate that item silently or reduce the count.
 
 ⚠️ BEFORE YOU START:
-Read the content above carefully. Identify the main topic (e.g., is it about language? science? history? math?).
-ALL your questions must be about THAT topic and use information from THAT content.
+Read the summary above carefully. Identify the main topic (e.g., is it about language? science? history? math?).
+ALL your questions must be about THAT topic and use information from THAT summary.
 DO NOT default to generic science or other memorized questions.
 
 OUTPUT FORMAT (JSON only, no markdown, no extra text):
@@ -838,23 +838,23 @@ OUTPUT FORMAT (JSON only, no markdown, no extra text):
   "difficulty": "${difficulty.toLowerCase()}",
   "items": [
     {
-      "question": "[Question about the ACTUAL topic in the content above]",
+      "question": "[Question about the ACTUAL topic in the summary above]",
       "choices": [
-        "[Specific answer from content]",
-        "[Plausible distractor related to content topic]",
+        "[Specific answer from summary]",
+        "[Plausible distractor related to summary topic]",
         "[Another plausible distractor]",
         "[Third plausible distractor]"
       ],
       "answerIndex": 0,
-      "explanation": "The correct answer is '[choice text]' because [specific fact from the content that supports this answer]."
+      "explanation": "The correct answer is '[choice text]' because [specific fact from the summary that supports this answer]."
     }
   ]
 }
 
-CRITICAL - ACTUAL CONTENT ONLY:
-- DO NOT use generic placeholders like "Option A", "Wrong answer 1", "Correct answer from content"
-- Every choice must be a SPECIFIC, CONCRETE answer derived from the actual content
-- The question must reference specific facts, terms, or concepts from the content
+CRITICAL - ACTUAL SUMMARY ONLY:
+- DO NOT use generic placeholders like "Option A", "Wrong answer 1", "Correct answer from summary"
+- Every choice must be a SPECIFIC, CONCRETE answer derived from the actual summary
+- The question must reference specific facts, terms, or concepts from the summary
 - The explanation must quote or paraphrase the exact supporting sentence
 
 RANDOMIZATION WILL BE HANDLED AUTOMATICALLY:
@@ -872,7 +872,7 @@ CRITICAL RULES:
 /**
  * Build fill-in-blank generation prompt
  */
-function buildFillInBlankPrompt(difficulty: string, count: number, transcript: string, recentConcepts: string[] = []): string {
+function buildFillInBlankPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
   const difficultyGuidelines = {
     EASY: '- Remove simple key terms that are clearly defined\n- Answer should be a single word or short phrase\n- The blank should be easy to identify from context',
     MEDIUM: '- Remove important concepts that require understanding\n- Answer may be a phrase or technical term\n- Context clues should help but not make it obvious',
@@ -886,19 +886,19 @@ ${recentConcepts.map(c => `- ${c}`).join('\n')}
 
 You MUST use DIFFERENT terms not listed above.` : '';
 
-  return `You are an expert educational quiz creator. Your task is to create fill-in-the-blank questions based ONLY on the provided content.
+  return `You are an expert educational quiz creator. Your task is to create fill-in-the-blank questions based ONLY on the provided summary.
 
-CONTENT TO ANALYZE:
-${transcript}
+SUMMARY TO ANALYZE:
+${summary}
 ${conceptMemory}
 
 ⚠️ CRITICAL - STAY ON TOPIC:
-- Create fill-in-blank sentences ONLY from the content above
+- Create fill-in-blank sentences ONLY from the summary above
 - DO NOT use sentences from your general knowledge
-- The blanked term MUST appear in the content provided
-- Each sentence must be directly taken or adapted from the content
+- The blanked term MUST appear in the summary provided
+- Each sentence must be directly taken or adapted from the summary
 
-YOUR TASK: Create exactly ${count} fill-in-the-blank questions at ${difficulty} difficulty using THE CONTENT ABOVE.
+YOUR TASK: Create exactly ${count} fill-in-the-blank questions at ${difficulty} difficulty using THE SUMMARY ABOVE.
 
 DIFFICULTY GUIDELINES:
 ${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
@@ -906,19 +906,19 @@ ${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
 QUALITY REQUIREMENTS:
 1. Use [blank] to mark where the answer goes
 2. The sentence must make sense and provide enough context
-3. The answer must be directly from or implied by the content
+3. The answer must be directly from or implied by the summary
 4. Distractors should be related terms that could confuse students
 5. Avoid blanking the first or last word of a sentence
 
 CRITICAL CONSTRAINT:
-- The answer MUST be explicitly mentioned in the content
-- Do NOT infer terms not present in the text
-- The sentence context must match how the term is used in the content
+- The answer MUST be explicitly mentioned in the summary
+- Do NOT infer terms not present in the summary
+- The sentence context must match how the term is used in the summary
 
 NO REDUNDANCY:
 - Each question MUST test a DIFFERENT term or concept
 - Do NOT create multiple blanks for the same answer
-- Spread questions across different topics in the content
+- Spread questions across different topics in the summary
 
 CITATION REQUIREMENT:
 - Find the sentence where the answer appears
@@ -927,7 +927,7 @@ CITATION REQUIREMENT:
 
 SELF-CHECK BEFORE FINAL OUTPUT:
 For each question:
-1. Find the exact sentence containing the answer
+1. Find the exact sentence in the summary containing the answer
 2. Verify your sentence preserves the original meaning
 3. Confirm distractors are related but clearly wrong
 4. Confirm only the correct answer fits logically
@@ -948,14 +948,14 @@ OUTPUT FORMAT (JSON only, no markdown, no extra text):
 
 CRITICAL - MUST USE [blank] MARKER:
 - Every sentence MUST contain exactly one [blank] marker
-- The [blank] must be where the answer belongs in the original content
+- The [blank] must be where the answer belongs in the original summary
 - The sentence must be grammatically correct and make complete sense
 - The answer must fit naturally when replacing [blank]
 
 DISTRACTORS MUST BE SPECIFIC:
 - Distractors must be actual terms from similar categories (not generic placeholders)
 - They must be plausible enough that someone who didn't read carefully might choose them
-- They must be clearly wrong based on the content
+- They must be clearly wrong based on the summary
 
 CRITICAL RULES:
 - Generate EXACTLY ${count} items in the array
@@ -968,7 +968,7 @@ CRITICAL RULES:
 /**
  * Build flashcard generation prompt
  */
-function buildFlashcardPrompt(difficulty: string, count: number, transcript: string, recentConcepts: string[] = []): string {
+function buildFlashcardPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
   const difficultyGuidelines = {
     EASY: '- Front: Simple term or concept name\n- Back: Clear, concise definition\n- Focus on basic vocabulary and fundamental ideas',
     MEDIUM: '- Front: Concept or principle\n- Back: Explanation with examples or applications\n- Connect multiple ideas when relevant',
@@ -982,19 +982,19 @@ ${recentConcepts.map(c => `- ${c}`).join('\n')}
 
 You MUST cover DIFFERENT topics not listed above.` : '';
 
-  return `You are an expert educational quiz creator. Your task is to create flashcards based ONLY on the provided content.
+  return `You are an expert educational quiz creator. Your task is to create flashcards based ONLY on the provided summary.
 
-CONTENT TO ANALYZE:
-${transcript}
+SUMMARY TO ANALYZE:
+${summary}
 ${conceptMemory}
 
 ⚠️ CRITICAL - STAY ON TOPIC:
-- Create flashcards ONLY about topics in the content above
+- Create flashcards ONLY about topics in the summary above
 - DO NOT create flashcards from your general knowledge
-- Both front and back must reference information from the content
-- Focus on the actual subject matter presented in the content
+- Both front and back must reference information from the summary
+- Focus on the actual subject matter presented in the summary
 
-YOUR TASK: Create exactly ${count} flashcards at ${difficulty} difficulty using THE CONTENT ABOVE.
+YOUR TASK: Create exactly ${count} flashcards at ${difficulty} difficulty using THE SUMMARY ABOVE.
 
 DIFFICULTY GUIDELINES:
 ${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
@@ -1004,21 +1004,21 @@ QUALITY REQUIREMENTS:
 2. Back should provide complete, accurate information
 3. Keep both sides concise but informative
 4. Use complete sentences on the back
-5. Ensure information is directly from the content
+5. Ensure information is directly from the summary
 
 CRITICAL CONSTRAINT:
-- All information on the back MUST be explicitly from the content
+- All information on the back MUST be explicitly from the summary
 - Do NOT add interpretations or inferences
-- Use exact terminology from the content
+- Use exact terminology from the summary
 
 NO REDUNDANCY:
 - Each flashcard MUST cover a DIFFERENT concept or topic
 - Do NOT create multiple cards about the same thing
-- Spread cards across various aspects of the content
+- Spread cards across various aspects of the summary
 
 SELF-CHECK BEFORE FINAL OUTPUT:
 For each flashcard:
-1. Verify the back information appears in content
+1. Verify the back information appears in the summary
 2. Verify terminology matches the source material
 3. Verify you didn't mix up similar concepts
 If any check fails, regenerate that item silently.
@@ -1037,7 +1037,7 @@ OUTPUT FORMAT (JSON only, no markdown, no extra text):
 
 CRITICAL - COMPLETE INFORMATION REQUIRED:
 - Front must be a specific, clear question or term (not generic like 'What is X?')
-- Back must provide a complete, accurate explanation directly from content
+- Back must provide a complete, accurate explanation directly from the summary
 - Both front and back must contain substantive content (no placeholders or generic text)
 - The back should be 1-3 complete sentences with specific details
 

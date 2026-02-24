@@ -52,8 +52,8 @@ export default function StatCard({
         h-[160px]
         rounded-[32px]
         bg-gradient-to-br from-[#9d8adb] to-[#4c4172]
-        px-10
-        py-8
+        px-5 sm:px-10
+        py-6 sm:py-8
         overflow-hidden
         text-white
         shadow-[0_22px_50px_rgba(76,65,114,0.45)]
@@ -65,11 +65,11 @@ export default function StatCard({
       <Icon label={label} />
 
       <div className="relative z-10">
-        <div className="text-[56px] font-extrabold leading-none tracking-tight">
+        <div className="text-4xl sm:text-[56px] font-extrabold leading-none tracking-tight">
           {value}
         </div>
 
-        <div className="mt-4 text-base font-medium opacity-90">
+        <div className="mt-2 sm:mt-4 text-sm sm:text-base font-medium opacity-90">
           {label}
         </div>
       </div>

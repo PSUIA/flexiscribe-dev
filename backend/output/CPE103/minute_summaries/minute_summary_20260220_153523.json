@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "session_id": "af0d50d0-67b4-4961-ae82-00458c37805d",
+    "run_id": "20260220_153523",
+    "course_code": "CPE103"
+  },
+  "summaries": [
+    {
+      "minute": 1,
+      "timestamp": "15:36:31",
+      "summary": "The speaker is expressing a refusal to perform a task, stating they cannot and are not willing to do so.",
+      "key_points": [
+        "Refusal to perform a task.",
+        "Acknowledging knowledge of the task.",
+        "Requesting assistance from Siri."
+      ]
+    },
+    {
+      "minute": 2,
+      "timestamp": "15:40:32",
+      "summary": "The lecture discusses the challenges of long lectures, particularly the presence of Siri and the need for faster processing, focusing on algorithm and batch streaming techniques.",
+      "key_points": [
+        "Long lectures present challenges with Siri.",
+        "Need for faster processing and techniques like algorithm and batch streaming.",
+        "Focus on batch transcription and streaming."
+      ]
+    }
+  ]
+}
