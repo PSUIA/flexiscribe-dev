@@ -1,5 +1,4 @@
-import queue
-import threading
+import time
 import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
@@ -28,7 +27,6 @@ def _resample_audio(audio: np.ndarray, from_rate: int, to_rate: int) -> np.ndarr
     down = from_rate // divisor
     return resample_poly(audio, up, down).astype(np.float32)
 
-# Lazy-load the model (only once)
 _model = None
 _model_lock = threading.Lock()
 
@@ -114,7 +112,10 @@ def whisper_worker(text_queue: queue.Queue, stop_event: threading.Event, session
           f"resample={'yes' if needs_resample else 'no'}")
     audio_buffer = []
 
-    def callback(indata, frames, time_info, status):
+    last_display_time = time.time()
+    last_summary_time = time.time()
+
+    def audio_callback(indata, frames, time_info, status):
         if status:
             print(f"[WARN] {status}")
         audio_buffer.append(indata[:, 0].copy())
@@ -129,7 +130,7 @@ def whisper_worker(text_queue: queue.Queue, stop_event: threading.Event, session
         ):
             print(f"[INFO] Recording audio from device {AUDIO_DEVICE}...")
             while not stop_event.is_set():
-                sd.sleep(CHUNK_DURATION * 1000)
+                time.sleep(0.5)  # check buffer twice per second
 
                 if not audio_buffer:
                     # Even if no audio, check if minute buffer should flush
@@ -223,7 +224,7 @@ def whisper_worker(text_queue: queue.Queue, stop_event: threading.Event, session
                         print(f"[BUFFER] Flushed minute text ({len(combined_text)} chars)")
 
     except Exception as e:
-        print(f"[ERROR] Whisper worker error: {e}")
+        print(f"[ERROR] Whisper worker for session {session.session_id}: {e}")
     finally:
         # ── Flush any remaining buffered text when stopping ──
         if minute_buffer.has_content():

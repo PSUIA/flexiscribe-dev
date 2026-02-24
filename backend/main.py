@@ -40,7 +40,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # ─── Request / Response models ───────────────────────────────────────────
 
 class StartRequest(BaseModel):
@@ -51,7 +50,6 @@ class StartRequest(BaseModel):
 
 class StopRequest(BaseModel):
     session_id: str
-
 
 class UploadConfirmRequest(BaseModel):
     session_id: str
