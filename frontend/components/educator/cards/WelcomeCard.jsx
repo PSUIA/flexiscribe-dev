@@ -41,7 +41,7 @@ export default function WelcomeCard({
     >
       {/* TEXT */}
       <div className="z-10">
-        <h2 className="text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold text-white leading-tight">
+        <h2 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-white leading-tight">
           Welcome, {name}!
         </h2>
 
@@ -51,13 +51,13 @@ export default function WelcomeCard({
       </div>
 
       {/* DESKTOP IMAGE */}
-      <div className="hidden md:block absolute right-6 lg:right-8 bottom-0">
+      <div className="hidden md:block absolute right-4 lg:right-2 bottom-0">
         <Image
           src="/owl-prof.png"
           alt="Welcome illustration"
           width={200}
           height={300}
-          className="lg:w-[180px] xl:w-[220px]"
+          className="lg:w-[140px] xl:w-[180px]"
           priority
         />
       </div>
