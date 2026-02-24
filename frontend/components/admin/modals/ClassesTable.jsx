@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Pencil, Trash2, Copy, Check } from "lucide-react";
 import EditClassModal from "./EditClassModal";
+import MessageModal from "@/components/shared/MessageModal";
 
 const GRID =
   "grid-cols-[2fr_1fr_1fr_1fr_1fr_1.2fr_1fr] ";
@@ -12,6 +13,8 @@ export default function ClassesTable() {
   const [loading, setLoading] = useState(true);
   const [editClass, setEditClass] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     fetchClasses();
@@ -33,21 +36,29 @@ export default function ClassesTable() {
   };
 
   const handleDelete = async (classId, subject) => {
-    if (!confirm(`Are you sure you want to delete ${subject}?`)) return;
+    setDeleteTarget({ classId, subject });
+    setModalInfo({ isOpen: true, title: "Confirm Delete", message: `Are you sure you want to delete ${subject}?`, type: "error" });
+  };
 
+  const executeDelete = async () => {
+    if (!deleteTarget) return;
+    setModalInfo({ ...modalInfo, isOpen: false });
     try {
-      const res = await fetch(`/api/admin/classes/${classId}`, {
+      const res = await fetch(`/api/admin/classes/${deleteTarget.classId}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        alert("Class deleted successfully");
+        setDeleteTarget(null);
+        setModalInfo({ isOpen: true, title: "Success", message: "Class deleted successfully.", type: "success" });
         fetchClasses();
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to delete class");
+        setDeleteTarget(null);
+        setModalInfo({ isOpen: true, title: "Error", message: error.error || "Failed to delete class.", type: "error" });
       }
     } catch {
-      alert("An error occurred while deleting");
+      setDeleteTarget(null);
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while deleting.", type: "error" });
     }
   };
 
@@ -228,6 +239,18 @@ export default function ClassesTable() {
           }}
         />
       )}
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => {
+          setModalInfo({ ...modalInfo, isOpen: false });
+          setDeleteTarget(null);
+        }}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+        onConfirm={deleteTarget ? executeDelete : undefined}
+      />
     </>
   );
 }

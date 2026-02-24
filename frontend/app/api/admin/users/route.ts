@@ -226,6 +226,16 @@ export async function POST(request: Request) {
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        action: "USER_CREATED",
+        details: `Created new ${role} user: ${email} (${fullName})`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
     return NextResponse.json(
       { message: "User created successfully", userId: newUser.id },
       { status: 201 }

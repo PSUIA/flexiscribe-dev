@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Trash2, Upload } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import EditUserModal from "./EditUserModal";
+import MessageModal from "@/components/shared/MessageModal";
 
 /* STATUS BADGE STYLES */
 const STATUS_STYLE = {
@@ -13,13 +14,14 @@ const STATUS_STYLE = {
 
 /* GRID LAYOUT */
 const GRID =
-  "grid-cols-[28px_2fr_1fr_1.3fr_1fr] sm:grid-cols-[32px_3fr_1.5fr_2.5fr_1.5fr_2fr_1fr]";
+  "grid-cols-[2fr_1fr_1.3fr_1fr] sm:grid-cols-[3fr_1.5fr_2.5fr_1.5fr_2fr_1fr]";
 
 export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
   const [editUser, setEditUser] = useState(null);
-  const [selected, setSelected] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -47,61 +49,33 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
   };
 
   const handleDelete = async (userId, userName) => {
-    if (!confirm(`Are you sure you want to delete ${userName}?`)) {
-      return;
-    }
+    setDeleteTarget({ userId, userName });
+    setModalInfo({ isOpen: true, title: "Confirm Delete", message: `Are you sure you want to delete ${userName}?`, type: "error" });
+  };
 
+  const executeDelete = async () => {
+    if (!deleteTarget) return;
+    setModalInfo({ ...modalInfo, isOpen: false });
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${deleteTarget.userId}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        alert("User deleted successfully");
-        fetchUsers(); // Refresh list
+        setDeleteTarget(null);
+        setModalInfo({ isOpen: true, title: "Success", message: "User deleted successfully.", type: "success" });
+        fetchUsers();
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to delete user");
+        setDeleteTarget(null);
+        setModalInfo({ isOpen: true, title: "Error", message: error.error || "Failed to delete user.", type: "error" });
       }
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("An error occurred while deleting user");
+      setDeleteTarget(null);
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while deleting user.", type: "error" });
     }
   };
-
-  const handleExport = async () => {
-    try {
-      const res = await fetch("/api/admin/users/export");
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `users_export_${new Date().toISOString().split("T")[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error("Error exporting users:", error);
-      alert("Failed to export users");
-    }
-  };
-
-  function toggleAll() {
-    if (selected.length === users.length && users.length > 0) {
-      setSelected([]);
-    } else {
-      setSelected(users.map((u) => u.id));
-    }
-  }
-
-  function toggleOne(id) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  }
 
   function formatDate(date) {
     return new Date(date).toLocaleDateString("en-US", {
@@ -121,33 +95,16 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
 
   return (
     <>
-      {/* EXPORT BUTTON */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-[#9d8adb] text-white rounded-lg hover:bg-[#8b78d1] transition"
-        >
-          <Upload size={16} />
-          Export Users
-        </button>
-      </div>
-
       {/* ================= DESKTOP TABLE ================= */}
       <div className="hidden sm:block bg-white rounded-3xl shadow-[0_24px_60px_rgba(76,65,114,0.18)] overflow-hidden">
         {/* HEADER */}
         <div
           className={`grid ${GRID} bg-[#9d8adb] px-5 py-4 text-white text-sm font-semibold items-center`}
         >
-          <input
-            type="checkbox"
-            checked={selected.length === users.length && users.length > 0}
-            onChange={toggleAll}
-          />
-
           <span>Full Name</span>
           <span>Username</span>
           <span className="text-center">Status</span>
-          <span>Role</span>
+          <span className="text-center">Role</span>
           <span>Joined</span>
           <span className="text-center">Actions</span>
         </div>
@@ -164,12 +121,6 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
                 key={u.id}
                 className={`grid ${GRID} px-5 py-4 items-center hover:bg-[#f7f5fc] transition`}
               >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(u.id)}
-                  onChange={() => toggleOne(u.id)}
-                />
-
                 {/* NAME */}
                 <div>
                   <p className="font-semibold text-[#4c4172]">
@@ -196,7 +147,7 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
                 </div>
 
                 {/* ROLE */}
-                <div className="text-[#6f63a6]">{u.role}</div>
+                <div className="text-[#6f63a6] text-center">{u.role}</div>
 
                 {/* JOINED */}
                 <div className="text-[#9a94b8]">
@@ -306,6 +257,18 @@ export default function UsersTable({ roleFilter, statusFilter, dateFilter }) {
           }}
         />
       )}
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => {
+          setModalInfo({ ...modalInfo, isOpen: false });
+          setDeleteTarget(null);
+        }}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+        onConfirm={deleteTarget ? executeDelete : undefined}
+      />
     </>
   );
 }

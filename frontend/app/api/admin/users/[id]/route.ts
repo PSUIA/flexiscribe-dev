@@ -112,6 +112,16 @@ export async function PATCH(
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        action: "USER_UPDATED",
+        details: `Updated user: ${email || existingUser.email}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
     return NextResponse.json(
       { message: "User updated successfully" },
       { status: 200 }
@@ -164,6 +174,16 @@ export async function DELETE(
       data: {
         action: "User Deleted",
         description: `Deleted user: ${existingUser.email}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "USER_DELETED",
+        details: `Deleted user: ${existingUser.email} (${existingUser.role})`,
         userRole: "ADMIN",
         userName: "Admin",
         userId: user.userId,

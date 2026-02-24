@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
+import MessageModal from "@/components/shared/MessageModal";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -27,6 +28,9 @@ export default function ReviewersPage() {
   const [joinError, setJoinError] = useState("");
   const [joinSuccess, setJoinSuccess] = useState("");
   const [joining, setJoining] = useState(false);
+
+  // Modal state for error messages
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     // Set initial time on mount
@@ -146,12 +150,20 @@ export default function ReviewersPage() {
         }
         setTimeout(() => setJoinSuccess(""), 3000);
       } else {
-        setJoinError(data.error || "Failed to join class");
-        setTimeout(() => setJoinError(""), 4000);
+        setModalInfo({
+          isOpen: true,
+          title: "Invalid Class Code",
+          message: data.error || "Invalid class code. Please check and try again.",
+          type: "error"
+        });
       }
     } catch {
-      setJoinError("An error occurred. Please try again.");
-      setTimeout(() => setJoinError(""), 4000);
+      setModalInfo({
+        isOpen: true,
+        title: "Error",
+        message: "An error occurred. Please try again.",
+        type: "error"
+      });
     } finally {
       setJoining(false);
     }
@@ -372,9 +384,6 @@ export default function ReviewersPage() {
                 disabled={joining}
                 style={{ fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}
               />
-              {joinError && (
-                <div className="join-feedback error">{joinError}</div>
-              )}
               {joinSuccess && (
                 <div className="join-feedback success">{joinSuccess}</div>
               )}
@@ -467,6 +476,14 @@ export default function ReviewersPage() {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Update the transcription record in the database with JSON data
     if (transcriptionId) {
-      await prisma.transcription.update({
+      const updatedTranscription = await prisma.transcription.update({
         where: { id: transcriptionId },
         data: {
           content: contentHtml,
@@ -68,7 +68,82 @@ export async function POST(request: NextRequest) {
           transcriptJson: data.transcript || null,
           summaryJson: data.final_summary || null,
         },
+        include: {
+          class: {
+            select: { id: true, subject: true, section: true },
+          },
+        },
       });
+
+      // Notify enrolled students about the new transcript/summary
+      if (updatedTranscription.classId) {
+        try {
+          const enrollments = await prisma.studentClass.findMany({
+            where: { classId: updatedTranscription.classId },
+            select: { studentId: true },
+          });
+
+          if (enrollments.length > 0) {
+            const hasSummary = !!data.final_summary;
+            const classSubject = updatedTranscription.class?.subject || updatedTranscription.course;
+            const classSection = updatedTranscription.class?.section || "";
+
+            let notifTitle = "New Transcript Available";
+            let notifMessage = `A new transcript "${updatedTranscription.title}" has been uploaded`;
+            let notifType = "transcript";
+
+            if (hasSummary) {
+              notifTitle = "New Transcript & Summary Available";
+              notifMessage = `A new transcript and summary "${updatedTranscription.title}" has been uploaded`;
+              notifType = "transcript_summary";
+            }
+
+            if (classSection) {
+              notifMessage += ` for ${classSubject} — Section ${classSection}.`;
+            } else {
+              notifMessage += ` for ${classSubject}.`;
+            }
+
+            await prisma.notification.createMany({
+              data: enrollments.map((e) => ({
+                title: notifTitle,
+                message: notifMessage,
+                type: notifType,
+                studentId: e.studentId,
+              })),
+            });
+          }
+        } catch (notifError) {
+          console.error("Failed to create student notifications:", notifError);
+        }
+      }
+    }
+
+      // Notify the educator that their transcription is complete
+      try {
+        const eduHasSummary = !!data.final_summary;
+        const eduClassSubject = updatedTranscription.class?.subject || updatedTranscription.course;
+        const eduClassSection = updatedTranscription.class?.section || "";
+        const eduNotifTitle = eduHasSummary ? "Transcription & Summary Ready" : "Transcription Completed";
+        let eduNotifMessage = eduHasSummary
+          ? `Your live transcription "${updatedTranscription.title}" and its summary are now ready`
+          : `Your live transcription "${updatedTranscription.title}" has been completed`;
+        if (eduClassSection) {
+          eduNotifMessage += ` for ${eduClassSubject} — Section ${eduClassSection}.`;
+        } else {
+          eduNotifMessage += `.`;
+        }
+        await prisma.notification.create({
+          data: {
+            title: eduNotifTitle,
+            message: eduNotifMessage,
+            type: eduHasSummary ? "transcript_summary" : "transcript",
+            educatorId: updatedTranscription.educatorId,
+          },
+        });
+      } catch (eduNotifErr) {
+        console.error("Failed to create educator notification:", eduNotifErr);
+      }
     }
 
     // Tell FastAPI to mark files for deletion since we saved to DB

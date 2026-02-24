@@ -69,8 +69,11 @@ export default function StudentDashboard() {
     }
 
     // Initialize streak data (don't record activity on load, only when user does something)
-    const currentStreak = calculateStreak();
-    setStreakData(currentStreak);
+    const loadStreak = async () => {
+      const currentStreak = await calculateStreak();
+      setStreakData(currentStreak);
+    };
+    loadStreak();
 
     // Fetch student profile from database
     const fetchStudentProfile = async () => {

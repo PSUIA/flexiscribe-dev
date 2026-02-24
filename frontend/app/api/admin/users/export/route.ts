@@ -118,6 +118,16 @@ export async function GET(request: Request) {
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        action: "USERS_EXPORTED",
+        details: `Exported ${users.length} users to CSV`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
     return new NextResponse(csvContent, {
       status: 200,
       headers: {

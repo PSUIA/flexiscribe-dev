@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import MessageModal from "@/components/shared/MessageModal";
 
 export default function ProfileModal({ open, defaultTab, onClose }) {
   const [tab, setTab] = useState(defaultTab);
@@ -18,6 +19,7 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     if (open) {
@@ -58,15 +60,15 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
       });
 
       if (res.ok) {
-        alert("Profile updated successfully!");
+        setModalInfo({ isOpen: true, title: "Success", message: "Profile updated successfully!", type: "success" });
         fetchProfile();
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to update profile");
+        setModalInfo({ isOpen: true, title: "Error", message: error.error || "Failed to update profile.", type: "error" });
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("An error occurred while saving profile");
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while saving profile.", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -74,12 +76,12 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
 
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match");
+      setModalInfo({ isOpen: true, title: "Validation Error", message: "Passwords do not match.", type: "error" });
       return;
     }
 
     if (newPassword.length < 8) {
-      alert("Password must be at least 8 characters");
+      setModalInfo({ isOpen: true, title: "Validation Error", message: "Password must be at least 8 characters.", type: "error" });
       return;
     }
 
@@ -95,17 +97,17 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
       });
 
       if (res.ok) {
-        alert("Password updated successfully!");
+        setModalInfo({ isOpen: true, title: "Success", message: "Password updated successfully!", type: "success" });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to update password");
+        setModalInfo({ isOpen: true, title: "Error", message: error.error || "Failed to update password.", type: "error" });
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      alert("An error occurred while updating password");
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while updating password.", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -124,7 +126,7 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
 
       {/* BACKDROP */}
       <div
@@ -328,6 +330,13 @@ export default function ProfileModal({ open, defaultTab, onClose }) {
           )}
         </div>
       </div>
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

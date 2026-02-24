@@ -13,10 +13,12 @@ import {
 } from "lucide-react";
 
 import RawTranscriptTable from "@/components/admin/tables/RawTranscriptTable";
+import MessageModal from "@/components/shared/MessageModal";
 
 export default function ClassAnalyticsPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     fetchAnalytics();
@@ -111,12 +113,10 @@ export default function ClassAnalyticsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
       
-      alert(
-        "Analytics summary downloaded as HTML. Open in browser and use 'Print to PDF' to convert to PDF."
-      );
+      setModalInfo({ isOpen: true, title: "Export Complete", message: "Analytics summary downloaded as HTML. Open in browser and use 'Print to PDF' to convert to PDF.", type: "success" });
     } catch (error) {
       console.error("Error exporting summary:", error);
-      alert("Failed to export summary");
+      setModalInfo({ isOpen: true, title: "Export Failed", message: "Failed to export summary. Please try again.", type: "error" });
     }
   };
 
@@ -140,9 +140,6 @@ export default function ClassAnalyticsPage() {
       <section className="space-y-4">
         <SectionTitle>Transcripts</SectionTitle>
         <RawTranscriptTable />
-        <p className="text-xs text-[#9d8adb] italic">
-          Note: Transcript upload from Python integration will be available soon
-        </p>
       </section>
 
       {/* ================= GENERATED CONTENT ================= */}
@@ -232,6 +229,13 @@ export default function ClassAnalyticsPage() {
           </div>
         </section>
       )}
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

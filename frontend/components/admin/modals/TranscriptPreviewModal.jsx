@@ -1,14 +1,14 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { rawTranscriptFiles } from "@/lib/mock/rawTranscripts";
 
 export default function TranscriptPreviewModal({ transcript, onClose }) {
   if (!transcript) return null;
 
-  const file = rawTranscriptFiles[transcript.id];
+  const rawContent = transcript.content || transcript.rawText || "";
   const cues = transcript.cue || [];
-  const processedLines = processTranscript(file?.content || "", cues);
+  const processedLines = processTranscript(rawContent, cues);
+  const filename = `${transcript.course}_${transcript.title?.replace(/\s+/g, "_")}.txt`;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
@@ -106,19 +106,19 @@ export default function TranscriptPreviewModal({ transcript, onClose }) {
         {/* FOOTER */}
         <div className="px-4 py-3 border-t bg-[#f7f6fb] flex flex-col sm:flex-row gap-2 sm:justify-between items-center">
           <span className="text-xs text-gray-500 truncate max-w-full">
-            {file?.filename}
+            {filename}
           </span>
 
           <div className="flex gap-2 w-full sm:w-auto justify-end">
             <button
-              onClick={() => downloadTXT(file.filename, file.content)}
+              onClick={() => downloadTXT(filename, rawContent)}
               className="px-4 py-2 text-sm rounded-md bg-[#edeaf7] text-[#4c4172]"
             >
               Download TXT
             </button>
 
             <button
-              onClick={() => downloadPDF(transcript.title, file.content)}
+              onClick={() => downloadPDF(transcript.title, rawContent)}
               className="px-4 py-2 text-sm rounded-md bg-[#9d8adb] text-white hover:bg-[#4c4172]"
             >
               Download PDF

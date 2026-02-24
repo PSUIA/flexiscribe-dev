@@ -2,6 +2,7 @@
 
 import { X, Mail, User, Phone } from "lucide-react";
 import { useState } from "react";
+import MessageModal from "@/components/shared/MessageModal";
 
 export default function EditUserModal({ user, onClose }) {
   const [fullName, setFullName] = useState(user.fullName || user.name || "");
@@ -9,6 +10,7 @@ export default function EditUserModal({ user, onClose }) {
   const [email, setEmail] = useState(user.email || "");
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber || "");
   const [saving, setSaving] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   const handleSave = async () => {
     try {
@@ -25,22 +27,21 @@ export default function EditUserModal({ user, onClose }) {
       });
 
       if (res.ok) {
-        alert("User updated successfully");
-        onClose();
+        setModalInfo({ isOpen: true, title: "Success", message: "User updated successfully.", type: "success" });
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to update user");
+        setModalInfo({ isOpen: true, title: "Error", message: error.error || "Failed to update user.", type: "error" });
       }
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("An error occurred while updating user");
+      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while updating user.", type: "error" });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] px-4">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-xl overflow-hidden">
         {/* Header */}
         <div className="bg-[#f5f3ff] px-6 py-4 flex justify-between items-center">
@@ -160,6 +161,16 @@ export default function EditUserModal({ user, onClose }) {
           </button>
         </div>
       </div>
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => {
+          setModalInfo({ ...modalInfo, isOpen: false });
+          if (modalInfo.type === "success") onClose();
+        }}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

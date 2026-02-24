@@ -49,6 +49,16 @@ export async function DELETE(
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        action: "CLASS_DELETED",
+        details: `Deleted class ${existing.subject} - Section ${existing.section}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
     return NextResponse.json({ message: "Class deleted" }, { status: 200 });
   } catch (error) {
     console.error("Delete class error:", error);
@@ -104,6 +114,42 @@ export async function PATCH(
         educator: { include: { department: true } },
       },
     });
+
+    await prisma.activity.create({
+      data: {
+        action: "CLASS_UPDATED",
+        description: `Updated class ${updated.subject} - Section ${updated.section}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "CLASS_UPDATED",
+        details: `Updated class ${updated.subject} - Section ${updated.section}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
+    // Notify the educator if a class was assigned or reassigned
+    if (educatorId && educatorId !== existing.educatorId) {
+      try {
+        await prisma.notification.create({
+          data: {
+            title: "Class Assigned to You",
+            message: `You have been assigned the class: ${updated.subject} — Section ${updated.section}, ${updated.day} ${updated.startTime}${updated.endTime ? ` - ${updated.endTime}` : ""}.`,
+            type: "class_assignment",
+            educatorId: educatorId,
+          },
+        });
+      } catch (notifErr) {
+        console.error("Failed to create educator notification:", notifErr);
+      }
+    }
 
     return NextResponse.json(
       {
