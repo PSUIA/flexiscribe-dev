@@ -43,9 +43,11 @@ export default function MessageModal({ isOpen, onClose, title, message, type = "
   return (
     <div className="message-modal-overlay" onClick={onClose}>
       <div className="message-modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="message-modal-close" onClick={onClose}>
-          <FaTimes />
-        </button>
+        {!onConfirm && (
+          <button className="message-modal-close" onClick={onClose}>
+            <FaTimes />
+          </button>
+        )}
 
         <div className="message-modal-icon">{iconMap[type]}</div>
         <h3 className="message-modal-title">{displayTitle}</h3>

@@ -49,148 +49,80 @@ export const getDailyQuote = (currentTime, mockQuotes) => {
 };
 
 /**
- * Calculate streak based on activity
- * @returns {Object} - Streak data with count, isActive, and lastActivityDate
+ * Calculate streak by fetching from DB via API
+ * @returns {Promise<Object>} - Streak data with count, isActive, and lastActivityDate
  */
-export const calculateStreak = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const savedStreak = localStorage.getItem('studyStreak');
-  
-  if (savedStreak) {
-    const parsed = JSON.parse(savedStreak);
-    const lastActivity = new Date(parsed.lastActivityDate);
-    const currentDate = new Date(today);
-    const daysDiff = Math.floor((currentDate - lastActivity) / (1000 * 60 * 60 * 24));
-    
-    // If last activity was today, streak is active
-    if (daysDiff === 0) {
-      return {
-        count: parsed.count,
-        isActive: true,
-        lastActivityDate: parsed.lastActivityDate
-      };
+export const calculateStreak = async () => {
+  try {
+    const res = await fetch("/api/students/streak");
+    if (res.ok) {
+      const data = await res.json();
+      return data.streak;
     }
-    // If last activity was yesterday, streak continues but not active today yet
-    else if (daysDiff === 1) {
-      return {
-        count: parsed.count,
-        isActive: false,
-        lastActivityDate: parsed.lastActivityDate
-      };
-    }
-    // If more than 1 day passed, streak is broken
-    else {
-      return {
-        count: 0,
-        isActive: false,
-        lastActivityDate: null
-      };
-    }
+  } catch (error) {
+    console.error("Error fetching streak:", error);
   }
-  
-  // No saved streak
-  return {
-    count: 0,
-    isActive: false,
-    lastActivityDate: null
-  };
+  return { count: 0, isActive: false, lastActivityDate: null };
 };
 
 /**
- * Check if user has completed at least 1 activity today
- * @returns {boolean} - True if user has activity today
+ * Check if user has completed at least 1 activity today (from DB streak)
+ * @returns {Promise<boolean>} - True if user has activity today
  */
-export const hasActivityToday = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const savedActivities = localStorage.getItem('dailyActivities');
-  
-  if (!savedActivities) return false;
-  
-  const activities = JSON.parse(savedActivities);
-  return activities[today] && activities[today].length > 0;
+export const hasActivityToday = async () => {
+  try {
+    const streak = await calculateStreak();
+    return streak.isActive;
+  } catch {
+    return false;
+  }
 };
 
 /**
- * Record activity to update streak (only activates if at least 1 activity done)
+ * Record activity to update streak via API
  * @param {Function} setStreakData - State setter for streak data
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export const recordActivity = (setStreakData) => {
-  const today = new Date().toISOString().split('T')[0];
-  const currentStreak = calculateStreak();
-  
-  // Check if user has done at least 1 activity today
-  if (!hasActivityToday()) {
-    return;
-  }
-  
-  // If already active today, don't update
-  if (currentStreak.isActive) {
-    return;
-  }
-  
-  // If last activity was yesterday or today is first activity
-  const lastActivity = currentStreak.lastActivityDate;
-  let newCount = currentStreak.count;
-  
-  if (!lastActivity) {
-    // First activity ever
-    newCount = 1;
-  } else {
-    const lastDate = new Date(lastActivity);
-    const currentDate = new Date(today);
-    const daysDiff = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
-    
-    if (daysDiff === 1) {
-      // Consecutive day - increment streak
-      newCount = currentStreak.count + 1;
-    } else if (daysDiff === 0) {
-      // Same day - keep count
-      newCount = currentStreak.count;
-    } else {
-      // Streak broken - start new
-      newCount = 1;
+export const recordActivity = async (setStreakData) => {
+  try {
+    const res = await fetch("/api/students/streak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activityType: "general" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (setStreakData) {
+        setStreakData(data.streak);
+      }
     }
-  }
-  
-  const newStreak = {
-    count: newCount,
-    isActive: true,
-    lastActivityDate: today
-  };
-  
-  localStorage.setItem('studyStreak', JSON.stringify(newStreak));
-  if (setStreakData) {
-    setStreakData(newStreak);
+  } catch (error) {
+    console.error("Error recording activity:", error);
   }
 };
 
 /**
- * Track daily activities (quiz completion, reviewer view, etc.)
+ * Track daily activities (quiz completion, reviewer view, etc.) via API
  * @param {string} activityType - Type of activity to track
  * @param {Function} setStreakData - State setter for streak data (optional)
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export const trackActivity = (activityType, setStreakData) => {
-  const today = new Date().toISOString().split('T')[0];
-  const activitiesKey = 'dailyActivities';
-  const savedActivities = localStorage.getItem(activitiesKey);
-  
-  let activities = savedActivities ? JSON.parse(savedActivities) : {};
-  
-  // Initialize today's activities if not exists
-  if (!activities[today]) {
-    activities[today] = [];
+export const trackActivity = async (activityType, setStreakData) => {
+  try {
+    const res = await fetch("/api/students/streak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activityType }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (setStreakData) {
+        setStreakData(data.streak);
+      }
+    }
+  } catch (error) {
+    console.error("Error tracking activity:", error);
   }
-  
-  // Add activity if not already recorded
-  if (!activities[today].includes(activityType)) {
-    activities[today].push(activityType);
-    localStorage.setItem(activitiesKey, JSON.stringify(activities));
-  }
-  
-  // After tracking activity, update streak
-  recordActivity(setStreakData);
 };
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaDownload, FaEye, FaFilePdf } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaFilePdf } from "react-icons/fa";
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
@@ -111,30 +111,7 @@ export default function ClassReviewersPage() {
     router.push(`/student/reviewers/${classCode}/${reviewer.id}`);
   };
 
-  const handleGenerateQuiz = (reviewer, e) => {
-    // Prevent card click event from firing
-    if (e) {
-      e.stopPropagation();
-    }
-    
-    // In a real application, this would:
-    // 1. Call an API to generate a quiz from the reviewer content
-    // 2. Store the generated quiz
-    // 3. Navigate to the new quiz
-    
-    // For demo purposes, navigate to quizzes page with a success message
-    console.log("Generating quiz from:", reviewer.title);
-    
-    // Store a temporary flag to show success message
-    localStorage.setItem('quiz-generated', JSON.stringify({
-      reviewerTitle: reviewer.title,
-      classCode: classCode,
-      timestamp: new Date().toISOString()
-    }));
-    
-    // Navigate to quizzes page where the new quiz would appear
-    router.push('/student/quizzes');
-  };
+
 
   if (!mounted || !currentTime) {
     return (
@@ -297,10 +274,6 @@ export default function ClassReviewersPage() {
                     <button className="action-btn view-btn" onClick={() => handleReviewerClick(reviewer)}>
                       <FaEye />
                       <span>View</span>
-                    </button>
-                    <button className="action-btn quiz-btn" onClick={(e) => handleGenerateQuiz(reviewer, e)}>
-                      <FaGamepad />
-                      <span>Generate Quiz</span>
                     </button>
                   </div>
                 </div>

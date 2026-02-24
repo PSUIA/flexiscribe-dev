@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import SearchBar from "@/components/educator/layout/SearchBar";
 import ProfessorProfileCard from "@/components/educator/cards/ProfessorProfileCard";
 import ScheduleCard from "@/components/educator/cards/ScheduleCard";
@@ -12,8 +10,6 @@ import StudentsLeaderboardCard from "@/components/educator/cards/StudentsLeaderb
 
 export default function DashboardPage() {
 
-  const [query, setQuery] = useState("");
-
   return (
     <>
       {/* ================= MOBILE ================= */}
@@ -22,10 +18,7 @@ export default function DashboardPage() {
         {/* HEADER ROW */}
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <SearchBar
-              placeholder="Search..."
-              onChange={(e) => setQuery(e.target.value)}
-            />
+            <SearchBar />
           </div>
 
           {/* PROFILE */}
@@ -52,10 +45,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 gap-6">
 
-          <SearchBar
-            placeholder="Search..."
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <SearchBar />
 
           <ProfessorProfileCard />
         </div>
@@ -78,10 +68,7 @@ export default function DashboardPage() {
         {/* LEFT COLUMN — takes remaining width */}
         <div className="flex-1 min-w-0 flex flex-col gap-6 xl:gap-8">
 
-          <SearchBar
-            placeholder="Search..."
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <SearchBar />
 
           <WelcomeCard />
 

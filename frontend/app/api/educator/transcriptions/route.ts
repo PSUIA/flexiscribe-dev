@@ -123,6 +123,89 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Notify enrolled students if this transcription is linked to a class
+    if (classId && (status === "COMPLETED" || !status)) {
+      try {
+        const enrollments = await prisma.studentClass.findMany({
+          where: { classId },
+          select: { studentId: true },
+        });
+
+        if (enrollments.length > 0) {
+          const classInfo = await prisma.class.findUnique({
+            where: { id: classId },
+            select: { subject: true, section: true },
+          });
+
+          const hasTranscript = !!rawText || !!transcriptJson;
+          const hasSummary = !!summaryJson || (content && content.length > 0);
+          let notifType = "transcript";
+          let notifTitle = "New Transcript Available";
+          let notifMessage = `A new transcript "${title}" has been uploaded`;
+          
+          if (hasSummary && hasTranscript) {
+            notifType = "transcript_summary";
+            notifTitle = "New Transcript & Summary Available";
+            notifMessage = `A new transcript and summary "${title}" has been uploaded`;
+          } else if (hasSummary) {
+            notifType = "summary";
+            notifTitle = "New Summary Available";
+            notifMessage = `A new summary "${title}" has been uploaded`;
+          }
+
+          if (classInfo) {
+            notifMessage += ` for ${classInfo.subject} — Section ${classInfo.section}.`;
+          } else {
+            notifMessage += ".";
+          }
+
+          await prisma.notification.createMany({
+            data: enrollments.map((e) => ({
+              title: notifTitle,
+              message: notifMessage,
+              type: notifType,
+              studentId: e.studentId,
+            })),
+          });
+        }
+      } catch (notifError) {
+        // Log but don't fail the transcription creation
+        console.error("Failed to create student notifications:", notifError);
+      }
+    }
+
+    // Notify the educator about the successful upload
+    try {
+      const hasSummary = !!summaryJson || (content && content.length > 0);
+      const eduNotifTitle = hasSummary ? "Transcription & Summary Uploaded" : "Transcription Uploaded";
+      let eduNotifMessage = hasSummary
+        ? `Your transcription "${title}" and its summary have been uploaded successfully`
+        : `Your transcription "${title}" has been uploaded successfully`;
+      if (classId) {
+        const classInfo2 = await prisma.class.findUnique({
+          where: { id: classId },
+          select: { subject: true, section: true },
+        });
+        if (classInfo2) {
+          eduNotifMessage += ` for ${classInfo2.subject} — Section ${classInfo2.section}.`;
+        } else {
+          eduNotifMessage += ".";
+        }
+      } else {
+        eduNotifMessage += ".";
+      }
+      await prisma.notification.create({
+        data: {
+          title: eduNotifTitle,
+          message: eduNotifMessage,
+          type: hasSummary ? "transcript_summary" : "transcript",
+          educatorId: educator.id,
+        },
+      });
+    } catch (eduNotifErr) {
+      console.error("Failed to create educator notification:", eduNotifErr);
+    }
+
     return NextResponse.json({ transcription }, { status: 201 });
   } catch (error) {
     console.error("Create transcription error:", error);

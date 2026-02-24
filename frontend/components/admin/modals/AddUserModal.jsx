@@ -4,7 +4,7 @@ import { X, User, Mail, Shield, Phone, Send } from "lucide-react";
 
 export default function AddUserModal({ onClose }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] px-4">
 
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden">
 

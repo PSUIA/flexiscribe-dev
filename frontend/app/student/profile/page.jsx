@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaSave, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
+import { FaHome, FaBook, FaGamepad, FaTrophy, FaSearch, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
 import UserMenu from "@/components/student/ui/UserMenu";
@@ -151,14 +151,6 @@ export default function StudentProfile() {
       document.documentElement.classList.remove('dark-mode');
       localStorage.setItem('theme', 'light');
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const handleAvatarSelect = async (avatarUrl) => {
@@ -332,55 +324,6 @@ export default function StudentProfile() {
     setPasswordStep(1);
     setPasswordData(prev => ({ ...prev, verificationCode: "" }));
     setPasswordErrors({});
-  };
-
-  const handleSave = async () => {
-    // TODO: Backend Integration - Update Profile
-    // API Endpoint: PUT /api/student/profile
-    // Request Body: {
-    //   studentId: formData.studentId,
-    //   username: formData.username,
-    //   firstName: formData.firstName,
-    //   lastName: formData.lastName,
-    //   email: formData.email,
-    //   course: formData.course,
-    //   yearLevel: formData.yearLevel,
-    //   profileImage: profileImage
-    // }
-    // Expected Response: {
-    //   success: boolean,
-    //   message: string,
-    //   data: { updated user profile }
-    // }
-    
-    try {
-      // const response = await fetch('/api/student/profile', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     studentId: formData.studentId,
-      //     username: formData.username,
-      //     firstName: formData.firstName,
-      //     lastName: formData.lastName,
-      //     email: formData.email,
-      //     course: formData.course,
-      //     yearLevel: formData.yearLevel,
-      //     profileImage: profileImage
-      //   })
-      // });
-      // const data = await response.json();
-      // if (data.success) {
-      //   alert("Profile updated successfully!");
-      // } else {
-      //   alert(data.message || "Failed to update profile");
-      // }
-      
-      // Mock success for now
-      setModalInfo({ isOpen: true, title: "Success", message: "Profile updated successfully!", type: "success" });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      setModalInfo({ isOpen: true, title: "Error", message: "An error occurred while updating profile.", type: "error" });
-    }
   };
 
   const handleBack = () => {
@@ -585,7 +528,7 @@ export default function StudentProfile() {
                     id="fullName"
                     name="fullName"
                     value={formData.fullName}
-                    onChange={handleInputChange}
+                    disabled
                   />
                 </div>
               </div>
@@ -598,7 +541,6 @@ export default function StudentProfile() {
                     id="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleInputChange}
                     disabled
                   />
                 </div>
@@ -612,7 +554,6 @@ export default function StudentProfile() {
                     id="studentNumber"
                     name="studentNumber"
                     value={formData.studentNumber}
-                    onChange={handleInputChange}
                     disabled
                   />
                 </div>
@@ -626,7 +567,7 @@ export default function StudentProfile() {
                     id="program"
                     name="program"
                     value={formData.program}
-                    onChange={handleInputChange}
+                    disabled
                   />
                 </div>
                 <div className="form-group">
@@ -635,7 +576,7 @@ export default function StudentProfile() {
                     id="yearLevel"
                     name="yearLevel"
                     value={formData.yearLevel}
-                    onChange={handleInputChange}
+                    disabled
                   >
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
@@ -653,7 +594,7 @@ export default function StudentProfile() {
                     id="section"
                     name="section"
                     value={formData.section}
-                    onChange={handleInputChange}
+                    disabled
                   />
                 </div>
                 <div className="form-group">
@@ -662,7 +603,7 @@ export default function StudentProfile() {
                     id="gender"
                     name="gender"
                     value={formData.gender}
-                    onChange={handleInputChange}
+                    disabled
                   >
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
@@ -680,15 +621,9 @@ export default function StudentProfile() {
                     id="birthDate"
                     name="birthDate"
                     value={formData.birthDate}
-                    onChange={handleInputChange}
+                    disabled
                   />
                 </div>
-              </div>
-
-              <div className="form-actions">
-                <button className="save-btn" onClick={handleSave}>
-                  <FaSave /> Save Changes
-                </button>
               </div>
             </div>
           </div>

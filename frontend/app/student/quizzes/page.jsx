@@ -56,6 +56,7 @@ export default function QuizzesPage() {
   const [showGeneratedNotification, setShowGeneratedNotification] = useState(false);
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [generatedQuizInfo, setGeneratedQuizInfo] = useState(null);
+  const [hasEnrolledClasses, setHasEnrolledClasses] = useState(false);
 
   // Fetch available lessons
   useEffect(() => {
@@ -75,6 +76,22 @@ export default function QuizzesPage() {
       }
     }
     fetchLessons();
+  }, []);
+
+  // Check if student has enrolled classes
+  useEffect(() => {
+    async function checkEnrollment() {
+      try {
+        const response = await fetch('/api/students/classes');
+        if (response.ok) {
+          const data = await response.json();
+          setHasEnrolledClasses(data.classes && data.classes.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking enrollment:', error);
+      }
+    }
+    checkEnrollment();
   }, []);
 
   // Fetch real quizzes from API
@@ -205,6 +222,10 @@ export default function QuizzesPage() {
   };
 
   const handleGenerateQuiz = async () => {
+    if (!hasEnrolledClasses) {
+      setModalInfo({ isOpen: true, title: "No Class Enrolled", message: "You must join a class before generating quizzes. Go to the Reviewers tab and enter a class code to join.", type: "error" });
+      return;
+    }
     if (selectedLesson && selectedQuizType && selectedDifficulty && selectedNumQuestions) {
       setIsGenerating(true);
       try {

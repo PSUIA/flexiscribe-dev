@@ -149,6 +149,30 @@ export async function POST(request: Request) {
       },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        action: "CLASS_CREATED",
+        details: `Created class ${subject} - Section ${section}, Room ${room}, ${day} ${startTime}${endTime ? ` - ${endTime}` : ""}, assigned to ${educator.fullName}`,
+        userRole: "ADMIN",
+        userName: "Admin",
+        userId: user.userId,
+      },
+    });
+
+    // Notify the educator about the new class assignment
+    try {
+      await prisma.notification.create({
+        data: {
+          title: "New Class Assigned",
+          message: `You have been assigned a new class: ${subject} — Section ${section}, ${day} ${startTime}${endTime ? ` - ${endTime}` : ""}.`,
+          type: "class_assignment",
+          educatorId: educatorId,
+        },
+      });
+    } catch (notifErr) {
+      console.error("Failed to create educator notification:", notifErr);
+    }
+
     return NextResponse.json(
       {
         class: {

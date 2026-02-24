@@ -2,10 +2,30 @@
 
 import { X, BookOpen, MapPin, Clock, Calendar, User } from "lucide-react";
 import { useState, useEffect } from "react";
-import { generateTimeOptions, timeToMinutes } from "@/lib/timeSlots";
+import MessageModal from "@/components/shared/MessageModal";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const TIME_OPTIONS = generateTimeOptions();
+
+// Convert 24h "HH:mm" to "H:MM AM/PM"
+function to12h(time24) {
+  if (!time24) return "";
+  const [h, m] = time24.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+// Convert "H:MM AM/PM" to 24h "HH:mm"
+function to24h(time12) {
+  if (!time12) return "";
+  const match = time12.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return "";
+  let [, h, mi, period] = match;
+  h = parseInt(h);
+  if (period.toUpperCase() === "PM" && h !== 12) h += 12;
+  if (period.toUpperCase() === "AM" && h === 12) h = 0;
+  return `${h.toString().padStart(2, "0")}:${mi}`;
+}
 
 export default function AddClassModal({ onClose }) {
   const [subject, setSubject] = useState("");
@@ -18,6 +38,7 @@ export default function AddClassModal({ onClose }) {
   const [educators, setEducators] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   useEffect(() => {
     async function fetchEducators() {
@@ -59,8 +80,7 @@ export default function AddClassModal({ onClose }) {
       });
 
       if (res.ok) {
-        alert("Class created successfully! The class code has been generated.");
-        onClose();
+        setModalInfo({ isOpen: true, title: "Success", message: "Class created successfully! The class code has been generated.", type: "success" });
       } else {
         const data = await res.json();
         setError(data.error || "Failed to create class");
@@ -73,7 +93,7 @@ export default function AddClassModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] px-4">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="bg-[#f5f3ff] px-6 py-4 flex justify-between items-center">
@@ -159,44 +179,35 @@ export default function AddClassModal({ onClose }) {
               {/* Start Time */}
               <div>
                 <label className="text-sm font-medium text-gray-700">Start Time *</label>
-                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1 relative">
+                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1">
                   <Clock size={18} className="text-gray-600" />
-                  <select
-                    value={startTime}
+                  <input
+                    type="time"
+                    value={to24h(startTime)}
                     onChange={(e) => {
-                      setStartTime(e.target.value);
-                      // Reset endTime if it's no longer valid
-                      if (endTime && timeToMinutes(e.target.value) >= timeToMinutes(endTime)) {
+                      const val12 = to12h(e.target.value);
+                      setStartTime(val12);
+                      if (endTime && e.target.value >= to24h(endTime)) {
                         setEndTime("");
                       }
                     }}
-                    className="w-full bg-transparent outline-none appearance-none text-gray-800"
-                  >
-                    <option value="">Select start time</option>
-                    {TIME_OPTIONS.slice(0, -1).map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                  <span className="absolute right-4 text-gray-500">▼</span>
+                    className="w-full bg-transparent outline-none text-gray-800"
+                  />
                 </div>
               </div>
 
               {/* End Time */}
               <div>
                 <label className="text-sm font-medium text-gray-700">End Time *</label>
-                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1 relative">
+                <div className="flex items-center gap-3 bg-gray-100 border rounded-xl px-4 py-3 mt-1">
                   <Clock size={18} className="text-gray-600" />
-                  <select
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full bg-transparent outline-none appearance-none text-gray-800"
-                  >
-                    <option value="">Select end time</option>
-                    {TIME_OPTIONS.filter((t) => !startTime || timeToMinutes(t) > timeToMinutes(startTime)).map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                  <span className="absolute right-4 text-gray-500">▼</span>
+                  <input
+                    type="time"
+                    value={to24h(endTime)}
+                    min={to24h(startTime) || undefined}
+                    onChange={(e) => setEndTime(to12h(e.target.value))}
+                    className="w-full bg-transparent outline-none text-gray-800"
+                  />
                 </div>
               </div>
             </div>
@@ -247,6 +258,16 @@ export default function AddClassModal({ onClose }) {
           </button>
         </div>
       </div>
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => {
+          setModalInfo({ ...modalInfo, isOpen: false });
+          if (modalInfo.type === "success") onClose();
+        }}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }

@@ -134,6 +134,34 @@ export async function PATCH(request: Request) {
       });
     }
 
+    // Build description of what changed
+    const changes = [];
+    if (fullName !== undefined) changes.push("name");
+    if (username !== undefined) changes.push("username");
+    if (phoneNumber !== undefined) changes.push("phone");
+    if (newPassword) changes.push("password");
+    const changeDesc = changes.length > 0 ? changes.join(", ") : "profile";
+
+    await prisma.activity.create({
+      data: {
+        action: "PROFILE_UPDATED",
+        description: `Admin updated ${changeDesc}`,
+        userRole: "ADMIN",
+        userName: admin.fullName,
+        userId: user.userId,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "PROFILE_UPDATED",
+        details: `Admin updated ${changeDesc}`,
+        userRole: "ADMIN",
+        userName: admin.fullName,
+        userId: user.userId,
+      },
+    });
+
     return NextResponse.json(
       { message: "Profile updated successfully" },
       { status: 200 }

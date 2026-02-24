@@ -43,8 +43,11 @@ export default function StudentLeaderboard() {
     }
 
     // Initialize streak data
-    const currentStreak = calculateStreak();
-    setStreakData(currentStreak);
+    const loadStreak = async () => {
+      const currentStreak = await calculateStreak();
+      setStreakData(currentStreak);
+    };
+    loadStreak();
 
     // Fetch student profile from database
     const fetchStudentProfile = async () => {
