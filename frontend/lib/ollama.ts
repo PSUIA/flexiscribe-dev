@@ -4,6 +4,13 @@
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 
+// ── Global model cache ──
+// Memoize the resolved model for 60 s so concurrent / back-to-back
+// generations don't each fire a /api/tags request.
+let _cachedModel: string | null = null;
+let _cachedModelTs = 0;
+const MODEL_CACHE_TTL_MS = 60_000; // 1 minute
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -55,25 +62,73 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Get a rotating slice of the summary for each batch
- * This prevents mode collapse by exposing the model to different content each attempt
+ * Extract leading sentence of each paragraph as a concept-seed list.
+ * Used to prepend topical anchors to summary slices for long summaries.
+ */
+function extractConceptSeeds(summary: string, maxSeeds: number = 6): string {
+  const paragraphs = summary.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  const seeds: string[] = [];
+  for (const para of paragraphs) {
+    const firstSentence = para.trim().match(/^[^.!?]*[.!?]/);
+    if (firstSentence && firstSentence[0].length > 15) {
+      seeds.push(firstSentence[0].trim());
+    }
+    if (seeds.length >= maxSeeds) break;
+  }
+  return seeds.length > 0 ? `Key concepts: ${seeds.join(' ')}\n\n` : '';
+}
+
+/**
+ * Get a rotating slice of the summary for each batch.
+ * Uses sentence-boundary alignment to avoid cutting mid-sentence,
+ * which prevents the model from hallucinating to complete truncated text.
+ *
+ * windowSize increased from 900→1100 to give the model more context per call,
+ * reducing the total number of calls needed for long summaries.
  */
 function getSummarySlice(
   summary: string,
   batchIndex: number,
-  windowSize: number = 2000,
-  overlap: number = 200
+  windowSize: number = 1100,
+  overlap: number = 150
 ): string {
-  const step = windowSize - overlap;
-  const start = (batchIndex * step) % Math.max(summary.length - windowSize, 1);
-  const end = Math.min(start + windowSize, summary.length);
-  
-  // If we've wrapped around and the slice is too small, start from beginning
-  if (end - start < windowSize / 2 && summary.length > windowSize) {
-    return summary.slice(0, windowSize);
+  // If summary fits in one window, return it whole — no slicing needed
+  if (summary.length <= windowSize) {
+    return summary;
   }
-  
-  return summary.slice(start, end);
+
+  // For very long summaries (>3x window), prepend concept seeds so each
+  // slice still has topical anchors even when it covers only a small portion.
+  const conceptPrefix = summary.length > windowSize * 3
+    ? extractConceptSeeds(summary)
+    : '';
+
+  const step = windowSize - overlap;
+  let start = (batchIndex * step) % Math.max(summary.length - windowSize, 1);
+  let end = Math.min(start + windowSize, summary.length);
+
+  // Snap `start` forward to the next sentence boundary (after . or \n)
+  if (start > 0) {
+    const boundaryMatch = summary.slice(start).match(/^[^.\n]*[.\n]\s*/);
+    if (boundaryMatch) {
+      start += boundaryMatch[0].length;
+    }
+  }
+
+  // Snap `end` forward to include the full sentence (up to next . or \n)
+  if (end < summary.length) {
+    const tailMatch = summary.slice(end).match(/^[^.\n]*[.\n]/);
+    if (tailMatch) {
+      end += tailMatch[0].length;
+    }
+  }
+
+  // If we've wrapped around and the slice is too small, start from beginning
+  if (end - start < windowSize / 2) {
+    return conceptPrefix + summary.slice(0, windowSize);
+  }
+
+  return conceptPrefix + summary.slice(start, end);
 }
 
 // ============================================================================
@@ -119,6 +174,44 @@ function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReaso
       };
     }
   }
+
+  // Minimum choice length — reject garbage like "a", "B", "–"
+  for (const choice of item.choices) {
+    if (typeof choice !== 'string' || choice.trim().length < 3) {
+      return {
+        valid: false,
+        item,
+        rejectionReason: `Choice too short (${choice?.length ?? 0} chars): "${choice}"`
+      };
+    }
+  }
+
+  // Duplicate-choices guard — all 4 must be unique after normalization.
+  // If duplicates exist, indexOf after shuffle will point to the wrong answer.
+  const normalizedChoices = item.choices.map((c: string) => normalizeText(c));
+  const uniqueChoices = new Set(normalizedChoices);
+  if (uniqueChoices.size < 4) {
+    return {
+      valid: false,
+      item,
+      rejectionReason: `Duplicate choices detected (${uniqueChoices.size} unique out of 4)`
+    };
+  }
+
+  // Check that no choice is a substring of another (catches near-duplicates)
+  for (let i = 0; i < normalizedChoices.length; i++) {
+    for (let j = i + 1; j < normalizedChoices.length; j++) {
+      const a = normalizedChoices[i];
+      const b = normalizedChoices[j];
+      if (a.length > 5 && b.length > 5 && (a.includes(b) || b.includes(a))) {
+        return {
+          valid: false,
+          item,
+          rejectionReason: `Near-duplicate choices: "${item.choices[i]}" vs "${item.choices[j]}"`
+        };
+      }
+    }
+  }
   
   // Validate answerIndex
   if (typeof item.answerIndex !== 'number' || item.answerIndex < 0 || item.answerIndex > 3) {
@@ -149,47 +242,26 @@ function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReaso
     choices: shuffledChoices,
     answerIndex: newAnswerIndex
   };
-  
-  // STRICT validation: explanation MUST align with correct answer
+
+  // Explanation-answer alignment check using word overlap.
+  // Previous prefix-match was too strict — rejected items where the explanation
+  // paraphrased the correct answer. Now we check that ≥50% of the significant
+  // words (length > 3) in the correct answer appear in the explanation.
   if (fixedItem.explanation && fixedItem.choices[fixedItem.answerIndex]) {
-    const answer = normalizeText(fixedItem.choices[fixedItem.answerIndex]);
-    const explanation = normalizeText(fixedItem.explanation);
-    
-    // Check if explanation mentions the correct answer
-    const answerWords = answer.split(' ');
-    let mentionsAnswer = false;
-    
-    for (const word of answerWords) {
-      if (word.length > 3 && explanation.includes(word)) {
-        mentionsAnswer = true;
-        break;
-      }
-    }
-    
-    if (!mentionsAnswer) {
-      return { 
-        valid: false, 
-        item: fixedItem, 
-        rejectionReason: `Explanation does not reference the correct answer: "${answer}"` 
-      };
-    }
-    
-    // Check if explanation contradicts by mentioning wrong answers more
-    for (let i = 0; i < fixedItem.choices.length; i++) {
-      if (i !== fixedItem.answerIndex) {
-        const wrongAnswer = normalizeText(fixedItem.choices[i]);
-        const wrongWords = wrongAnswer.split(' ');
-        
-        // If explanation focuses more on a wrong answer, reject it
-        for (const word of wrongWords) {
-          if (word.length > 5 && explanation.split(word).length > explanation.split(answerWords[0]).length + 1) {
-            return { 
-              valid: false, 
-              item: fixedItem, 
-              rejectionReason: `Explanation focuses on wrong answer: "${wrongAnswer}"` 
-            };
-          }
-        }
+    const correctText = normalizeText(fixedItem.choices[fixedItem.answerIndex]);
+    const explanationText = normalizeText(fixedItem.explanation);
+    // Only apply check for answers with substantive words
+    const correctWords = correctText.split(/\s+/).filter(w => w.length > 3);
+    if (correctWords.length >= 2) {
+      const explanationWordSet = new Set(explanationText.split(/\s+/));
+      const hits = correctWords.filter(w => explanationWordSet.has(w)).length;
+      const overlapRatio = hits / correctWords.length;
+      if (overlapRatio < 0.5) {
+        return {
+          valid: false,
+          item: fixedItem,
+          rejectionReason: `Explanation does not reference correct answer (word overlap ${Math.round(overlapRatio * 100)}% < 50%)`
+        };
       }
     }
   }
@@ -198,8 +270,83 @@ function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReaso
 }
 
 /**
- * Auto-fix fill-in-blank sentence to include [blank] marker
- * Returns fixed sentence or null if unable to fix
+ * Compute word-overlap ratio between two strings.
+ * Returns a value between 0 and 1 representing the fraction
+ * of answer words found in the sentence.
+ */
+function wordOverlapRatio(sentence: string, answer: string): number {
+  const sentenceWords = new Set(normalizeText(sentence).split(/\s+/));
+  const answerWords = normalizeText(answer).split(/\s+/);
+  if (answerWords.length === 0) return 0;
+  let hits = 0;
+  for (const w of answerWords) {
+    if (sentenceWords.has(w)) hits++;
+  }
+  return hits / answerWords.length;
+}
+
+/**
+ * Find the best contiguous span in the sentence that matches the answer words.
+ * Returns [startIndex, endIndex] in the original string, or null if no good match.
+ * Uses a sliding window over sentence words and picks the window with the
+ * highest overlap to the answer words.
+ */
+function findBestFuzzySpan(
+  sentence: string,
+  answer: string,
+  threshold: number = 0.7
+): { start: number; end: number } | null {
+  const answerWords = normalizeText(answer).split(/\s+/);
+  const windowSize = answerWords.length;
+  if (windowSize === 0) return null;
+
+  // Tokenize sentence, keeping track of character offsets
+  const tokenRegex = /\S+/g;
+  const tokens: { word: string; start: number; end: number }[] = [];
+  let match;
+  while ((match = tokenRegex.exec(sentence)) !== null) {
+    tokens.push({
+      word: match[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+
+  const answerSet = new Set(answerWords.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')));
+
+  let bestOverlap = 0;
+  let bestStart = -1;
+  let bestEnd = -1;
+
+  // Slide a window of size windowSize (±1) over the tokens
+  for (let extra = 0; extra <= 1; extra++) {
+    const ws = windowSize + extra;
+    for (let i = 0; i <= tokens.length - ws; i++) {
+      let hits = 0;
+      for (let j = i; j < i + ws; j++) {
+        if (answerSet.has(tokens[j].word)) hits++;
+      }
+      const overlap = hits / answerWords.length;
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        bestStart = tokens[i].start;
+        bestEnd = tokens[i + ws - 1].end;
+      }
+    }
+  }
+
+  if (bestOverlap >= threshold && bestStart >= 0) {
+    return { start: bestStart, end: bestEnd };
+  }
+  return null;
+}
+
+/**
+ * Auto-fix fill-in-blank sentence to include [blank] marker.
+ * Uses a 3-tier strategy: exact match → multi-word match → fuzzy match.
+ * The fuzzy tier (Strategy 3) handles paraphrased sentences where the answer
+ * words appear in a different order or with minor rewording.
+ * Returns fixed sentence or null if unable to fix.
  */
 function autoFixFillInBlank(sentence: string, answer: string): string | null {
   if (sentence.includes('[blank]')) {
@@ -216,17 +363,16 @@ function autoFixFillInBlank(sentence: string, answer: string): string | null {
     return fixed;
   }
   
-  // Strategy 2: Multi-word answer matching
+  // Strategy 2: Multi-word answer matching (strict word-by-word)
   const answerWords = trimmedAnswer.split(/\s+/);
   if (answerWords.length > 1) {
     const words = sentence.split(/\b/);
     
     for (let i = 0; i < words.length; i++) {
       if (normalizeText(words[i]) === normalizeText(answerWords[0])) {
-        // Check if multi-word answer matches
         let matches = true;
         for (let j = 1; j < answerWords.length; j++) {
-          const wordIndex = i + j * 2; // Account for word boundaries
+          const wordIndex = i + j * 2;
           if (wordIndex >= words.length || normalizeText(words[wordIndex]) !== normalizeText(answerWords[j])) {
             matches = false;
             break;
@@ -234,7 +380,6 @@ function autoFixFillInBlank(sentence: string, answer: string): string | null {
         }
         
         if (matches) {
-          // Replace the matched portion
           const endIndex = i + (answerWords.length - 1) * 2 + 1;
           words.splice(i, endIndex - i, '[blank]');
           const fixed = words.join('');
@@ -243,6 +388,16 @@ function autoFixFillInBlank(sentence: string, answer: string): string | null {
         }
       }
     }
+  }
+
+  // Strategy 3: Fuzzy span matching — handles paraphrased sentences.
+  // Find the contiguous window that has ≥70% word overlap with the answer,
+  // then replace that span with [blank].
+  const fuzzySpan = findBestFuzzySpan(sentence, trimmedAnswer, 0.7);
+  if (fuzzySpan) {
+    const fixed = sentence.slice(0, fuzzySpan.start) + '[blank]' + sentence.slice(fuzzySpan.end);
+    console.log(`Auto-fixed (fuzzy, overlap≥70%): "${trimmedAnswer}" → [blank]`);
+    return fixed;
   }
   
   console.warn(`Could not auto-fix: answer "${trimmedAnswer}" not found in: "${sentence}"`);
@@ -272,12 +427,21 @@ function validateFillInBlankItem(item: any): { valid: boolean; item: any; reject
     };
   }
   
-  // Validate distractors
-  if (!item.distractors || item.distractors.length !== 3) {
+  // ── Distractor auto-fix ──
+  // Gemma 4B sometimes returns distractors as a comma-separated string
+  // instead of a JSON array. Attempt to salvage before rejecting.
+  let distractors = item.distractors;
+  if (typeof distractors === 'string') {
+    // "encapsulation, abstraction, inheritance" → ["encapsulation", "abstraction", "inheritance"]
+    distractors = distractors.split(/,\s*/).map((d: string) => d.trim()).filter((d: string) => d.length > 0);
+    console.log(`Auto-fixed distractors from string → array (${distractors.length} items)`);
+  }
+  
+  if (!Array.isArray(distractors) || distractors.length !== 3) {
     return { 
       valid: false, 
       item, 
-      rejectionReason: `Invalid distractors (length: ${item.distractors?.length}, expected: 3)` 
+      rejectionReason: `Invalid distractors (length: ${Array.isArray(distractors) ? distractors.length : typeof distractors}, expected: 3)` 
     };
   }
   
@@ -285,7 +449,8 @@ function validateFillInBlankItem(item: any): { valid: boolean; item: any; reject
     valid: true,
     item: {
       ...item,
-      sentence: fixedSentence
+      sentence: fixedSentence,
+      distractors
     }
   };
 }
@@ -408,6 +573,7 @@ export interface OllamaGenerateRequest {
     temperature?: number;
     top_p?: number;
     top_k?: number;
+    num_predict?: number;
   };
 }
 
@@ -427,6 +593,7 @@ export async function generateWithOllama(
     model?: string;
     temperature?: number;
     requireJson?: boolean;
+    maxTokens?: number;
   } = {}
 ): Promise<string> {
   // Auto-select best available model if not specified
@@ -439,6 +606,7 @@ export async function generateWithOllama(
   const {
     temperature = 0.7,
     requireJson = false,
+    maxTokens,
   } = options;
 
   try {
@@ -448,6 +616,7 @@ export async function generateWithOllama(
       stream: false,
       options: {
         temperature,
+        ...(maxTokens ? { num_predict: maxTokens } : {}),
       },
     };
 
@@ -461,6 +630,7 @@ export async function generateWithOllama(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(300_000), // 5 min timeout — CPU inference is slow
     });
 
     if (!response.ok) {
@@ -513,159 +683,339 @@ export async function getAvailableModels(): Promise<string[]> {
 }
 
 /**
- * Find the best available small model for quiz generation
+ * Find the best available small model for quiz generation.
+ *
+ * Resolution order:
+ * 1. OLLAMA_MODEL env var — lets the deployer pin a specific model (e.g. gemma3:1b)
+ * 2. Cached result from a previous call (TTL = 60 s)
+ * 3. Live /api/tags probe with quantized → 4b → 1b priority
+ *
+ * Quantized models (q4_K_M, q4_0) are ~2× faster on CPU with minimal quality loss.
+ * 1B models are another 2–3× faster but produce lower-quality items.
  */
 export async function getBestAvailableModel(): Promise<string> {
+  // 1. Respect explicit env-var override — skip everything else
+  const envModel = process.env.OLLAMA_MODEL;
+  if (envModel) {
+    console.log(`Using model from OLLAMA_MODEL env var: ${envModel}`);
+    return envModel;
+  }
+
+  // 2. Return cached result if still fresh
+  if (_cachedModel && Date.now() - _cachedModelTs < MODEL_CACHE_TTL_MS) {
+    return _cachedModel;
+  }
+
+  // 3. Probe available models
   const models = await getAvailableModels();
   
-  // Priority order: prefer smaller, faster models
+  // Priority order: quantized 4B → full 4B → quantized 1B → full 1B
+  // Quantized 4B variants give ~2× CPU speedup with negligible quality loss.
+  // 1B variants are another 2–3× faster but with some quality trade-off.
   const preferredModels = [
+    'gemma3:4b-it-q4_K_M',  // Best quality-to-speed quantized 4B
+    'gemma3:4b-q4_0',       // Aggressive quantization, fastest 4B
     'gemma3:4b-cloud',
     'gemma3:4b',
+    'gemma3:1b-it-q4_K_M',  // Quantized 1B — very fast, lower quality
+    'gemma3:1b',             // Full 1B — fast, lower quality
   ];
+
+  const QUANTIZED_TAGS = ['q4_K_M', 'q4_0', 'q8_0', 'q5_K_M', 'q4_1', 'q2_K'];
   
+  let selected: string | null = null;
+
   // First, try exact match
   for (const preferred of preferredModels) {
     if (models.includes(preferred)) {
-      return preferred;
+      selected = preferred;
+      break;
     }
   }
   
   // Then try prefix match
-  for (const preferred of preferredModels) {
-    const prefix = preferred.split(':')[0];
-    const found = models.find(m => m.startsWith(prefix));
-    if (found) return found;
+  if (!selected) {
+    for (const preferred of preferredModels) {
+      const prefix = preferred.split(':')[0];
+      const found = models.find(m => m.startsWith(prefix));
+      if (found) {
+        selected = found;
+        break;
+      }
+    }
   }
   
   // Last resort: any model
-  return models[0] || 'gemma3:4b';
+  if (!selected) {
+    selected = models[0] || 'gemma3:4b';
+  }
+
+  // Warn if the selected model is NOT quantized — user could pull one for speed
+  const isQuantized = QUANTIZED_TAGS.some(tag => selected!.includes(tag));
+  if (!isQuantized) {
+    console.warn(
+      `⚠ Selected model "${selected}" is not quantized. ` +
+      `For ~2× faster CPU inference, pull a quantized variant: ollama pull gemma3:4b-it-q4_K_M`
+    );
+  }
+
+  // Cache the result
+  _cachedModel = selected;
+  _cachedModelTs = Date.now();
+
+  return selected;
 }
 
 /**
  * Generate quiz using Ollama with structured prompts (auto-selects best available model)
- * Implements batch processing with deduplication to ensure exact count
+ * High-performance parallel-wave architecture with 1.5x overgeneration
  */
 export async function generateQuizWithGemma(
   summary: string,
   type: 'MCQ' | 'FILL_IN_BLANK' | 'FLASHCARD',
   difficulty: 'EASY' | 'MEDIUM' | 'HARD',
-  count: number
+  count: number,
+  preResolvedModel?: string
 ): Promise<any> {
   // Track generation time
   const startTime = Date.now();
   
-  // Dynamic temperature based on quiz type for better accuracy
-  // Lower = more factual, Higher = more creative
-  const baseTemperature = type === 'MCQ' ? 0.25 : type === 'FILL_IN_BLANK' ? 0.35 : 0.5;
+  // Pre-resolve model ONCE before the batch loop (eliminates redundant /api/tags calls)
+  const resolvedModel = preResolvedModel || await getBestAvailableModel();
+  console.log(`Using model: ${resolvedModel} (resolved once, reused for all batches)`);
+  
+  // Dynamic temperature based on quiz type AND difficulty for better accuracy
+  // Lower = more factual/deterministic, Higher = more creative
+  const temperatureMatrix: Record<string, Record<string, number>> = {
+    MCQ:           { EASY: 0.15, MEDIUM: 0.25, HARD: 0.35 },
+    FILL_IN_BLANK: { EASY: 0.15, MEDIUM: 0.25, HARD: 0.30 },
+    FLASHCARD:     { EASY: 0.25, MEDIUM: 0.45, HARD: 0.55 },
+  };
+  const baseTemperature = temperatureMatrix[type]?.[difficulty] ?? 0.3;
 
   // Track unique items across batches to prevent duplicates
   const seenItems = new Set<string>();
   const allValidItems: any[] = [];
   const allRejectedItems: any[] = [];
   
-  // Batch configuration - CRITICAL: Use smaller batches for HARD difficulty
-  const BASE_BATCH_SIZE = difficulty === 'HARD' ? 1 : 5;
-  const MAX_ATTEMPTS = Math.max(Math.ceil(count / BASE_BATCH_SIZE) * 5, 30);
+  // ── Optimized batch configuration ──
+  // Smaller HARD batches = higher per-item success rate, less wasted inference.
+  // FILL_IN_BLANK HARD gets the smallest — nested JSON + paraphrasing issues.
+  let baseBatchSize =
+    type === 'FILL_IN_BLANK' && difficulty === 'HARD' ? 2 :
+    type === 'FILL_IN_BLANK' ? 3 :
+    difficulty === 'HARD' ? 3 :
+    6;
   
-  let attempts = 0;
+  // CPU inference: Ollama processes requests sequentially on CPU, so parallel calls
+  // just compete for threads and both timeout. Use CONCURRENCY=1 for local/CPU setups.
+  // Set OLLAMA_CONCURRENCY=2 (or higher) when running with GPU / sufficient RAM.
+  const CONCURRENCY = parseInt(process.env.OLLAMA_CONCURRENCY ?? '1', 10);
+  const MAX_WAVES = Math.max(Math.ceil(count / baseBatchSize) * 2, 3);
+  
+  let wave = 0;
+  let totalApiCalls = 0;
   let consecutiveFailures = 0;
   
+  let jsonParseErrors = 0; // Track truncation-related parse failures
+  let tokenMultiplier = 1.0; // Dynamic: increases by 20% per parse error, resets on success
+  let stagnantWaves = 0; // Track consecutive waves with zero new valid items
+
   console.log(`Starting quiz generation: ${count} ${type} items at ${difficulty} difficulty`);
-  console.log(`Configuration: BASE_BATCH_SIZE=${BASE_BATCH_SIZE}, MAX_ATTEMPTS=${MAX_ATTEMPTS}`);
+  console.log(`Configuration: baseBatchSize=${baseBatchSize}, CONCURRENCY=${CONCURRENCY}, MAX_WAVES=${MAX_WAVES}`);
   console.log(`Base temperature: ${baseTemperature}`);
   
   try {
-    // Generate batches until we have enough valid, unique items
-    while (allValidItems.length < count && attempts < MAX_ATTEMPTS) {
+    // ── Parallel-wave generation loop ──
+    // Each wave fires CONCURRENCY parallel API calls, each with a different summary slice
+    while (allValidItems.length < count && wave < MAX_WAVES) {
       const remainingCount = count - allValidItems.length;
       
-      // Get rotating summary slice to prevent mode collapse
-      const summarySlice = getSummarySlice(summary, attempts);
-      console.log(`\nBatch ${attempts + 1}: Using summary slice (chars ${attempts * 1200 % summary.length}-${(attempts * 1200 % summary.length) + summarySlice.length})`);
-      
-      // Dynamic batch size based on recent failure rate
-      let batchSize = BASE_BATCH_SIZE;
-      if (attempts > 0) {
-        const recentRejectionRate = allRejectedItems.length / (allValidItems.length + allRejectedItems.length);
-        if (recentRejectionRate > 0.6) {
-          batchSize = Math.max(1, Math.floor(BASE_BATCH_SIZE / 2)); // Halve batch size
-          console.log(`High rejection rate (${Math.round(recentRejectionRate * 100)}%), reducing batch size to ${batchSize}`);
-        }
-      }
-      
-      const batchCount = Math.min(batchSize, remainingCount);
-      
-      // Temperature decay: start creative, get more factual with retries
-      // Keep floor at 0.2 to prevent excessive repetition
+      // Temperature decay: start creative, get more factual with retries.
+      // Floor is type-dependent: FLASHCARD needs higher creative floor to avoid
+      // over-deterministic outputs that trigger duplicate rejection and retries.
+      const tempFloor = type === 'FLASHCARD' ? 0.35 : 0.25;
       const temperature = Math.max(
         baseTemperature - (consecutiveFailures * 0.02),
-        0.2
+        tempFloor
       );
       
       if (temperature !== baseTemperature) {
-        console.log(`Temperature decayed to ${temperature.toFixed(2)} after ${consecutiveFailures} consecutive low-quality batches`);
+        console.log(`Temperature decayed to ${temperature.toFixed(2)} after ${consecutiveFailures} consecutive low-quality waves`);
       }
       
-      // Extract recently used concepts for memory injection
-      const recentConcepts = Array.from(seenItems).slice(-5);
+      // Extract used concepts for memory injection — cap at 8 to avoid bloating prompt
+      const recentConcepts = Array.from(seenItems).slice(-Math.min(count, 8));
+
+      // Collect already-used content for explicit prompt injection so the model
+      // avoids regenerating identical content across all quiz types.
+      const usedSentences: string[] = [];
+      if (type === 'FILL_IN_BLANK') {
+        for (const item of allValidItems) {
+          if (item.sentence) usedSentences.push(item.sentence.replace('[blank]', item.answer || '___'));
+        }
+      } else if (type === 'FLASHCARD') {
+        for (const item of allValidItems) {
+          if (item.front) usedSentences.push(item.front);
+        }
+      } else if (type === 'MCQ') {
+        // For MCQ: collect used question text so later waves avoid recycling topics
+        for (const item of allValidItems) {
+          if (item.question) usedSentences.push(item.question);
+        }
+      }
       
-      console.log(`Batch ${attempts + 1}: Requesting ${batchCount} items (${allValidItems.length}/${count} collected)`);
+      // ── Dynamic batch-size reduction ──
+      // After 2+ consecutive failures the model is struggling; shrink batches
+      // so each request is simpler and more likely to produce valid JSON.
+      const effectiveBatchSize = consecutiveFailures >= 2
+        ? Math.max(Math.floor(baseBatchSize * 0.6), 1)
+        : baseBatchSize;
+
+      if (effectiveBatchSize !== baseBatchSize) {
+        console.log(`Batch size reduced ${baseBatchSize} → ${effectiveBatchSize} after ${consecutiveFailures} consecutive failures`);
+      }
+
+      // Determine how many parallel calls to fire this wave
+      const callsThisWave = Math.min(
+        CONCURRENCY,
+        Math.ceil(remainingCount / effectiveBatchSize) // Don't fire more calls than needed
+      );
       
-      // Generate batch with rotating content and concept memory
-      const batchPrompt = buildPrompt(type, difficulty, batchCount, summarySlice, recentConcepts);
-      const rawResponse = await generateWithOllama(batchPrompt, {
-        temperature,
-        requireJson: true,
+      console.log(`\nWave ${wave + 1}/${MAX_WAVES}: Firing ${callsThisWave} parallel calls (${allValidItems.length}/${count} collected)`);
+      
+      // Build and fire parallel promises
+      const wavePromises = Array.from({ length: callsThisWave }).map((_, i) => {
+        const sliceIndex = wave * CONCURRENCY + i; // Each call gets a different summary slice
+        // Zero overlap for FILL_IN_BLANK — overlap causes the same "good candidate"
+        // sentences to reappear across waves, triggering massive duplicate rejections
+        const sliceOverlap = type === 'FILL_IN_BLANK' ? 0 : 150;
+        const summarySlice = getSummarySlice(summary, sliceIndex, 1100, sliceOverlap);
+        
+        // Request 1.1x what we need per call to account for rejections.
+        // Validation pass rates are typically high enough that 1.1x suffices;
+        // lower overgeneration = fewer tokens = meaningfully faster inference.
+        const perCallTarget = Math.ceil(remainingCount / callsThisWave);
+        const batchCount = Math.min(
+          Math.ceil(perCallTarget * 1.1),
+          effectiveBatchSize + 1 // Tight overgen cap
+        );
+        
+        // ── Difficulty-aware token budgets ──
+        // HARD items need significantly more tokens: longer explanations (MCQ),
+        // longer sentences (FIB), and detailed backs (flashcards).
+        // Budgets raised after observing truncation even at 180 tokens/item.
+        const baseTokensPerItem =
+          difficulty === 'HARD'
+            ? (type === 'MCQ' ? 200 : type === 'FILL_IN_BLANK' ? 90 : 130)
+            : difficulty === 'MEDIUM'
+            ? (type === 'MCQ' ? 140 : type === 'FILL_IN_BLANK' ? 70 : 90)
+            : (type === 'MCQ' ? 110 : type === 'FILL_IN_BLANK' ? 55 : 65);
+        // Dynamic token multiplier: after parse errors (truncation), automatically
+        // increase budget for subsequent waves to avoid repeated truncation.
+        const tokensPerItem = Math.min(Math.round(baseTokensPerItem * tokenMultiplier), 300);
+        const maxTokens = Math.min(batchCount * tokensPerItem + 50, 2200); // Hard cap raised to 2200
+        
+        console.log(`  Call ${i + 1}: Requesting ${batchCount} items (slice offset ${sliceIndex}, max ${maxTokens} tokens)`);
+        
+        const batchPrompt = buildPrompt(type, difficulty, batchCount, summarySlice, recentConcepts, usedSentences);
+        return generateWithOllama(batchPrompt, {
+          model: resolvedModel,
+          temperature,
+          requireJson: true,
+          maxTokens,
+        }).catch((err) => {
+          // Don't let one failed call kill the whole wave
+          console.error(`  Call ${i + 1} failed:`, err instanceof Error ? err.message : err);
+          return null;
+        });
       });
       
-      // Parse response
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(rawResponse);
-      } catch (parseError) {
-        console.error(`Batch ${attempts + 1}: JSON parse error`, parseError);
-        attempts++;
-        continue;
+      // Await all parallel calls
+      const rawResponses = await Promise.all(wavePromises);
+      totalApiCalls += callsThisWave;
+      
+      // Process each response
+      let waveValidCount = 0;
+      let waveRejectedCount = 0;
+      
+      for (let i = 0; i < rawResponses.length; i++) {
+        const rawResponse = rawResponses[i];
+        if (!rawResponse) continue; // Skip failed calls
+        
+        // Parse response
+        let parsedResponse;
+        try {
+          parsedResponse = JSON.parse(rawResponse);
+        } catch (parseError) {
+          jsonParseErrors++;
+          // Bump token multiplier by 20% per parse error (cap at 1.6x)
+          tokenMultiplier = Math.min(tokenMultiplier * 1.2, 1.6);
+          console.error(`  Call ${i + 1}: JSON parse error (${jsonParseErrors} total) — ` +
+            `response may have been truncated by num_predict cap. ` +
+            `Token multiplier raised to ${tokenMultiplier.toFixed(2)}x.`, parseError);
+          continue;
+        }
+        
+        // Validate structure
+        if (!parsedResponse.items || !Array.isArray(parsedResponse.items)) {
+          console.warn(`  Call ${i + 1}: Invalid response structure`);
+          continue;
+        }
+        
+        // Validate and deduplicate items (seenItems is shared across all calls)
+        const { validItems: validBatchItems, rejectedItems: rejectedBatchItems } =
+          validateQuizItems(parsedResponse.items, type, seenItems);
+        
+        allValidItems.push(...validBatchItems);
+        allRejectedItems.push(...rejectedBatchItems);
+        waveValidCount += validBatchItems.length;
+        waveRejectedCount += rejectedBatchItems.length;
+        
+        console.log(`  Call ${i + 1}: Generated ${parsedResponse.items.length}, Valid: ${validBatchItems.length}, Rejected: ${rejectedBatchItems.length}`);
+        
+        // Early exit if we already have enough
+        if (allValidItems.length >= count) break;
       }
-      
-      // Validate batch
-      if (!parsedResponse.items || !Array.isArray(parsedResponse.items)) {
-        console.warn(`Batch ${attempts + 1}: Invalid response structure`);
-        attempts++;
-        continue;
-      }
-      
-      // Validate and deduplicate items
-      const { validItems: validBatchItems, rejectedItems: rejectedBatchItems } = validateQuizItems(parsedResponse.items, type, seenItems);
-      
-      allValidItems.push(...validBatchItems);
-      allRejectedItems.push(...rejectedBatchItems);
       
       // Track consecutive failures for temperature decay
-      if (validBatchItems.length === 0) {
+      if (waveValidCount === 0) {
         consecutiveFailures++;
+        stagnantWaves++;
       } else {
-        consecutiveFailures = 0; // Reset on success
+        consecutiveFailures = 0;
+        stagnantWaves = 0;
+        // Reset token multiplier on a successful wave (truncation issue resolved)
+        if (tokenMultiplier > 1.0) {
+          console.log(`Token multiplier reset to 1.0x (successful wave)`);
+          tokenMultiplier = 1.0;
+        }
       }
       
-      console.log(`Batch ${attempts + 1}: Generated ${parsedResponse.items.length}, Valid: ${validBatchItems.length}, Rejected: ${rejectedBatchItems.length}, Total Valid: ${allValidItems.length}/${count}`);
-      
-      // Show progress percentage
+      // Show progress
       const progress = Math.min(100, Math.round((allValidItems.length / count) * 100));
-      console.log(`Progress: ${progress}% complete (${allValidItems.length}/${count} valid items collected)`);
+      console.log(`Wave ${wave + 1} result: +${waveValidCount} valid, +${waveRejectedCount} rejected | Total: ${allValidItems.length}/${count} (${progress}%)`);
       
-      attempts++;
+      wave++;
       
-      // Check if we've reached the target
       if (allValidItems.length >= count) {
-        console.log(`✓ Target reached! Collected ${allValidItems.length} valid items in ${attempts} attempts`);
+        console.log(`✓ Target reached! Collected ${allValidItems.length} valid items in ${wave} waves (${totalApiCalls} API calls)`);
+        break;
+      }
+
+      // ── Early termination on stagnation ──
+      // If 3+ consecutive waves produced zero new items, the model has likely
+      // exhausted its diversity for this summary. Return what we have rather
+      // than wasting 10+ more waves on zero yield.
+      if (stagnantWaves >= 3 && allValidItems.length > 0) {
+        console.warn(`⚠ Early termination: ${stagnantWaves} consecutive waves with zero new items. ` +
+          `Returning ${allValidItems.length}/${count} collected items.`);
         break;
       }
       
-      // Safety valve: downgrade difficulty if stuck
-      if (attempts > 10 && allValidItems.length < count * 0.3) {
-        console.warn(`⚠ Low progress after ${attempts} attempts. Consider using MEDIUM or EASY difficulty for better results with this model.`);
+      // Safety valve
+      if (wave >= 3 && allValidItems.length < count * 0.3) {
+        console.warn(`⚠ Low progress after ${wave} waves. Consider using MEDIUM or EASY difficulty for better results with this model.`);
       }
     }
     
@@ -674,7 +1024,7 @@ export async function generateQuizWithGemma(
       throw new Error('No valid quiz items generated after multiple attempts');
     }
     
-    // Trim to exact count if we got more
+    // Trim to exact count if we got more (expected with overgeneration)
     const finalItems = allValidItems.slice(0, count);
     
     // Calculate elapsed time
@@ -690,15 +1040,24 @@ export async function generateQuizWithGemma(
     console.log(`Valid items generated: ${allValidItems.length}`);
     console.log(`Final items (after trimming): ${finalItems.length}`);
     console.log(`Rejected items: ${allRejectedItems.length}`);
-    console.log(`Total attempts: ${attempts}`);
+    console.log(`Total waves: ${wave} (${totalApiCalls} API calls)`);
     console.log(`Success rate: ${Math.round((allValidItems.length / (allValidItems.length + allRejectedItems.length)) * 100)}%`);
+    console.log(`JSON parse errors (possible truncations): ${jsonParseErrors}`);
     console.log(`Time elapsed: ${timeString}`);
     console.log(`===========================\n`);
+
+    // Actionable warning if many parse errors — token budget is likely too tight
+    if (jsonParseErrors >= 2) {
+      console.warn(
+        `⚠ ${jsonParseErrors} JSON parse errors detected — responses may be truncated by the num_predict cap. ` +
+        `Consider increasing per-item token budgets (tokensPerItem) if this affects output quality.`
+      );
+    }
     
     if (finalItems.length < count) {
-      console.warn(`Generated ${finalItems.length} valid items out of ${count} requested (${attempts} attempts)`);
+      console.warn(`Generated ${finalItems.length} valid items out of ${count} requested (${wave} waves)`);
     } else {
-      console.log(`Successfully generated ${finalItems.length} items in ${attempts} attempts`);
+      console.log(`Successfully generated ${finalItems.length} items in ${wave} waves (${totalApiCalls} API calls)`);
     }
     
     return {
@@ -710,7 +1069,8 @@ export async function generateQuizWithGemma(
         requested: count,
         generated: finalItems.length,
         rejected: allRejectedItems.length,
-        attempts: attempts
+        waves: wave,
+        apiCalls: totalApiCalls
       }
     };
     
@@ -732,15 +1092,16 @@ function buildPrompt(
   difficulty: 'EASY' | 'MEDIUM' | 'HARD',
   count: number,
   summary: string,
-  recentConcepts: string[] = []
+  recentConcepts: string[] = [],
+  usedSentences: string[] = []
 ): string {
   switch (type) {
     case 'MCQ':
-      return buildMCQPrompt(difficulty, count, summary, recentConcepts);
+      return buildMCQPrompt(difficulty, count, summary, recentConcepts, usedSentences);
     case 'FILL_IN_BLANK':
-      return buildFillInBlankPrompt(difficulty, count, summary, recentConcepts);
+      return buildFillInBlankPrompt(difficulty, count, summary, recentConcepts, usedSentences);
     case 'FLASHCARD':
-      return buildFlashcardPrompt(difficulty, count, summary, recentConcepts);
+      return buildFlashcardPrompt(difficulty, count, summary, recentConcepts, usedSentences);
     default:
       throw new Error(`Unknown quiz type: ${type}`);
   }
@@ -749,302 +1110,103 @@ function buildPrompt(
 /**
  * Build MCQ generation prompt with all quality controls
  */
-function buildMCQPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
-  const difficultyGuidelines = {
-    EASY: '- Focus on basic facts, definitions, and direct recall\n- Questions should test if student remembers key information\n- Correct answer should be clearly stated in the content',
-    MEDIUM: '- Test understanding and application of concepts\n- Questions should require connecting ideas\n- Choices should be plausible but distinguishable',
-    HARD: '- Test analysis, evaluation, and synthesis\n- Questions should require critical thinking\n- All choices should seem reasonable at first glance'
+function buildMCQPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = [], usedQuestions: string[] = []): string {
+  const diffGuide: Record<string, string> = {
+    EASY: 'Simple recall only. Correct answer is a direct quote from the summary. Wrong choices are obviously wrong.',
+    MEDIUM: 'Test understanding. Choices are plausible but distinguishable. Distractors are related summary concepts.',
+    HARD: 'Test critical thinking. All choices seem reasonable. Distractors are closely related summary concepts a student could confuse.'
   };
 
-  const conceptMemory = recentConcepts.length > 0 ? `
+  const avoid = recentConcepts.length > 0 ? `\nAVOID these topics: ${recentConcepts.join(', ')}` : '';
 
-DO NOT REPEAT THESE PREVIOUSLY USED CONCEPTS:
-${recentConcepts.map(c => `- ${c}`).join('\n')}
+  // Inject already-used questions so the model avoids recycling the same concepts.
+  // Cap at 15 to avoid exceeding context window on very large runs.
+  const usedBlock = usedQuestions.length > 0
+    ? `\n\nALREADY USED QUESTIONS (DO NOT create questions about the same topics):\n${usedQuestions.slice(-15).map(q => `- ${q}`).join('\n')}\n`
+    : '';
 
-You MUST cover DIFFERENT concepts not listed above.` : '';
+  return `Create ${count} ${difficulty} MCQs from this summary. Output ONLY valid JSON.${avoid}${usedBlock}
 
-  return `You are an expert educational quiz creator. Your task is to create multiple-choice questions based ONLY on the provided summary.
-
-SUMMARY TO ANALYZE:
+SUMMARY:
 ${summary}
-${conceptMemory}
 
-⚠️ CRITICAL - STAY ON TOPIC:
-- Generate questions ONLY about the topics, concepts, and facts in the summary above
-- DO NOT generate questions from your general knowledge about other subjects
-- If the summary is about linguistics, DO NOT create biology questions
-- If the summary is about history, DO NOT create science questions
-- Your questions MUST directly relate to what you just read in the SUMMARY section
-- Each question must reference specific information that appears in the summary
+RULES:
+- All content from summary only, no outside knowledge
+- Each question on a different concept
+- All 4 choices must be real terms from the summary, no placeholders
+- 3 wrong choices must be real summary terms, not the correct answer
+- No duplicate or synonym choices
+- Explanation starts with: "The correct answer is '[exact choice text]' because ..."
+- ${diffGuide[difficulty] || diffGuide.MEDIUM}
 
-YOUR TASK: Create exactly ${count} multiple-choice questions at ${difficulty} difficulty about THE TOPICS IN THE SUMMARY ABOVE.
-
-DIFFICULTY GUIDELINES:
-${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
-
-QUALITY REQUIREMENTS:
-1. Each question must be clear and unambiguous
-2. All 4 choices must be grammatically consistent
-3. Wrong choices (distractors) must be plausible but clearly incorrect
-4. Avoid "all of the above" or "none of the above" options
-5. The explanation must reference specific content from the summary
-
-CRITICAL CONSTRAINT:
-- The correct answer MUST be explicitly stated or directly paraphrased from the summary
-- Do NOT infer information not clearly mentioned in the summary
-- Do NOT create questions about topics not covered in the summary
-- Stick closely to the facts and terminology used in the summary
-
-NO REDUNDANCY:
-- Each question MUST cover a DIFFERENT concept, fact, or aspect from the summary
-- Do NOT ask about the same topic twice in different words
-- Spread questions across the entire summary, not just one section
-- Avoid questions that test the same knowledge point
-
-CITATION REQUIREMENT:
-- Every correct answer must be traceable to a specific sentence in the summary
-- If you cannot find supporting text, DO NOT use that question
-
-EXPLANATION RULE (MANDATORY - CRITICAL FOR VALIDATION):
-Your explanation MUST explicitly repeat key words from the CORRECT choice verbatim.
-The explanation must justify ONLY the correct answer, not any distractors.
-If the explanation does not contain recognizable text from the correct choice, the question is INVALID.
-
-Bad explanation example (WILL BE REJECTED):
-✗ "It adds a prefix to the beginning of a word."
-
-Good explanation example (WILL PASS VALIDATION):
-✓ "The correct answer is 'Energy production through ATP' because mitochondria produce ATP through cellular respiration, making them the powerhouse of the cell."
-
-SELF-CHECK BEFORE FINAL OUTPUT (FAIL = DISCARD ITEM):
-For each question:
-1. TOPIC CHECK: Is this question about a topic actually mentioned in the summary? If NO → discard immediately
-2. Find the exact sentence in the summary that supports the correct answer
-3. Verify all incorrect options contradict or are absent from the summary  
-4. Verify explanation directly references the supporting summary
-5. CRITICAL: Does the explanation explicitly mention words from the correct choice? If NO → discard
-6. Could the explanation also justify ANY wrong option? If YES → discard
-7. Is this question similar to any previously generated? If YES → discard
-If any check fails, regenerate that item silently or reduce the count.
-
-⚠️ BEFORE YOU START:
-Read the summary above carefully. Identify the main topic (e.g., is it about language? science? history? math?).
-ALL your questions must be about THAT topic and use information from THAT summary.
-DO NOT default to generic science or other memorized questions.
-
-OUTPUT FORMAT (JSON only, no markdown, no extra text):
-{
-  "type": "mcq",
-  "difficulty": "${difficulty.toLowerCase()}",
-  "items": [
-    {
-      "question": "[Question about the ACTUAL topic in the summary above]",
-      "choices": [
-        "[Specific answer from summary]",
-        "[Plausible distractor related to summary topic]",
-        "[Another plausible distractor]",
-        "[Third plausible distractor]"
-      ],
-      "answerIndex": 0,
-      "explanation": "The correct answer is '[choice text]' because [specific fact from the summary that supports this answer]."
-    }
-  ]
-}
-
-CRITICAL - ACTUAL SUMMARY ONLY:
-- DO NOT use generic placeholders like "Option A", "Wrong answer 1", "Correct answer from summary"
-- Every choice must be a SPECIFIC, CONCRETE answer derived from the actual summary
-- The question must reference specific facts, terms, or concepts from the summary
-- The explanation must quote or paraphrase the exact supporting sentence
-
-RANDOMIZATION WILL BE HANDLED AUTOMATICALLY:
-- You can place the correct answer at any position (0, 1, 2, or 3)
-- The system will automatically shuffle choices after generation
-- Focus on creating high-quality, content-accurate questions
-
-CRITICAL RULES:
-- Generate EXACTLY ${count} items in the array
-- answerIndex must be 0, 1, 2, or 3 (0-based index)
-- Return ONLY the JSON object, no other text
-- Ensure all JSON is valid and properly formatted`;
+{"type":"mcq","difficulty":"${difficulty.toLowerCase()}","items":[{"question":"...","choices":["...","...","...","..."],"answerIndex":0,"explanation":"The correct answer is '...' because ..."}]}`;
 }
 
 /**
  * Build fill-in-blank generation prompt
  */
-function buildFillInBlankPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
-  const difficultyGuidelines = {
-    EASY: '- Remove simple key terms that are clearly defined\n- Answer should be a single word or short phrase\n- The blank should be easy to identify from context',
-    MEDIUM: '- Remove important concepts that require understanding\n- Answer may be a phrase or technical term\n- Context clues should help but not make it obvious',
-    HARD: '- Remove complex terms or relationships\n- May require deeper understanding to identify\n- Multiple terms might fit, but one is most accurate'
+function buildFillInBlankPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = [], usedSentences: string[] = []): string {
+  const diffGuide: Record<string, string> = {
+    EASY: 'Blank a simple noun or name. Single word answer. Obvious clues.',
+    MEDIUM: 'Blank a technical term or concept. Context helps but not obvious.',
+    HARD: 'Blank a multi-word key term or conceptual phrase. Use longer sentences. Requires deep understanding.'
   };
 
-  const conceptMemory = recentConcepts.length > 0 ? `
+  const avoid = recentConcepts.length > 0
+    ? `\nDo NOT reuse these terms or sentences — pick DIFFERENT ones: ${recentConcepts.join(', ')}`
+    : '';
 
-DO NOT REPEAT THESE PREVIOUSLY USED TERMS:
-${recentConcepts.map(c => `- ${c}`).join('\n')}
+  // Inject already-used sentences so the model doesn't regenerate them.
+  // Cap at 15 to avoid exceeding context window on very large runs.
+  const usedBlock = usedSentences.length > 0
+    ? `\n\nALREADY USED SENTENCES (DO NOT reuse or paraphrase these):\n${usedSentences.slice(-15).map(s => `- ${s}`).join('\n')}\n`
+    : '';
 
-You MUST use DIFFERENT terms not listed above.` : '';
+  return `Create ${count} ${difficulty} fill-in-the-blank items from this summary. Output ONLY valid JSON.${avoid}${usedBlock}
 
-  return `You are an expert educational quiz creator. Your task is to create fill-in-the-blank questions based ONLY on the provided summary.
-
-SUMMARY TO ANALYZE:
+SUMMARY:
 ${summary}
-${conceptMemory}
 
-⚠️ CRITICAL - STAY ON TOPIC:
-- Create fill-in-blank sentences ONLY from the summary above
-- DO NOT use sentences from your general knowledge
-- The blanked term MUST appear in the summary provided
-- Each sentence must be directly taken or adapted from the summary
+RULES:
+- Copy sentences EXACTLY from the summary — do NOT paraphrase or reword
+- Each sentence has exactly one [blank]
+- Answer must be a word/phrase that appears VERBATIM in the original sentence
+- Each item must use a DIFFERENT sentence — never repeat
+- "distractors" must be a JSON array of exactly 3 strings: ["a","b","c"]
+- Distractors are other real terms from the summary (not the answer)
+- If you cannot find ${count} different sentences, return fewer items
+- ${diffGuide[difficulty] || diffGuide.MEDIUM}
 
-YOUR TASK: Create exactly ${count} fill-in-the-blank questions at ${difficulty} difficulty using THE SUMMARY ABOVE.
-
-DIFFICULTY GUIDELINES:
-${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
-
-QUALITY REQUIREMENTS:
-1. Use [blank] to mark where the answer goes
-2. The sentence must make sense and provide enough context
-3. The answer must be directly from or implied by the summary
-4. Distractors should be related terms that could confuse students
-5. Avoid blanking the first or last word of a sentence
-
-CRITICAL CONSTRAINT:
-- The answer MUST be explicitly mentioned in the summary
-- Do NOT infer terms not present in the summary
-- The sentence context must match how the term is used in the summary
-
-NO REDUNDANCY:
-- Each question MUST test a DIFFERENT term or concept
-- Do NOT create multiple blanks for the same answer
-- Spread questions across different topics in the summary
-
-CITATION REQUIREMENT:
-- Find the sentence where the answer appears
-- Ensure your fill-in-blank sentence preserves the same meaning
-- Don't change the context or relationships
-
-SELF-CHECK BEFORE FINAL OUTPUT:
-For each question:
-1. Find the exact sentence in the summary containing the answer
-2. Verify your sentence preserves the original meaning
-3. Confirm distractors are related but clearly wrong
-4. Confirm only the correct answer fits logically
-If any check fails, regenerate that item silently.
-
-OUTPUT FORMAT (JSON only, no markdown, no extra text):
-{
-  "type": "fill_blank",
-  "difficulty": "${difficulty.toLowerCase()}",
-  "items": [
-    {
-      "sentence": "Photosynthesis occurs in the [blank] of plant cells, where light energy is converted to chemical energy.",
-      "answer": "chloroplasts",
-      "distractors": ["mitochondria", "nucleus", "ribosomes"]
-    }
-  ]
-}
-
-CRITICAL - MUST USE [blank] MARKER:
-- Every sentence MUST contain exactly one [blank] marker
-- The [blank] must be where the answer belongs in the original summary
-- The sentence must be grammatically correct and make complete sense
-- The answer must fit naturally when replacing [blank]
-
-DISTRACTORS MUST BE SPECIFIC:
-- Distractors must be actual terms from similar categories (not generic placeholders)
-- They must be plausible enough that someone who didn't read carefully might choose them
-- They must be clearly wrong based on the summary
-
-CRITICAL RULES:
-- Generate EXACTLY ${count} items in the array
-- Each item must have exactly 3 distractors
-- Distractors must be plausible alternatives
-- Return ONLY the JSON object, no other text
-- Ensure all JSON is valid and properly formatted`;
+{"type":"fill_blank","difficulty":"${difficulty.toLowerCase()}","items":[{"sentence":"The [blank] is responsible for...","answer":"term","distractors":["wrong1","wrong2","wrong3"]}]}`;
 }
 
 /**
  * Build flashcard generation prompt
  */
-function buildFlashcardPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = []): string {
-  const difficultyGuidelines = {
-    EASY: '- Front: Simple term or concept name\n- Back: Clear, concise definition\n- Focus on basic vocabulary and fundamental ideas',
-    MEDIUM: '- Front: Concept or principle\n- Back: Explanation with examples or applications\n- Connect multiple ideas when relevant',
-    HARD: '- Front: Complex scenario or relationship\n- Back: Detailed analysis or comparison\n- May include implications and connections'
+function buildFlashcardPrompt(difficulty: string, count: number, summary: string, recentConcepts: string[] = [], usedSentences: string[] = []): string {
+  const diffGuide: Record<string, string> = {
+    EASY: 'Front: "What is [term]?" only. Back: 1-2 sentence definition from summary.',
+    MEDIUM: 'Front: Concept question. Back: Explanation with application (2-3 sentences).',
+    HARD: 'Front: Complex scenario. Back: Detailed analysis or comparison.'
   };
 
-  const conceptMemory = recentConcepts.length > 0 ? `
+  const avoid = recentConcepts.length > 0 ? `\nAVOID these topics: ${recentConcepts.join(', ')}` : '';
 
-DO NOT REPEAT THESE PREVIOUSLY USED TOPICS:
-${recentConcepts.map(c => `- ${c}`).join('\n')}
+  // Inject already-used fronts so the model doesn't regenerate duplicate cards.
+  const usedBlock = usedSentences.length > 0
+    ? `\n\nALREADY USED FLASHCARD FRONTS (DO NOT reuse these questions):\n${usedSentences.slice(-15).map(s => `- ${s}`).join('\n')}\n`
+    : '';
 
-You MUST cover DIFFERENT topics not listed above.` : '';
+  return `Create ${count} ${difficulty} flashcards from this summary. Output ONLY valid JSON.${avoid}${usedBlock}
 
-  return `You are an expert educational quiz creator. Your task is to create flashcards based ONLY on the provided summary.
-
-SUMMARY TO ANALYZE:
+SUMMARY:
 ${summary}
-${conceptMemory}
 
-⚠️ CRITICAL - STAY ON TOPIC:
-- Create flashcards ONLY about topics in the summary above
-- DO NOT create flashcards from your general knowledge
-- Both front and back must reference information from the summary
-- Focus on the actual subject matter presented in the summary
-
-YOUR TASK: Create exactly ${count} flashcards at ${difficulty} difficulty using THE SUMMARY ABOVE.
-
-DIFFICULTY GUIDELINES:
-${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
-
-QUALITY REQUIREMENTS:
-1. Front should be a clear question or prompt
-2. Back should provide complete, accurate information
-3. Keep both sides concise but informative
-4. Use complete sentences on the back
-5. Ensure information is directly from the summary
-
-CRITICAL CONSTRAINT:
-- All information on the back MUST be explicitly from the summary
-- Do NOT add interpretations or inferences
+RULES:
+- Content from summary only, no outside knowledge
+- Each card on a different concept
 - Use exact terminology from the summary
+- ${diffGuide[difficulty] || diffGuide.MEDIUM}
 
-NO REDUNDANCY:
-- Each flashcard MUST cover a DIFFERENT concept or topic
-- Do NOT create multiple cards about the same thing
-- Spread cards across various aspects of the summary
-
-SELF-CHECK BEFORE FINAL OUTPUT:
-For each flashcard:
-1. Verify the back information appears in the summary
-2. Verify terminology matches the source material
-3. Verify you didn't mix up similar concepts
-If any check fails, regenerate that item silently.
-
-OUTPUT FORMAT (JSON only, no markdown, no extra text):
-{
-  "type": "flashcard",
-  "difficulty": "${difficulty.toLowerCase()}",
-  "items": [
-    {
-      "front": "What is the function of the Golgi apparatus?",
-      "back": "The Golgi apparatus processes and packages proteins and lipids produced by the endoplasmic reticulum, preparing them for transport to other parts of the cell or for secretion outside the cell."
-    }
-  ]
-}
-
-CRITICAL - COMPLETE INFORMATION REQUIRED:
-- Front must be a specific, clear question or term (not generic like 'What is X?')
-- Back must provide a complete, accurate explanation directly from the summary
-- Both front and back must contain substantive content (no placeholders or generic text)
-- The back should be 1-3 complete sentences with specific details
-
-CRITICAL RULES:
-- Generate EXACTLY ${count} items in the array
-- Front must be a question or clear prompt
-- Back must be informative and accurate
-- Return ONLY the JSON object, no other text
-- Ensure all JSON is valid and properly formatted`;
+{"type":"flashcard","difficulty":"${difficulty.toLowerCase()}","items":[{"front":"What is...?","back":"It is..."}]}`;
 }
