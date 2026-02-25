@@ -178,6 +178,14 @@ export default function ReviewerEditorPage() {
       };
 
       await html2pdf().set(opt).from(container).save();
+
+      // Track the download for achievements
+      try {
+        await fetch('/api/students/track-download', { method: 'POST' });
+      } catch (e) {
+        // Non-critical, don't block download
+        console.log('Download tracking failed:', e);
+      }
     } catch (error) {
       console.error('PDF download error:', error);
       setModalInfo({ isOpen: true, title: "PDF Error", message: "Failed to generate PDF. Please try again.", type: "error" });

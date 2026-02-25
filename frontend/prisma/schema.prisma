@@ -36,6 +36,7 @@ model Student {
   xp               Int                  @default(0)
   streakCount      Int                  @default(0)
   lastActivityDate String?
+  downloadCount    Int                  @default(0)
   quizzes          Quiz[]
   quizAttempts     QuizAttempt[]
   user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -129,7 +130,8 @@ model Achievement {
   description         String
   icon                String
   category            String
-  xpRequired          Int
+  requirementType     String
+  requirementValue    Int
   createdAt           DateTime             @default(now())
   studentAchievements StudentAchievement[]
 }

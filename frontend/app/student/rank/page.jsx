@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, FaArrowLeft, FaMedal, FaStar, FaCrown } from "react-icons/fa";
 import StudentSidebar from "@/components/student/layout/StudentSidebar";
 import StudentHeader from "@/components/student/layout/StudentHeader";
+import MessageModal from "@/components/shared/MessageModal";
 import { calculateRank, ALL_RANKS, toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode } from "../../../utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";
@@ -19,6 +20,7 @@ export default function StudentRank() {
   const [achievements, setAchievements] = useState([]);
   const [badges, setBadges] = useState([]);
   const [leaderboardRank, setLeaderboardRank] = useState(null);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [currentRank, setCurrentRank] = useState({
     name: "Learner V",
     tier: "V",
@@ -124,6 +126,20 @@ export default function StudentRank() {
         if (response.ok) {
           const data = await response.json();
           setAchievements(data.achievements);
+          
+          // Notify about newly earned achievements
+          if (data.newlyEarned && data.newlyEarned.length > 0) {
+            const newNames = data.achievements
+              .filter(a => data.newlyEarned.includes(a.id))
+              .map(a => `🏆 ${a.name}`)
+              .join('\n');
+            setModalInfo({
+              isOpen: true,
+              title: "Achievement Unlocked!",
+              message: `Congratulations! You've earned:\n${newNames}`,
+              type: "success",
+            });
+          }
         } else {
           console.error('Failed to fetch achievements');
         }
@@ -139,6 +155,23 @@ export default function StudentRank() {
         if (response.ok) {
           const data = await response.json();
           setBadges(data.badges);
+          
+          // Notify about newly earned badges (only if no achievement notification is showing)
+          if (data.newlyEarned && data.newlyEarned.length > 0) {
+            const newNames = data.badges
+              .filter(b => data.newlyEarned.includes(b.id))
+              .map(b => `⭐ ${b.name}`)
+              .join('\n');
+            // Delay slightly if achievement modal might be showing
+            setTimeout(() => {
+              setModalInfo({
+                isOpen: true,
+                title: "Badge Earned!",
+                message: `Congratulations! You've earned:\n${newNames}`,
+                type: "success",
+              });
+            }, 500);
+          }
         } else {
           console.error('Failed to fetch badges');
         }
@@ -446,6 +479,14 @@ export default function StudentRank() {
           </div>
         </div>
       </main>
+
+      <MessageModal
+        isOpen={modalInfo.isOpen}
+        onClose={() => setModalInfo({ ...modalInfo, isOpen: false })}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        type={modalInfo.type}
+      />
     </div>
   );
 }
