@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     const earnedBadgeIds = new Set(earnedBadges.map((sb) => sb.badgeId));
 
     // Auto-award badges based on XP if not already earned
+    const newlyEarned: string[] = [];
     for (const badge of allBadges) {
       if (student.xp >= badge.xpRequired && !earnedBadgeIds.has(badge.id)) {
         try {
@@ -42,6 +43,17 @@ export async function GET(request: NextRequest) {
             },
           });
           earnedBadgeIds.add(badge.id);
+          newlyEarned.push(badge.id);
+
+          // Create notification for newly earned badge
+          await prisma.notification.create({
+            data: {
+              title: '⭐ Badge Earned!',
+              message: `You earned the "${badge.title}" badge — ${badge.description}`,
+              type: 'badge',
+              studentId: student.id,
+            },
+          });
         } catch (error) {
           // Ignore duplicate errors
           console.log('Badge already awarded:', badge.title);
@@ -67,11 +79,17 @@ export async function GET(request: NextRequest) {
               day: 'numeric',
               year: 'numeric',
             })
-          : null,
+          : newlyEarned.includes(badge.id)
+            ? new Date().toLocaleDateString('en-US', {
+                month: 'Short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : null,
       };
     });
 
-    return NextResponse.json({ badges });
+    return NextResponse.json({ badges, newlyEarned });
   } catch (error) {
     console.error('Error fetching badges:', error);
     return NextResponse.json(

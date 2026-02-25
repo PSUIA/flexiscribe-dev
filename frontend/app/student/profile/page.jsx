@@ -48,7 +48,6 @@ export default function StudentProfile() {
   });
   const [passwordErrors, setPasswordErrors] = useState({});
   const [passwordStep, setPasswordStep] = useState(1); // 1: Enter passwords, 2: Verify code
-  const [generatedCode, setGeneratedCode] = useState("");
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [countdown, setCountdown] = useState(0);
 
@@ -224,39 +223,51 @@ export default function StudentProfile() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const generateVerificationCode = () => {
-    // Generate a 4-digit verification code
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
-
-  const sendVerificationCode = () => {
-    const code = generateVerificationCode();
-    setGeneratedCode(code);
+  const sendVerificationCode = async () => {
     setCountdown(60); // 60 seconds cooldown
     
-    // TODO: Backend Integration - Send Verification Code
-    // API Endpoint: POST /api/student/send-verification-code
-    // Request Body: {
-    //   studentId: formData.studentId,
-    //   email: formData.email
-    // }
-    // Expected Response: {
-    //   success: boolean,
-    //   message: string
-    // }
-    
-    // In a real app, this would send the code via email
-    // For demo purposes, we'll just show it in console
-    console.log("Verification code:", code);
-    setModalInfo({ isOpen: true, title: "Verification Code Sent", message: `Verification code sent to ${formData.email}! (Demo code: ${code})`, type: "info" });
+    try {
+      const response = await fetch('/api/students/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send-code',
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setPasswordErrors({ currentPassword: data.error || 'Failed to send verification code' });
+        setCountdown(0);
+        return false;
+      }
+      
+      // In development, the code is returned directly — auto-fill it
+      if (data.devCode) {
+        setPasswordData(prev => ({ ...prev, verificationCode: data.devCode }));
+        setModalInfo({ isOpen: true, title: "Dev Mode — Code Auto-filled", message: `Email sending is skipped in development. Your verification code (${data.devCode}) has been auto-filled.`, type: "info" });
+      } else {
+        setModalInfo({ isOpen: true, title: "Verification Code Sent", message: `A verification code has been sent to ${formData.email}. Please check your inbox.`, type: "info" });
+      }
+      return true;
+    } catch (error) {
+      console.error('Error sending verification code:', error);
+      setPasswordErrors({ currentPassword: 'An error occurred. Please try again.' });
+      setCountdown(0);
+      return false;
+    }
   };
 
-  const handleContinueToVerification = () => {
+  const handleContinueToVerification = async () => {
     if (!validatePassword()) {
       return;
     }
-    sendVerificationCode();
-    setPasswordStep(2);
+    const sent = await sendVerificationCode();
+    if (sent) {
+      setPasswordStep(2);
+    }
   };
 
   const handleVerifyAndChangePassword = async () => {
@@ -265,58 +276,34 @@ export default function StudentProfile() {
       return;
     }
 
-    if (passwordData.verificationCode !== generatedCode) {
-      setPasswordErrors({ verificationCode: "Invalid verification code" });
-      return;
-    }
-
-    // Code is valid, proceed with password change
-    // API Endpoint: POST /api/student/change-password
-    // Request Body: {
-    //   studentId: formData.studentId,
-    //   currentPassword: passwordData.currentPassword,
-    //   newPassword: passwordData.newPassword
-    // }
-    // Expected Response: {
-    //   success: boolean,
-    //   message: string
-    // }
-    
     try {
-      // const response = await fetch('/api/student/change-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     studentId: formData.studentId,
-      //     currentPassword: passwordData.currentPassword,
-      //     newPassword: passwordData.newPassword,
-      //     verificationCode: passwordData.verificationCode
-      //   })
-      // });
-      // const data = await response.json();
-      // if (data.success) {
-      //   alert("Password changed successfully!");
-      //   setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "", verificationCode: "" });
-      //   setPasswordStep(1);
-      //   setGeneratedCode("");
-      // } else {
-      //   setPasswordErrors({ verificationCode: data.message || "Failed to change password" });
-      // }
+      const response = await fetch('/api/students/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify-and-change',
+          verificationCode: passwordData.verificationCode,
+        }),
+      });
+      const data = await response.json();
       
-      // Mock success for now
+      if (!response.ok) {
+        setPasswordErrors({ verificationCode: data.error || "Failed to change password" });
+        return;
+      }
+      
       setModalInfo({ isOpen: true, title: "Success", message: "Password changed successfully!", type: "success" });
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "", verificationCode: "" });
       setPasswordStep(1);
-      setGeneratedCode("");
     } catch (error) {
       console.error("Error changing password:", error);
       setPasswordErrors({ verificationCode: "An error occurred while changing password" });
     }
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     if (countdown === 0) {
-      sendVerificationCode();
+      await sendVerificationCode();
     }
   };
 
@@ -572,17 +559,13 @@ export default function StudentProfile() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="yearLevel">Year Level</label>
-                  <select
+                  <input
+                    type="text"
                     id="yearLevel"
                     name="yearLevel"
                     value={formData.yearLevel}
                     disabled
-                  >
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -599,17 +582,13 @@ export default function StudentProfile() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="gender">Gender</label>
-                  <select
+                  <input
+                    type="text"
                     id="gender"
                     name="gender"
-                    value={formData.gender}
+                    value={formData.gender === 'MALE' ? 'Male' : formData.gender === 'FEMALE' ? 'Female' : formData.gender === 'OTHER' ? 'Other' : formData.gender === 'PREFER_NOT_TO_SAY' ? 'Prefer not to say' : formData.gender}
                     disabled
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                  </select>
+                  />
                 </div>
               </div>
 

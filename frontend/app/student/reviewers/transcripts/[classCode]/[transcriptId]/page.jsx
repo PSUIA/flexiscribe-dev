@@ -129,6 +129,9 @@ export default function TranscriptViewerPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Track the download for achievements
+      fetch('/api/students/track-download', { method: 'POST' }).catch(() => {});
     } catch (err) {
       console.error("Error downloading file:", err);
     }
