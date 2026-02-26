@@ -23,6 +23,7 @@ export default function FillInQuiz({ quiz, questions }) {
   const [submitting, setSubmitting] = useState(false);
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [quizStartedAt] = useState(() => new Date().toISOString());
 
   const currentQuestion = questions.questions[currentQuestionIndex];
   const totalQuestions = questions.questions.length;
@@ -378,7 +379,7 @@ export default function FillInQuiz({ quiz, questions }) {
                       const res = await fetch(`/api/students/quizzes/${quiz.id}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ answers }),
+                        body: JSON.stringify({ answers, startedAt: quizStartedAt }),
                       });
                       const data = await res.json();
                       if (data.success) {

@@ -191,6 +191,7 @@ export async function POST(
     const { id: quizId } = await params;
     const body = await request.json();
     const submittedAnswers: Record<string, any> = body.answers ?? {};
+    const startedAt: string | null = body.startedAt ?? null;
 
     // Get the student record
     const student = await prisma.student.findUnique({
@@ -302,6 +303,7 @@ export async function POST(
         score: correctCount,
         totalQuestions,
         answers: { submitted: submittedAnswers, results: answerResults },
+        startedAt: startedAt ? new Date(startedAt) : null,
       },
     });
 

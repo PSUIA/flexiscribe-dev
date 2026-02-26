@@ -110,15 +110,16 @@ model QuizQuestion {
 }
 
 model QuizAttempt {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   quizId         String
   studentId      String
   score          Float
+  startedAt      DateTime?
   totalQuestions Int
   answers        Json
-  completedAt    DateTime @default(now())
-  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  completedAt    DateTime  @default(now())
+  quiz           Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([quizId])
   @@index([studentId])
