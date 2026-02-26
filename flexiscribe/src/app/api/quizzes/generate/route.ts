@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { generateQuizWithGemma, checkOllamaAvailability } from '@/lib/ollama';
+import { generateQuizWithGemma, getBestAvailableModel } from '@/lib/ollama';
 import { verifyAuth } from '@/lib/auth';
+
+// Allow up to 5 minutes for remote Ollama inference (batch quiz generation)
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,9 +55,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Ollama is available
-    const isOllamaAvailable = await checkOllamaAvailability();
-    if (!isOllamaAvailable) {
+    // Single call: check availability + resolve best model in one /api/tags round-trip
+    let resolvedModel: string;
+    try {
+      resolvedModel = await getBestAvailableModel();
+    } catch {
       return NextResponse.json(
         { error: 'Ollama service is not available. Please ensure Ollama is running.' },
         { status: 503 }
@@ -73,13 +78,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate quiz using Gemma 3 1B
-    console.log(`Generating ${type} quiz with ${count} questions at ${difficulty} difficulty...`);
+    // Summary quality gate — short summaries produce hallucinated filler
+    if (!lesson.content || lesson.content.trim().length < 200) {
+      return NextResponse.json(
+        { error: 'Summary is too short to generate meaningful questions. The lesson needs at least 200 characters of content.' },
+        { status: 422 }
+      );
+    }
+
+    // Generate quiz — pass pre-resolved model to avoid redundant /api/tags calls
+    console.log(`Generating ${type} quiz with ${count} questions at ${difficulty} difficulty using ${resolvedModel}...`);
     const generatedQuiz = await generateQuizWithGemma(
       lesson.content,
       type as 'MCQ' | 'FILL_IN_BLANK' | 'FLASHCARD',
       difficulty as 'EASY' | 'MEDIUM' | 'HARD',
-      count
+      count,
+      resolvedModel
     );
 
     // Save quiz to database (tied to the student for uniqueness)

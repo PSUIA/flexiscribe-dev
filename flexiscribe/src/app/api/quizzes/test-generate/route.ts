@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateQuizWithGemma, checkOllamaAvailability } from '@/lib/ollama';
+import { generateQuizWithGemma, getBestAvailableModel } from '@/lib/ollama';
+
+// Allow up to 5 minutes for remote Ollama inference (batch quiz generation)
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,22 +48,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Ollama is available
-    const isOllamaAvailable = await checkOllamaAvailability();
-    if (!isOllamaAvailable) {
+    // Summary quality gate — short summaries produce hallucinated filler
+    if (content.trim().length < 200) {
+      return NextResponse.json(
+        { error: 'Content is too short to generate meaningful questions. Please provide at least 200 characters.' },
+        { status: 422 }
+      );
+    }
+
+    // Single call: check availability + resolve model
+    let resolvedModel: string;
+    try {
+      resolvedModel = await getBestAvailableModel();
+    } catch {
       return NextResponse.json(
         { error: 'Ollama service is not available. Please ensure Ollama is running with: ollama serve' },
         { status: 503 }
       );
     }
 
-    // Generate quiz using Gemma 3 1B
-    console.log(`Generating ${type} quiz with ${count} questions at ${difficulty} difficulty...`);
+    // Generate quiz — pass pre-resolved model
+    console.log(`Generating ${type} quiz with ${count} questions at ${difficulty} difficulty using ${resolvedModel}...`);
     const generatedQuiz = await generateQuizWithGemma(
       content,
       type as 'MCQ' | 'FILL_IN_BLANK' | 'FLASHCARD',
       difficulty as 'EASY' | 'MEDIUM' | 'HARD',
-      count
+      count,
+      resolvedModel
     );
 
     return NextResponse.json({
