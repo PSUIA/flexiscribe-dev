@@ -14,6 +14,7 @@ import {
 
 import RawTranscriptTable from "@/components/admin/tables/RawTranscriptTable";
 import MessageModal from "@/components/shared/MessageModal";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function ClassAnalyticsPage() {
   const [analytics, setAnalytics] = useState(null);
@@ -133,6 +134,10 @@ export default function ClassAnalyticsPage() {
     mcqs: 0,
     fitb: 0,
   };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f3fb] px-4 sm:px-6 py-6 sm:py-8 space-y-14">

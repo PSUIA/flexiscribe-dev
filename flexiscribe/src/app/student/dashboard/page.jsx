@@ -6,6 +6,7 @@ import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import StudentSidebar from "@/layouts/student/StudentSidebar";
 import StudentHeader from "@/layouts/student/StudentHeader";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import { mockDailyMessages, mockQuotes } from "./mockData";
 import { 
   getGreeting, 
@@ -216,49 +217,9 @@ export default function StudentDashboard() {
     }
   };
 
-  // Don't render clock until mounted to avoid hydration mismatch
-  if (!mounted || !currentTime) {
-    return (
-      <div className="dashboard-container">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-
-          <nav className="nav-menu">
-            <div className="nav-item active">
-              <FaHome className="nav-icon" />
-              <span>Dashboard</span>
-            </div>
-            <div className="nav-item">
-              <FaBook className="nav-icon" />
-              <span>Reviewers</span>
-            </div>
-            <div className="nav-item">
-              <FaGamepad className="nav-icon" />
-              <span>Quizzes</span>
-            </div>
-            <div className="nav-item">
-              <FaTrophy className="nav-icon" />
-              <span>Leaderboard</span>
-            </div>
-          </nav>
-
-          <div className="clock-widget">
-            {/* Placeholder while loading */}
-            <div style={{ height: '200px' }}></div>
-          </div>
-        </aside>
-        <main className="main-content flex flex-col min-h-screen">
-          <div className="flex items-center justify-center flex-1 text-white opacity-60">Loading...</div>
-        </main>
-      </div>
-    );
+  // Don't render until mounted and data is loaded to avoid flash of default data
+  if (!mounted || !currentTime || loading) {
+    return <LoadingScreen />;
   }
 
   // Calculate clock hand angles

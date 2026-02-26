@@ -86,6 +86,7 @@ export default function Sidebar() {
   const [time, setTime] = useState("");
   const [day, setDay] = useState("");
   const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
   useEffect(() => {
     const update = () => {
@@ -114,6 +115,8 @@ export default function Sidebar() {
         }
       } catch (error) {
         console.error("Failed to fetch classes:", error);
+      } finally {
+        setLoadingCourses(false);
       }
     }
     fetchClasses();
@@ -171,19 +174,28 @@ export default function Sidebar() {
 
         {openClasses && (
           <div className="ml-10 mt-1 space-y-1">
-            {courses.map((course) => (
-              <Link
-                key={course}
-                href={`/educator/classes/${course.toLowerCase()}`}
-                className="edu-nav-sub-item block px-4 py-2.5 rounded-lg bg-white/10 text-sm"
-              >
-                {course}
-              </Link>
-            ))}
-            {courses.length === 0 && (
-              <p className="px-4 py-3 text-sm text-white/60">
-                No classes assigned yet
-              </p>
+            {loadingCourses ? (
+              <div className="px-4 py-3">
+                <div className="w-24 h-3 bg-white/20 rounded animate-pulse mb-2" />
+                <div className="w-20 h-3 bg-white/20 rounded animate-pulse" />
+              </div>
+            ) : (
+              <>
+                {courses.map((course) => (
+                  <Link
+                    key={course}
+                    href={`/educator/classes/${course.toLowerCase()}`}
+                    className="edu-nav-sub-item block px-4 py-2.5 rounded-lg bg-white/10 text-sm"
+                  >
+                    {course}
+                  </Link>
+                ))}
+                {courses.length === 0 && (
+                  <p className="px-4 py-3 text-sm text-white/60">
+                    No classes assigned yet
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import FlashcardQuiz from "./FlashcardQuiz";
 import MCQQuiz from "./MCQQuiz";
 import FillInQuiz from "./FillInQuiz";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function TestViewPage() {
   const router = useRouter();
@@ -71,17 +72,7 @@ export default function TestViewPage() {
   }, [router]);
 
   if (!quiz || !questions) {
-    return (
-      <div className="loading-container" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '1.2rem' 
-      }}>
-        <div>Loading quiz...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Render the appropriate quiz type component

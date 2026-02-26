@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import StudentSidebar from "@/layouts/student/StudentSidebar";
 import StudentHeader from "@/layouts/student/StudentHeader";
 import MessageModal from "@/components/shared/MessageModal";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import { calculateRank, ALL_RANKS, toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode } from "../../../utils/student";
 import "../dashboard/styles.css";
 import "./styles.css";
@@ -19,6 +20,7 @@ export default function StudentRank() {
   const [studentProfile, setStudentProfile] = useState(null);
   const [achievements, setAchievements] = useState([]);
   const [badges, setBadges] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [leaderboardRank, setLeaderboardRank] = useState(null);
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [currentRank, setCurrentRank] = useState({
@@ -116,6 +118,8 @@ export default function StudentRank() {
         }
       } catch (error) {
         console.error('Error fetching student profile:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -242,8 +246,8 @@ export default function StudentRank() {
     router.push("/student/dashboard");
   };
 
-  if (!mounted || !currentTime) {
-    return <div className="dashboard-container">Loading...</div>;
+  if (!mounted || !currentTime || loading) {
+    return <LoadingScreen />;
   }
 
   const hours = currentTime.getHours() % 12;

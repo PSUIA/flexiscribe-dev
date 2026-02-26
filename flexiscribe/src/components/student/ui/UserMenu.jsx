@@ -99,7 +99,7 @@ export default function UserMenu({ userName, userRole, userAvatar }) {
           </div>
           <div className="dropdown-item" onClick={handleRank}>
             <FaTrophy className="dropdown-icon" />
-            <span>My Rank</span>
+            <span>My Rank</span>  
           </div>
           <div className="dropdown-item" onClick={handleChangePassword}>
             <FaKey className="dropdown-icon" />

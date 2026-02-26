@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import FlashcardQuiz from "./FlashcardQuiz";
 import MCQQuiz from "./MCQQuiz";
 import FillInQuiz from "./FillInQuiz";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function QuizPage() {
   const params = useParams();
@@ -44,11 +45,7 @@ export default function QuizPage() {
   }, [params.id, router]);
 
   if (loading || !quiz || !questions) {
-    return (
-      <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <div>{error || 'Loading quiz...'}</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Render the appropriate quiz type component

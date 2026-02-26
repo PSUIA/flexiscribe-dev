@@ -14,7 +14,8 @@ export default function ProfessorProfileCard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
 
-  const [name, setName] = useState("Uia");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
   const [educator, setEducator] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
@@ -36,9 +37,14 @@ export default function ProfessorProfileCard() {
           const data = await res.json();
           setEducator(data.educator);
           setName(data.educator.fullName.split(" ")[0] || "Professor");
+        } else {
+          setName("Professor");
         }
       } catch (error) {
         console.error("Failed to fetch educator profile:", error);
+        setName("Professor");
+      } finally {
+        setLoading(false);
       }
     }
     fetchProfile();
@@ -107,7 +113,22 @@ export default function ProfessorProfileCard() {
     router.push("/educator/notifications");
   }
 
-  const initial = name?.charAt(0)?.toUpperCase() || "?";
+  const initial = loading ? "..." : (name?.charAt(0)?.toUpperCase() || "?");
+
+  if (loading) {
+    return (
+      <>
+        {/* MOBILE BUTTON - shimmer */}
+        <div className="md:hidden flex justify-end mb-2">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#9d8adb] to-[#4c4172] animate-pulse" />
+        </div>
+        {/* DESKTOP - shimmer */}
+        <div className="hidden md:block">
+          <div className="w-full min-h-[140px] sm:min-h-[160px] md:min-h-[170px] lg:min-h-[180px] bg-gradient-to-br from-[#9d8adb] to-[#4c4172] rounded-[16px] md:rounded-[24px] lg:rounded-[30px] animate-pulse" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
