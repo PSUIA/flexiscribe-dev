@@ -246,7 +246,7 @@ export default function QuizTestPage() {
           <div className="quiz-stats">
             <span className="stat-item">✓ Valid: {quiz.stats.generated}</span>
             <span className="stat-item">✗ Rejected: {quiz.stats.rejected}</span>
-            <span className="stat-item">Attempts: {quiz.stats.attempts}</span>
+            <span className="stat-item">Waves: {quiz.stats.waves ?? quiz.stats.attempts} ({quiz.stats.apiCalls ?? '?'} calls)</span>
           </div>
         )}
 
