@@ -83,6 +83,7 @@ function LeaderboardColumn({ data, startRank }) {
 
 export default function StudentsLeaderboardCard() {
   const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -94,6 +95,8 @@ export default function StudentsLeaderboardCard() {
         }
       } catch (error) {
         console.error("Failed to fetch leaderboard:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchLeaderboard();
@@ -135,23 +138,43 @@ export default function StudentsLeaderboardCard() {
 
       {/* CONTENT */}
       <div className="flex items-start overflow-x-auto md:overflow-visible edu-scrollbar">
-        <LeaderboardColumn
-          data={col1}
-          startRank={1}
-        />
-        <div className="w-10 shrink-0" />
+        {loading ? (
+          <div className="flex gap-10 w-full">
+            {[1, 2, 3].map((col) => (
+              <div key={col} className="w-[200px] space-y-2">
+                {[1, 2, 3, 4, 5].map((row) => (
+                  <div key={row} className="flex items-center gap-3 p-2">
+                    <div className="w-10 h-10 rounded-full bg-white/20 animate-pulse shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="w-24 h-3 bg-white/20 rounded animate-pulse" />
+                      <div className="w-16 h-2 bg-white/15 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <LeaderboardColumn
+              data={col1}
+              startRank={1}
+            />
+            <div className="w-10 shrink-0" />
 
-        <LeaderboardColumn
-          data={col2}
-          startRank={col1.length + 1}
-        />
-        <div className="w-10 shrink-0" />
+            <LeaderboardColumn
+              data={col2}
+              startRank={col1.length + 1}
+            />
+            <div className="w-10 shrink-0" />
 
-        <LeaderboardColumn
-          data={col3}
-          startRank={col1.length + col2.length + 1}
-        />
-        <div className="w-16 shrink-0" />
+            <LeaderboardColumn
+              data={col3}
+              startRank={col1.length + col2.length + 1}
+            />
+            <div className="w-16 shrink-0" />
+          </>
+        )}
       </div>
 
       {/* FOOTER */}

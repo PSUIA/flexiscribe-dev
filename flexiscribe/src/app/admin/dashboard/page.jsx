@@ -5,6 +5,7 @@ import StatCard from "@/components/admin/cards/StatCard";
 import ProgressCard from "@/components/admin/cards/ProgressCard";
 import RecentActivityCard from "@/components/admin/cards/RecentActivityCard";
 import ClassAnalyticsCard from "@/components/admin/cards/ClassAnalyticsCard";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -37,6 +38,10 @@ export default function DashboardPage() {
     }
   };
 
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="space-y-8 sm:space-y-10">
       {/* QUICK STATS */}
@@ -48,15 +53,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           <StatCard
             label="Total Students"
-            value={loading ? "..." : stats.totalStudents}
+            value={stats.totalStudents}
           />
           <StatCard
             label="Total Educators"
-            value={loading ? "..." : stats.totalEducators}
+            value={stats.totalEducators}
           />
           <StatCard
             label="Active Users"
-            value={loading ? "..." : stats.activeUsers}
+            value={stats.activeUsers}
           />
         </div>
       </section>

@@ -9,8 +9,11 @@ import {
   LogOut,
   X,
   Menu,
+  Users,
+  GraduationCap,
+  Activity,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ProfileModal from "@/components/admin/modals/ProfileModal";
 
@@ -26,11 +29,77 @@ export default function TopBar({ onMenuClick }) {
   const [adminProfile, setAdminProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const searchRef = useRef(null);
+  const searchTimerRef = useRef(null);
+
   // Fetch notifications and profile
   useEffect(() => {
     fetchNotifications();
     fetchProfile();
+    // Poll notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced search
+  const handleSearch = useCallback((query) => {
+    setSearchQuery(query);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      setSearchOpen(false);
+      return;
+    }
+
+    setSearchOpen(true);
+    setSearching(true);
+
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/search?q=${encodeURIComponent(query.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.results || []);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+  }, []);
+
+  const handleSearchResultClick = (result) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    router.push(result.href);
+  };
+
+  const getSearchIcon = (type) => {
+    switch (type) {
+      case "user": return <Users size={14} className="text-[#9d8adb]" />;
+      case "class": return <GraduationCap size={14} className="text-[#9d8adb]" />;
+      case "activity": return <Activity size={14} className="text-[#9d8adb]" />;
+      default: return <Search size={14} className="text-[#9d8adb]" />;
+    }
+  };
 
   const fetchNotifications = async () => {
     try {

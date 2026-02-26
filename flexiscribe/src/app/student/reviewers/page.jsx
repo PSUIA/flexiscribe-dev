@@ -6,6 +6,7 @@ import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
 import MessageModal from "@/components/shared/MessageModal";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -178,45 +179,9 @@ export default function ReviewersPage() {
     router.push(`/student/reviewers/transcripts/${code}`);
   };
 
-  // Don't render clock until mounted to avoid hydration mismatch
-  if (!mounted || !currentTime) {
-    return (
-      <div className="dashboard-container">
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-          <nav className="nav-menu">
-            <div className="nav-item">
-              <FaHome className="nav-icon" />
-              <span>Dashboard</span>
-            </div>
-            <div className="nav-item active">
-              <FaBook className="nav-icon" />
-              <span>Reviewers</span>
-            </div>
-            <div className="nav-item">
-              <FaGamepad className="nav-icon" />
-              <span>Quizzes</span>
-            </div>
-            <div className="nav-item">
-              <FaTrophy className="nav-icon" />
-              <span>Leaderboard</span>
-            </div>
-          </nav>
-          <div className="clock-widget">
-            <div style={{ height: '200px' }}></div>
-          </div>
-        </aside>
-        <main className="main-content">
-          <div>Loading...</div>
-        </main>
-      </div>
-    );
+  // Don't render until mounted and data is loaded to avoid flash of default data
+  if (!mounted || !currentTime || loadingClasses || loadingTranscripts) {
+    return <LoadingScreen />;
   }
 
   // Calculate clock hand angles

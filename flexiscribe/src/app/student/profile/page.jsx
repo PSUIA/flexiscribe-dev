@@ -6,6 +6,7 @@ import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
 import UserMenu from "@/components/student/ui/UserMenu";
 import MessageModal from "@/components/shared/MessageModal";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import "../../student/dashboard/styles.css";
 
 // Default avatar options
@@ -317,8 +318,8 @@ export default function StudentProfile() {
     router.push("/student/dashboard");
   };
 
-  if (!mounted || !currentTime) {
-    return <div className="dashboard-container">Loading...</div>;
+  if (!mounted || !currentTime || loading) {
+    return <LoadingScreen />;
   }
 
   const hours = currentTime.getHours() % 12;

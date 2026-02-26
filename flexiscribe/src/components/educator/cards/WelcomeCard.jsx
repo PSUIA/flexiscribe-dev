@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 export default function WelcomeCard({
   subtitle = "Ready to manage your classes today?",
 }) {
-  const [name, setName] = useState("Professor");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -16,9 +17,14 @@ export default function WelcomeCard({
           const data = await res.json();
           const parts = data.educator.fullName?.trim().split(/\s+/) || [];
           setName(parts[0] || "Professor");
+        } else {
+          setName("Professor");
         }
       } catch (error) {
         console.error("Failed to fetch educator profile:", error);
+        setName("Professor");
+      } finally {
+        setLoading(false);
       }
     }
     fetchProfile();
@@ -42,11 +48,19 @@ export default function WelcomeCard({
       {/* TEXT */}
       <div className="z-10">
         <h2 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-white leading-tight">
-          Welcome, {name}!
+          {loading ? (
+            <span className="inline-block w-48 h-8 bg-white/20 rounded animate-pulse" />
+          ) : (
+            <>Welcome, {name}!</>
+          )}
         </h2>
 
         <p className="text-xs md:text-sm lg:text-base text-white/90 mt-1 opacity-90">
-          {subtitle}
+          {loading ? (
+            <span className="inline-block w-64 h-4 bg-white/15 rounded animate-pulse mt-1" />
+          ) : (
+            subtitle
+          )}
         </p>
       </div>
 

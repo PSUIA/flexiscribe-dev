@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 export default function ScheduleCard() {
   const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSchedule() {
@@ -26,6 +27,8 @@ export default function ScheduleCard() {
         }
       } catch (error) {
         console.error("Failed to fetch schedule:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchSchedule();
@@ -70,7 +73,13 @@ export default function ScheduleCard() {
             pr-3 lg:pr-4
           "
         >
-          {schedules.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-[18px] sm:rounded-[22px] bg-white/18 h-[52px] sm:h-[60px] animate-pulse" />
+              ))}
+            </div>
+          ) : schedules.length === 0 ? (
             <p className="text-center text-white/80">
               No schedule for today 🎉
             </p>
