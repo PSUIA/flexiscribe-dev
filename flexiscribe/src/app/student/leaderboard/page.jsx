@@ -6,6 +6,7 @@ import StudentSidebar from "@/layouts/student/StudentSidebar";
 import StudentHeader from "@/layouts/student/StudentHeader";
 import { toggleSidebar as utilToggleSidebar, toggleDarkMode as utilToggleDarkMode, handleNavigation as utilHandleNavigation } from "../../../utils/student";
 import { ALL_RANKS, calculateStreak } from "@/utils/student";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import "../dashboard/styles.css";
 import "./styles.css";
 
@@ -20,6 +21,7 @@ export default function StudentLeaderboard() {
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [studentProfile, setStudentProfile] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [streakData, setStreakData] = useState({ count: 0, isActive: false, lastActivityDate: null });
 
   useEffect(() => {
@@ -81,6 +83,8 @@ export default function StudentLeaderboard() {
         }
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -135,48 +139,9 @@ export default function StudentLeaderboard() {
     }
   };
 
-  if (!mounted || !currentTime) {
-    return (
-      <div className="dashboard-container">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-
-          <nav className="nav-menu">
-            <div className="nav-item">
-              <FaHome className="nav-icon" />
-              <span>Dashboard</span>
-            </div>
-            <div className="nav-item">
-              <FaBook className="nav-icon" />
-              <span>Reviewers</span>
-            </div>
-            <div className="nav-item">
-              <FaGamepad className="nav-icon" />
-              <span>Quizzes</span>
-            </div>
-            <div className="nav-item active">
-              <FaTrophy className="nav-icon" />
-              <span>Leaderboard</span>
-            </div>
-          </nav>
-
-          <div className="clock-widget">
-            {/* Placeholder while loading */}
-            <div style={{ height: '200px' }}></div>
-          </div>
-        </aside>
-        <main className="main-content flex flex-col justify-between min-h-screen">
-          <div>Loading...</div>
-        </main>
-      </div>
-    );
+  // Don't render until mounted and data is loaded to avoid flash of default data
+  if (!mounted || !currentTime || loading) {
+    return <LoadingScreen />;
   }
 
   const hours = currentTime.getHours() % 12;

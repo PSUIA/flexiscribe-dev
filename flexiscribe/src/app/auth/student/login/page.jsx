@@ -83,7 +83,7 @@ export default function Login() {
       const loginData = await loginResponse.json();
 
       if (!loginResponse.ok) {
-        setError(loginData.error || "Login failed");
+        setError("Invalid student number or password ❌");
         setIsLoading(false);
         return;
       }

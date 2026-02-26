@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import EducatorHeader from "@/layouts/educator/EducatorHeader";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function ClassesPage() {
   const [classes, setClasses] = useState([]);
-  const [userName, setUserName] = useState("Educator");
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     async function fetchClasses() {
@@ -19,6 +21,8 @@ export default function ClassesPage() {
         }
       } catch (error) {
         console.error("Failed to fetch classes:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchClasses();
@@ -31,13 +35,20 @@ export default function ClassesPage() {
         if (res.ok) {
           const data = await res.json();
           setUserName(data.educator.fullName.split(" ")[0] || "Educator");
+        } else {
+          setUserName("Educator");
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error);
+        setUserName("Educator");
       }
     }
     fetchProfile();
   }, []);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">

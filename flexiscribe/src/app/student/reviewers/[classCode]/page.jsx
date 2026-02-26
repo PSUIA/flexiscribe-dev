@@ -5,6 +5,7 @@ import { FaHome, FaBook, FaGamepad, FaTrophy, FaBars, FaTimes, FaMoon, FaSun, Fa
 import UserMenu from "@/components/student/ui/UserMenu";
 import NotificationMenu from "@/components/student/ui/NotificationMenu";
 import SearchBar from "@/components/student/ui/SearchBar";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 import "../../dashboard/styles.css";
 import "./styles.css";
 
@@ -113,23 +114,8 @@ export default function ClassReviewersPage() {
 
 
 
-  if (!mounted || !currentTime) {
-    return (
-      <div className="dashboard-container">
-        <aside className="sidebar">
-          <div className="logo-section">
-            <img src="/img/fLexiScribe-logo.png" alt="Logo" className="h-16 w-16" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-2xl font-bold">fLexiScribe</h1>
-              <p className="text-xs font-normal">Your Note-Taking Assistant</p>
-            </div>
-          </div>
-        </aside>
-        <main className="main-content">
-          <div>Loading...</div>
-        </main>
-      </div>
-    );
+  if (!mounted || !currentTime || loadingReviewers) {
+    return <LoadingScreen />;
   }
 
   const hours = currentTime.getHours() % 12;

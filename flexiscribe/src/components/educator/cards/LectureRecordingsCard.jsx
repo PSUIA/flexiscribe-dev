@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 export default function LectureRecordingsCard() {
   const [lectures, setLectures] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTranscriptions() {
@@ -18,6 +19,8 @@ export default function LectureRecordingsCard() {
         }
       } catch (error) {
         console.error("Failed to fetch transcriptions:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchTranscriptions();
@@ -46,9 +49,23 @@ export default function LectureRecordingsCard() {
 
       {/* LIST */}
       <div className="space-y-4 flex-1">
-        {lectures.map((lecture, index) => (
-          <LectureItem key={index} {...lecture} />
-        ))}
+        {loading ? (
+          <>  
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between px-1 sm:px-2">
+                  <span className="inline-block w-20 h-3 bg-white/20 rounded animate-pulse" />
+                  <span className="inline-block w-12 h-3 bg-white/20 rounded animate-pulse" />
+                </div>
+                <div className="bg-white/20 rounded-full px-4 sm:px-8 py-2 sm:py-3 h-10 animate-pulse" />
+              </div>
+            ))}
+          </>
+        ) : (
+          lectures.map((lecture, index) => (
+            <LectureItem key={index} {...lecture} />
+          ))
+        )}
       </div>
 
       {/* ILLUSTRATION */}

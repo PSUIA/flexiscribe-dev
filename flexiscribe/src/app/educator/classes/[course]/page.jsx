@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import SectionCard from "@/components/educator/classes/SectionCard";
 import StudentTableCard from "@/components/educator/classes/StudentTableCard";
 import EducatorHeader from "@/layouts/educator/EducatorHeader";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 /* ================= PAGE ================= */
 
@@ -15,7 +16,8 @@ export default function ClassPage() {
 
   // Real data state
   const [allClasses, setAllClasses] = useState([]);
-  const [userName, setUserName] = useState("Educator");
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
   const [activeSection, setActiveSection] = useState("");
   const [activeClassId, setActiveClassId] = useState(null);
 
@@ -38,6 +40,8 @@ export default function ClassPage() {
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
@@ -59,6 +63,10 @@ export default function ClassPage() {
       setActiveClassId(courseClasses[0].id);
     }
   }, [courseClasses]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">

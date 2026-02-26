@@ -74,7 +74,7 @@
 }
 
 .dark-mode .class-input::placeholder {
-  color: rgba(139, 127, 199, 0.6);
+  color: C;
 }
 
 .add-class-btn {
@@ -134,7 +134,7 @@
 .folder-sublabel {
   position: relative;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(45, 38, 64, 0.8);
   font-size: 13px;
   font-weight: 500;
   text-align: center;

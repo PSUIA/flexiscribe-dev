@@ -7,11 +7,13 @@ import TranscriptionHeader from "./components/TranscriptionHeader";
 import CourseTabs from "./components/CourseTabs";
 import TranscriptCard from "./components/TranscriptCard";
 import PreviewPanel from "./components/PreviewPanel";
+import LoadingScreen from "@/components/shared/LoadingScreen";
 
 export default function TranscriptionsPage() {
   const searchParams = useSearchParams();
 
   const [transcripts, setTranscripts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
   const [activeCourse, setActiveCourse] = useState("");
   const [selected, setSelected] = useState(null);
@@ -35,6 +37,8 @@ export default function TranscriptionsPage() {
         }
       } catch (error) {
         console.error("Failed to fetch transcriptions:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchTranscriptions();
@@ -60,6 +64,10 @@ export default function TranscriptionsPage() {
   const filtered = transcripts.filter(
     (t) => t.course === activeCourse
   );
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="h-full flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
