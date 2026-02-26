@@ -154,7 +154,7 @@ function hasPlaceholderText(choice: string): boolean {
  * Validate and fix a single MCQ item
  * Returns object with { valid: boolean, item: any, rejectionReason?: string }
  */
-function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReason?: string } {
+function validateMCQItem(item: any, difficulty: string = 'MEDIUM'): { valid: boolean; item: any; rejectionReason?: string } {
   // Check choices array
   if (!item.choices || item.choices.length !== 4) {
     return { 
@@ -198,17 +198,24 @@ function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReaso
     };
   }
 
-  // Check that no choice is a substring of another (catches near-duplicates)
+  // Check that no two choices are near-duplicates using word-set overlap.
+  // Previous substring check was too aggressive (e.g. "encapsulation" ⊂ "encapsulation in OOP").
+  // Now we use significant-word overlap: reject only when ≥80% of the shorter
+  // choice's words (length > 3) appear in the longer one.
   for (let i = 0; i < normalizedChoices.length; i++) {
     for (let j = i + 1; j < normalizedChoices.length; j++) {
-      const a = normalizedChoices[i];
-      const b = normalizedChoices[j];
-      if (a.length > 5 && b.length > 5 && (a.includes(b) || b.includes(a))) {
-        return {
-          valid: false,
-          item,
-          rejectionReason: `Near-duplicate choices: "${item.choices[i]}" vs "${item.choices[j]}"`
-        };
+      const wordsA = new Set(normalizedChoices[i].split(/\s+/).filter((w: string) => w.length > 3));
+      const wordsB = new Set(normalizedChoices[j].split(/\s+/).filter((w: string) => w.length > 3));
+      if (wordsA.size > 0 && wordsB.size > 0) {
+        const intersection = [...wordsA].filter(w => wordsB.has(w)).length;
+        const overlapRatio = intersection / Math.min(wordsA.size, wordsB.size);
+        if (overlapRatio > 0.8) {
+          return {
+            valid: false,
+            item,
+            rejectionReason: `Near-duplicate choices (${Math.round(overlapRatio * 100)}% word overlap): "${item.choices[i]}" vs "${item.choices[j]}"`
+          };
+        }
       }
     }
   }
@@ -243,25 +250,33 @@ function validateMCQItem(item: any): { valid: boolean; item: any; rejectionReaso
     answerIndex: newAnswerIndex
   };
 
-  // Explanation-answer alignment check using word overlap.
-  // Previous prefix-match was too strict — rejected items where the explanation
-  // paraphrased the correct answer. Now we check that ≥50% of the significant
-  // words (length > 3) in the correct answer appear in the explanation.
+  // Explanation-answer alignment check — difficulty-aware.
+  // EASY: accept if the answer appears as a substring in the explanation (the model
+  //       is instructed to quote the answer, so substring is a reliable signal).
+  //       Fall back to 30% word overlap for single-word answers.
+  // MEDIUM/HARD: require ≥50% word overlap (paraphrasing is expected at higher levels).
   if (fixedItem.explanation && fixedItem.choices[fixedItem.answerIndex]) {
     const correctText = normalizeText(fixedItem.choices[fixedItem.answerIndex]);
     const explanationText = normalizeText(fixedItem.explanation);
-    // Only apply check for answers with substantive words
-    const correctWords = correctText.split(/\s+/).filter(w => w.length > 3);
-    if (correctWords.length >= 2) {
-      const explanationWordSet = new Set(explanationText.split(/\s+/));
-      const hits = correctWords.filter(w => explanationWordSet.has(w)).length;
-      const overlapRatio = hits / correctWords.length;
-      if (overlapRatio < 0.5) {
-        return {
-          valid: false,
-          item: fixedItem,
-          rejectionReason: `Explanation does not reference correct answer (word overlap ${Math.round(overlapRatio * 100)}% < 50%)`
-        };
+
+    // Substring fallback — if the exact answer phrase appears, it's clearly aligned
+    const substringMatch = explanationText.includes(correctText);
+
+    if (!substringMatch) {
+      // Word-overlap check with difficulty-aware threshold
+      const correctWords = correctText.split(/\s+/).filter(w => w.length > 3);
+      if (correctWords.length >= 2) {
+        const explanationWordSet = new Set(explanationText.split(/\s+/));
+        const hits = correctWords.filter(w => explanationWordSet.has(w)).length;
+        const overlapRatio = hits / correctWords.length;
+        const threshold = difficulty === 'EASY' ? 0.3 : 0.5;
+        if (overlapRatio < threshold) {
+          return {
+            valid: false,
+            item: fixedItem,
+            rejectionReason: `Explanation does not reference correct answer (word overlap ${Math.round(overlapRatio * 100)}% < ${Math.round(threshold * 100)}%)`
+          };
+        }
       }
     }
   }
@@ -405,10 +420,13 @@ function autoFixFillInBlank(sentence: string, answer: string): string | null {
 }
 
 /**
- * Validate and fix a single fill-in-blank item
+ * Validate and fix a single fill-in-blank item.
+ * @param item  The raw item from the model.
+ * @param summary  The full source summary — used to verify the sentence is
+ *                 actually present in the source material (not hallucinated).
  * Returns object with { valid: boolean, item: any, rejectionReason?: string }
  */
-function validateFillInBlankItem(item: any): { valid: boolean; item: any; rejectionReason?: string } {
+function validateFillInBlankItem(item: any, summary: string = ''): { valid: boolean; item: any; rejectionReason?: string } {
   if (!item.sentence || !item.answer) {
     return { 
       valid: false, 
@@ -425,6 +443,32 @@ function validateFillInBlankItem(item: any): { valid: boolean; item: any; reject
       item, 
       rejectionReason: `Could not auto-fix: answer "${item.answer}" not found in sentence` 
     };
+  }
+
+  // ── Source-presence check ──
+  // Verify the sentence (with [blank] replaced by the answer) exists in the
+  // source summary. This prevents the model from hallucinating sentences that
+  // look plausible but aren't actually in the material — a major cause of
+  // duplicates across waves (the model invents the same fake sentence repeatedly).
+  if (summary.length > 0) {
+    const reconstructed = normalizeText(fixedSentence.replace('[blank]', item.answer));
+    const normSummary = normalizeText(summary);
+    if (!normSummary.includes(reconstructed)) {
+      // Fallback: check if most words appear in order (handles minor tokenization diffs)
+      const recWords = reconstructed.split(/\s+/).filter(w => w.length > 3);
+      if (recWords.length >= 3) {
+        const summaryWords = new Set(normSummary.split(/\s+/));
+        const hits = recWords.filter(w => summaryWords.has(w)).length;
+        const ratio = hits / recWords.length;
+        if (ratio < 0.7) {
+          return {
+            valid: false,
+            item,
+            rejectionReason: `Sentence not found in summary (word match ${Math.round(ratio * 100)}% < 70%): "${fixedSentence}"`
+          };
+        }
+      }
+    }
   }
   
   // ── Distractor auto-fix ──
@@ -488,7 +532,9 @@ function validateFlashcardItem(item: any): { valid: boolean; item: any; rejectio
 function validateQuizItems(
   items: any[], 
   type: string, 
-  existingItems: Set<string> = new Set()
+  existingItems: Set<string> = new Set(),
+  difficulty: string = 'MEDIUM',
+  summary: string = ''
 ): { validItems: any[]; rejectedItems: any[] } {
   const validItems: any[] = [];
   const rejectedItems: any[] = [];
@@ -498,12 +544,24 @@ function validateQuizItems(
     
     // Type-specific validation
     if (type === 'MCQ') {
-      validationResult = validateMCQItem(item);
+      validationResult = validateMCQItem(item, difficulty);
       
-      // Check for duplicates
+      // Check for duplicates — use semantic similarity (keyword overlap)
+      // instead of exact normalized match. This catches paraphrased duplicates
+      // that the model generates when slices overlap.
       if (validationResult.valid) {
         const questionKey = normalizeText(validationResult.item.question);
-        if (existingItems.has(questionKey)) {
+        let isDuplicate = existingItems.has(questionKey);
+        if (!isDuplicate) {
+          // Check keyword overlap with all existing questions
+          for (const existing of existingItems) {
+            if (areQuestionsSimilar(questionKey, existing)) {
+              isDuplicate = true;
+              break;
+            }
+          }
+        }
+        if (isDuplicate) {
           validationResult = {
             valid: false,
             item: validationResult.item,
@@ -514,12 +572,22 @@ function validateQuizItems(
         }
       }
     } else if (type === 'FILL_IN_BLANK') {
-      validationResult = validateFillInBlankItem(item);
+      validationResult = validateFillInBlankItem(item, summary);
       
-      // Check for duplicates
+      // Check for duplicates — use semantic similarity (keyword overlap)
+      // to catch paraphrased duplicates the model generates across waves.
       if (validationResult.valid) {
         const sentenceKey = normalizeText(validationResult.item.sentence);
-        if (existingItems.has(sentenceKey)) {
+        let isDuplicate = existingItems.has(sentenceKey);
+        if (!isDuplicate) {
+          for (const existing of existingItems) {
+            if (areQuestionsSimilar(sentenceKey, existing)) {
+              isDuplicate = true;
+              break;
+            }
+          }
+        }
+        if (isDuplicate) {
           validationResult = {
             valid: false,
             item: validationResult.item,
@@ -787,9 +855,9 @@ export async function generateQuizWithGemma(
   // Dynamic temperature based on quiz type AND difficulty for better accuracy
   // Lower = more factual/deterministic, Higher = more creative
   const temperatureMatrix: Record<string, Record<string, number>> = {
-    MCQ:           { EASY: 0.15, MEDIUM: 0.25, HARD: 0.35 },
-    FILL_IN_BLANK: { EASY: 0.15, MEDIUM: 0.25, HARD: 0.30 },
-    FLASHCARD:     { EASY: 0.25, MEDIUM: 0.45, HARD: 0.55 },
+    MCQ:           { EASY: 0.25, MEDIUM: 0.30, HARD: 0.40 },
+    FILL_IN_BLANK: { EASY: 0.20, MEDIUM: 0.30, HARD: 0.35 },
+    FLASHCARD:     { EASY: 0.30, MEDIUM: 0.45, HARD: 0.55 },
   };
   const baseTemperature = temperatureMatrix[type]?.[difficulty] ?? 0.3;
 
@@ -811,7 +879,9 @@ export async function generateQuizWithGemma(
   // just compete for threads and both timeout. Use CONCURRENCY=1 for local/CPU setups.
   // Set OLLAMA_CONCURRENCY=2 (or higher) when running with GPU / sufficient RAM.
   const CONCURRENCY = parseInt(process.env.OLLAMA_CONCURRENCY ?? '1', 10);
-  const MAX_WAVES = Math.max(Math.ceil(count / baseBatchSize) * 2, 3);
+  // Allow more waves so the loop has room to collect all valid items.
+  // Early termination (stagnantWaves) still stops us before hitting this cap.
+  const MAX_WAVES = Math.max(Math.ceil(count / baseBatchSize) * 3, 5);
   
   let wave = 0;
   let totalApiCalls = 0;
@@ -852,7 +922,9 @@ export async function generateQuizWithGemma(
       const usedSentences: string[] = [];
       if (type === 'FILL_IN_BLANK') {
         for (const item of allValidItems) {
-          if (item.sentence) usedSentences.push(item.sentence.replace('[blank]', item.answer || '___'));
+          // Store the sentence exactly as validated (with [blank]) so the model
+          // sees the exact format it should NOT reproduce.
+          if (item.sentence) usedSentences.push(item.sentence);
         }
       } else if (type === 'FLASHCARD') {
         for (const item of allValidItems) {
@@ -866,9 +938,10 @@ export async function generateQuizWithGemma(
       }
       
       // ── Dynamic batch-size reduction ──
-      // After 2+ consecutive failures the model is struggling; shrink batches
+      // After 3+ consecutive failures the model is struggling; shrink batches
       // so each request is simpler and more likely to produce valid JSON.
-      const effectiveBatchSize = consecutiveFailures >= 2
+      // Threshold raised from 2→3 to give the model more chances at full batch size.
+      const effectiveBatchSize = consecutiveFailures >= 3
         ? Math.max(Math.floor(baseBatchSize * 0.6), 1)
         : baseBatchSize;
 
@@ -887,9 +960,9 @@ export async function generateQuizWithGemma(
       // Build and fire parallel promises
       const wavePromises = Array.from({ length: callsThisWave }).map((_, i) => {
         const sliceIndex = wave * CONCURRENCY + i; // Each call gets a different summary slice
-        // Zero overlap for FILL_IN_BLANK — overlap causes the same "good candidate"
-        // sentences to reappear across waves, triggering massive duplicate rejections
-        const sliceOverlap = type === 'FILL_IN_BLANK' ? 0 : 150;
+        // Zero overlap for all types — overlap causes the same content to reappear
+        // across waves, triggering massive duplicate rejections (especially for MCQ/FIB).
+        const sliceOverlap = 0;
         const summarySlice = getSummarySlice(summary, sliceIndex, 1100, sliceOverlap);
         
         // Request 1.1x what we need per call to account for rejections.
@@ -907,10 +980,10 @@ export async function generateQuizWithGemma(
         // Budgets raised after observing truncation even at 180 tokens/item.
         const baseTokensPerItem =
           difficulty === 'HARD'
-            ? (type === 'MCQ' ? 200 : type === 'FILL_IN_BLANK' ? 90 : 130)
+            ? (type === 'MCQ' ? 200 : type === 'FILL_IN_BLANK' ? 110 : 130)
             : difficulty === 'MEDIUM'
-            ? (type === 'MCQ' ? 140 : type === 'FILL_IN_BLANK' ? 70 : 90)
-            : (type === 'MCQ' ? 110 : type === 'FILL_IN_BLANK' ? 55 : 65);
+            ? (type === 'MCQ' ? 160 : type === 'FILL_IN_BLANK' ? 90 : 100)
+            : (type === 'MCQ' ? 140 : type === 'FILL_IN_BLANK' ? 80 : 75);
         // Dynamic token multiplier: after parse errors (truncation), automatically
         // increase budget for subsequent waves to avoid repeated truncation.
         const tokensPerItem = Math.min(Math.round(baseTokensPerItem * tokenMultiplier), 300);
@@ -965,7 +1038,7 @@ export async function generateQuizWithGemma(
         
         // Validate and deduplicate items (seenItems is shared across all calls)
         const { validItems: validBatchItems, rejectedItems: rejectedBatchItems } =
-          validateQuizItems(parsedResponse.items, type, seenItems);
+          validateQuizItems(parsedResponse.items, type, seenItems, difficulty, summary);
         
         allValidItems.push(...validBatchItems);
         allRejectedItems.push(...rejectedBatchItems);
@@ -1122,7 +1195,7 @@ function buildMCQPrompt(difficulty: string, count: number, summary: string, rece
   // Inject already-used questions so the model avoids recycling the same concepts.
   // Cap at 15 to avoid exceeding context window on very large runs.
   const usedBlock = usedQuestions.length > 0
-    ? `\n\nALREADY USED QUESTIONS (DO NOT create questions about the same topics):\n${usedQuestions.slice(-15).map(q => `- ${q}`).join('\n')}\n`
+    ? `\n\nIMPORTANT: The following questions have ALREADY been used. You MUST NOT create questions about the same topics or concepts. Any repeated topic will be REJECTED.\n${usedQuestions.slice(-15).map(q => `- ${q}`).join('\n')}\n`
     : '';
 
   return `Create ${count} ${difficulty} MCQs from this summary. Output ONLY valid JSON.${avoid}${usedBlock}
@@ -1159,7 +1232,7 @@ function buildFillInBlankPrompt(difficulty: string, count: number, summary: stri
   // Inject already-used sentences so the model doesn't regenerate them.
   // Cap at 15 to avoid exceeding context window on very large runs.
   const usedBlock = usedSentences.length > 0
-    ? `\n\nALREADY USED SENTENCES (DO NOT reuse or paraphrase these):\n${usedSentences.slice(-15).map(s => `- ${s}`).join('\n')}\n`
+    ? `\n\nIMPORTANT: The following sentences have ALREADY been used. You MUST NOT output any of these again or any sentence covering the same concept. Any repeated sentence will be REJECTED.\n${usedSentences.slice(-15).map(s => `- ${s}`).join('\n')}\n`
     : '';
 
   return `Create ${count} ${difficulty} fill-in-the-blank items from this summary. Output ONLY valid JSON.${avoid}${usedBlock}
@@ -1171,10 +1244,10 @@ RULES:
 - Copy sentences EXACTLY from the summary — do NOT paraphrase or reword
 - Each sentence has exactly one [blank]
 - Answer must be a word/phrase that appears VERBATIM in the original sentence
-- Each item must use a DIFFERENT sentence — never repeat
+- Each item must use a DIFFERENT sentence from a DIFFERENT part of the summary — never repeat
 - "distractors" must be a JSON array of exactly 3 strings: ["a","b","c"]
 - Distractors are other real terms from the summary (not the answer)
-- If you cannot find ${count} different sentences, return fewer items
+- If you cannot find ${count} different sentences, return FEWER items — quality over quantity
 - ${diffGuide[difficulty] || diffGuide.MEDIUM}
 
 {"type":"fill_blank","difficulty":"${difficulty.toLowerCase()}","items":[{"sentence":"The [blank] is responsible for...","answer":"term","distractors":["wrong1","wrong2","wrong3"]}]}`;
