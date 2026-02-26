@@ -24,14 +24,18 @@ async function checkRequirement(
       return student.downloadCount >= achievement.requirementValue;
 
     case 'QUIZ_BEFORE_HOUR': {
-      // Check if any quiz attempt was completed before the given hour (e.g., 8 AM)
+      // Check if any quiz attempt was completed before the given hour (Philippine Time, UTC+8)
       const earlyAttempts = await prisma.quizAttempt.findMany({
         where: { studentId: student.id },
         select: { completedAt: true },
       });
       return earlyAttempts.some((a) => {
-        const hour = new Date(a.completedAt).getHours();
-        return hour < achievement.requirementValue;
+        const phHour = new Date(a.completedAt).toLocaleString('en-US', {
+          timeZone: 'Asia/Manila',
+          hour: 'numeric',
+          hour12: false,
+        });
+        return parseInt(phHour, 10) < achievement.requirementValue;
       });
     }
 
@@ -70,36 +74,37 @@ async function checkRequirement(
     }
 
     case 'STUDY_AFTER_MIDNIGHT': {
-      // Check if any quiz attempt was completed after midnight (0:00-4:59 AM)
+      // Check if any quiz attempt was completed after midnight (0:00-4:59 AM Philippine Time)
       const nightAttempts = await prisma.quizAttempt.findMany({
         where: { studentId: student.id },
         select: { completedAt: true },
       });
       return nightAttempts.some((a) => {
-        const hour = new Date(a.completedAt).getHours();
+        const phHour = new Date(a.completedAt).toLocaleString('en-US', {
+          timeZone: 'Asia/Manila',
+          hour: 'numeric',
+          hour12: false,
+        });
+        const hour = parseInt(phHour, 10);
         return hour >= 0 && hour < 5;
       });
     }
 
     case 'QUIZ_UNDER_MINUTES': {
-      // Check if any two consecutive quiz attempts by the same student on same quiz
-      // were completed within requirementValue minutes
-      // Alternative: check if quiz was started and finished within time limit
-      // Since we don't track start time, we check if quiz attempt completedAt
-      // has a corresponding quiz createdAt within requirementValue minutes
-      const attempts = await prisma.quizAttempt.findMany({
-        where: { studentId: student.id },
-        include: { quiz: { select: { createdAt: true } } },
-        orderBy: { completedAt: 'desc' },
+      // Check if any quiz attempt was completed within requirementValue minutes of starting
+      const timedAttempts = await prisma.quizAttempt.findMany({
+        where: {
+          studentId: student.id,
+          startedAt: { not: null },
+        },
+        select: { startedAt: true, completedAt: true },
       });
-      // Check if any two attempts on the same quiz are within requirementValue minutes
-      // (first and subsequent attempts)
-      // Simpler approach: any attempt completed within requirementValue minutes of its creation
-      // Since QuizAttempt doesn't have startedAt, we'll check if the attempt was fast
-      // by looking at attempts completed on the same day and same quiz
-      // For now, we'll mark as achievable if student has at least one attempt
-      // and rely on the quiz submission endpoint to track timing
-      return false; // Will be awarded during quiz submission when timing is checked
+      return timedAttempts.some((a) => {
+        if (!a.startedAt) return false;
+        const diffMs = new Date(a.completedAt).getTime() - new Date(a.startedAt).getTime();
+        const diffMinutes = diffMs / (1000 * 60);
+        return diffMinutes > 0 && diffMinutes <= achievement.requirementValue;
+      });
     }
 
     default:
@@ -142,10 +147,16 @@ export async function GET(request: NextRequest) {
     const newlyEarned: string[] = [];
     for (const achievement of allAchievements) {
       if (!earnedAchievementIds.has(achievement.id)) {
-        const met = await checkRequirement(
-          { requirementType: achievement.requirementType, requirementValue: achievement.requirementValue },
-          student
-        );
+        let met = false;
+        try {
+          met = await checkRequirement(
+            { requirementType: achievement.requirementType, requirementValue: achievement.requirementValue },
+            student
+          );
+        } catch (checkError) {
+          console.error(`Error checking requirement for "${achievement.title}" (${achievement.requirementType}):`, checkError);
+          continue;
+        }
         if (met) {
           try {
             await prisma.studentAchievement.create({
@@ -208,7 +219,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ achievements, newlyEarned });
   } catch (error) {
-    console.error('Error fetching achievements:', error);
+    console.error('Error fetching achievements:', error instanceof Error ? error.message : error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       { error: 'Failed to fetch achievements' },
       { status: 500 }

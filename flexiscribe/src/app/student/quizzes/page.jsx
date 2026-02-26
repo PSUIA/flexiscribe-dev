@@ -455,7 +455,7 @@ export default function QuizzesPage() {
               <div className="quiz-notification-icon">✓</div>
               <div className="notification-content">
                 <h4>Quiz Generated Successfully!</h4>
-                <p>A new quiz has been generated from "{generatedQuizInfo.reviewerTitle}" in {generatedQuizInfo.classCode}</p>
+                {/* <p>A new quiz has been generated from "{generatedQuizInfo.reviewerTitle}" in {generatedQuizInfo.classCode}</p> */}
               </div>
               <button 
                 className="notification-close"
