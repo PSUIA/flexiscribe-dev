@@ -77,13 +77,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    const currentRole = user?.role;
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
       setUser(null);
-      router.push("/auth/role-selection");
+      if (currentRole === "STUDENT") {
+        router.push("/auth/role-selection?role=student");
+      } else if (currentRole === "EDUCATOR") {
+        router.push("/auth/role-selection?role=educator");
+      } else {
+        router.push("/auth/role-selection");
+      }
     }
   };
 
