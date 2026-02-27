@@ -1,6 +1,17 @@
 import Link from "next/link";
 
-export default async function Landing() {
+export default async function Landing({ searchParams }) {
+  const params = await searchParams;
+  const role = params?.role?.toLowerCase();
+  const roleParam = role === "student" || role === "educator" ? `?role=${role}` : "";
+
+  const portalLabel =
+    role === "student"
+      ? "Student Portal"
+      : role === "educator"
+        ? "Educator Portal"
+        : "Student & Educator Portal";
+
   return (
     <div className="container min-h-screen flex flex-col">
       {/* Navbar */}
@@ -24,17 +35,19 @@ export default async function Landing() {
 
         {/* Actions */}
         <div className="neu-navbar-actions">
+          {role !== "student" && (
+            <Link
+              href="/auth/educator/login?redirect=prototype"
+              className="btn-login text-center"
+            >
+              Prototype
+            </Link>
+          )}
           <Link
-            href="/auth/educator/login?redirect=prototype"
+            href={`/auth/role-selection${roleParam}`}
             className="btn-login text-center"
           >
-            Prototype
-          </Link>
-          <Link
-            href="/auth/role-selection"
-            className="btn-login text-center"
-          >
-            Student & Educator Portal
+            {portalLabel}
           </Link>
         </div>
       </nav>
@@ -85,7 +98,7 @@ export default async function Landing() {
           </div>
 
           {/* Get Started Button */}
-          <Link href="/auth/role-selection" className="btn-get-started">
+          <Link href={`/auth/role-selection${roleParam}`} className="btn-get-started">
             Get Started
           </Link>
         </div>

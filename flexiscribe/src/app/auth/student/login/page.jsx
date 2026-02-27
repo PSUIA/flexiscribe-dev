@@ -36,7 +36,7 @@ export default function Login() {
   const strength = getPasswordStrength(password);
 
   const handleBack = () => {
-    router.push("/auth/role-selection");
+    router.push("/auth/role-selection?role=student");
   };
 
   // Handle form submission

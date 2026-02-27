@@ -43,7 +43,7 @@ export default function EducatorRegister() {
 
   const handleBack = () => {
     if (step === 1) {
-      router.push("/auth/role-selection");
+      router.push("/auth/role-selection?role=educator");
     } else {
       setStep(step - 1);
       setError("");

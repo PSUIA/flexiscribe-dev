@@ -46,7 +46,7 @@ export default function EducatorLogin() {
     if (isPrototypeMode) {
       router.push("/");
     } else {
-      router.push("/auth/role-selection");
+      router.push("/auth/role-selection?role=educator");
     }
   };
 
