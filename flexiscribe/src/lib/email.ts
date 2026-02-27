@@ -1,6 +1,14 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "RESEND_API_KEY environment variable is not set. Email sending is unavailable."
+    );
+  }
+  return new Resend(apiKey);
+}
 
 export interface EmailOptions {
   to: string;
@@ -17,7 +25,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     console.log("From:", process.env.EMAIL_FROM);
     console.log("API Key exists:", !!process.env.RESEND_API_KEY);
     
-    const result = await resend.emails.send({
+    const result = await getResendClient().emails.send({
       from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       to,
       subject,
